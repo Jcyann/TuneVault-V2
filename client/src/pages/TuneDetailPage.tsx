@@ -1,255 +1,342 @@
-import { useParams, Link } from "wouter";
-  import { useQuery } from "@tanstack/react-query";
-  import { ArrowLeft, Music2, ExternalLink, Youtube, FileText, Library } from "lucide-react";
-  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-  import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+  import { useParams, Link } from "wouter";
+  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
+  import { Badge } from "@/components/ui/badge";
   import { Separator } from "@/components/ui/separator";
-  import type { Tune } from "@shared/schema";
+  import { ArrowLeft, Music2, ExternalLink, FileText, Video, Music } from "lucide-react";
+
+  interface Tune {
+    id: number;
+    title: string;
+    alternativeTitles: string | null;
+    key: string;
+    tuneType: string | null;
+    region: string | null;
+    difficulty: string | null;
+    sourceFiddler: string | null;
+    era: string | null;
+    popularity: number | null;
+    description: string | null;
+    youtubeUrl: string | null;
+    youtubeVideoId: string | null;
+    abcNotation: string | null;
+    locUrl: string | null;
+    locItemId: string | null;
+    theSessionId: string | null;
+    taterJoeUrl: string | null;
+    transcriptUrl: string | null;
+    folkwaysUrl: string | null;
+    tuning: string | null;
+    notes: string | null;
+    tags: string | null;
+  }
 
   export default function TuneDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const params = useParams();
+    const tuneId = params.id ? parseInt(params.id) : null;
 
     const { data: tune, isLoading } = useQuery<Tune>({
-      queryKey: [`/api/tunes/${id}`],
-      queryFn: async () => {
-        const response = await fetch(`/api/tunes/${id}`);
-        if (!response.ok) throw new Error("Tune not found");
-        return response.json();
-      },
+      queryKey: [`/api/tunes/${tuneId}`],
+      enabled: !!tuneId,
     });
 
     if (isLoading) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-500">Loading tune...</p>
+        <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50 flex items-center justify-center">
+          <div className="text-center">
+            <Music2 className="w-16 h-16 mx-auto mb-4 animate-pulse text-amber-900" />
+            <p className="text-lg text-amber-800">Loading tune...</p>
+          </div>
         </div>
       );
     }
 
     if (!tune) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50 flex items-center justify-center">
           <div className="text-center">
-            <Music2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg mb-4">Tune not found</p>
+            <p className="text-lg text-amber-800">Tune not found</p>
             <Link href="/">
-              <Button>Return Home</Button>
+              <Button className="mt-4 bg-amber-900 hover:bg-amber-800">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Collection
+              </Button>
             </Link>
           </div>
         </div>
       );
     }
 
-    const getYouTubeId = (url: string | null) => {
-      if (!url) return null;
-      const match = url.match(/[?&]v=([^&]+)/);
-      return match ? match[1] : null;
-    };
-
-    const videoId = getYouTubeId(tune.youtubeUrl);
-
     return (
-      <div className="min-h-screen">
-        <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
-          <div className="container mx-auto px-4 py-4">
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-orange-50 to-amber-100">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-amber-900 via-orange-800 to-amber-900 text-white py-8 px-4 shadow-lg">
+          <div className="container mx-auto max-w-5xl">
             <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-2">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Tunes
+              <Button variant="ghost" className="text-white hover:bg-amber-800 mb-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Collection
               </Button>
             </Link>
-            <div className="flex items-center gap-3">
-              <Music2 className="h-8 w-8 text-amber-700" />
-              <div>
-                <h1 className="text-3xl font-bold text-amber-900">TuneVault</h1>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold mb-2">{tune.title}</h1>
+                {tune.alternativeTitles && (
+                  <p className="text-amber-200 text-lg">
+                    Also known as: {tune.alternativeTitles}
+                  </p>
+                )}
               </div>
+              {tune.popularity && tune.popularity >= 9 && (
+                <Badge className="bg-orange-500 text-white text-lg px-4 py-2">
+                  Popular Tune
+                </Badge>
+              )}
             </div>
           </div>
-        </header>
+        </div>
 
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="mb-8">
-            <div className="flex items-start gap-4 mb-4">
-              <Badge className="bg-amber-700 text-white text-lg px-4 py-1">
-                {tune.key}
-              </Badge>
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {tune.region}
-              </Badge>
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">{tune.title}</h1>
-            <p className="text-xl text-gray-600 mb-4">{tune.sourceFiddler}</p>
-            <p className="text-gray-700 leading-relaxed max-w-3xl">
-              {tune.description}
-            </p>
+        <div className="container mx-auto max-w-5xl px-4 py-8">
+          {/* Key Info Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <Card className="bg-white/90 backdrop-blur border-amber-200">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs">Key</CardDescription>
+                <CardTitle className="text-2xl text-amber-900">{tune.key}</CardTitle>
+              </CardHeader>
+            </Card>
+            {tune.tuneType && (
+              <Card className="bg-white/90 backdrop-blur border-amber-200">
+                <CardHeader className="pb-2">
+                  <CardDescription className="text-xs">Type</CardDescription>
+                  <CardTitle className="text-lg text-orange-800 capitalize">{tune.tuneType}</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+            {tune.difficulty && (
+              <Card className="bg-white/90 backdrop-blur border-amber-200">
+                <CardHeader className="pb-2">
+                  <CardDescription className="text-xs">Difficulty</CardDescription>
+                  <CardTitle className="text-lg capitalize"
+                    style={{
+                      color: tune.difficulty === 'beginner' ? '#15803d' 
+                        : tune.difficulty === 'intermediate' ? '#c2410c'
+                        : '#991b1b'
+                    }}
+                  >
+                    {tune.difficulty}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+            {tune.region && (
+              <Card className="bg-white/90 backdrop-blur border-amber-200">
+                <CardHeader className="pb-2">
+                  <CardDescription className="text-xs">Region</CardDescription>
+                  <CardTitle className="text-lg text-amber-900">{tune.region}</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {videoId && (
-                <Card>
+              {/* Description */}
+              {tune.description && (
+                <Card className="bg-white/90 backdrop-blur border-amber-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Youtube className="h-5 w-5 text-red-600" />
-                      Video Performance
-                    </CardTitle>
+                    <CardTitle className="text-amber-900">About This Tune</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                    <p className="text-amber-800 leading-relaxed">{tune.description}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Video Player */}
+              {tune.youtubeVideoId && (
+                <Card className="bg-white/90 backdrop-blur border-amber-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-900">
+                      <Video className="w-5 h-5" />
+                      Video Performance
+                    </CardTitle>
+                    <CardDescription>
+                      Use playback speed controls (gear icon) to slow down for practice
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video rounded-lg overflow-hidden bg-black">
                       <iframe
                         width="100%"
                         height="100%"
-                        src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+                        src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0`}
                         title={tune.title}
+                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <p className="text-sm font-medium text-amber-900 mb-2">
-                        💡 Playback Speed Control
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Use YouTube playback speed controls (gear icon) to slow down to 0.75x, 0.5x, or 0.25x for practice.
-                      </p>
+                      ></iframe>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {tune.audioUrl && (
-                <Card>
+              {/* ABC Notation */}
+              {tune.abcNotation && (
+                <Card className="bg-white/90 backdrop-blur border-amber-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Music2 className="h-5 w-5 text-amber-700" />
-                      Audio Recording
+                    <CardTitle className="flex items-center gap-2 text-amber-900">
+                      <Music className="w-5 h-5" />
+                      ABC Notation
                     </CardTitle>
+                    <CardDescription>
+                      Sheet music in ABC format from TheSession.org
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <audio
-                      controls
-                      controlsList="nodownload"
-                      className="w-full"
-                      style={{ height: "54px" }}
-                    >
-                      <source src={tune.audioUrl} type="audio/mpeg" />
-                      Your browser does not support the audio element.
-                    </audio>
-                    <p className="mt-3 text-sm text-gray-600">
-                      Right-click on the timeline to adjust playback speed
-                    </p>
+                    <pre className="bg-amber-50 p-4 rounded-lg overflow-x-auto text-sm font-mono text-amber-900 border border-amber-200">
+                      {tune.abcNotation}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Performance Notes */}
+              {tune.notes && (
+                <Card className="bg-white/90 backdrop-blur border-amber-200">
+                  <CardHeader>
+                    <CardTitle className="text-amber-900">Performance Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-amber-800 leading-relaxed">{tune.notes}</p>
                   </CardContent>
                 </Card>
               )}
             </div>
 
+            {/* Sidebar */}
             <div className="space-y-6">
-              <Card className="border-amber-200">
+              {/* Historical Details */}
+              <Card className="bg-white/90 backdrop-blur border-amber-200">
                 <CardHeader>
-                  <CardTitle className="text-lg">Historical Archives</CardTitle>
+                  <CardTitle className="text-amber-900">Historical Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {tune.taterJoeUrl && (
-                    <a
-                      href={tune.taterJoeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 group-hover:text-amber-900">
-                          Tater Joe\'s
-                        </span>
-                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-amber-700" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        View transcription & notation
-                      </p>
-                    </a>
+                <CardContent className="space-y-3 text-sm">
+                  {tune.sourceFiddler && (
+                    <div>
+                      <strong className="text-amber-900">Source Fiddler:</strong>
+                      <p className="text-amber-800">{tune.sourceFiddler}</p>
+                    </div>
                   )}
+                  {tune.era && (
+                    <div>
+                      <strong className="text-amber-900">Era:</strong>
+                      <p className="text-amber-800">{tune.era}</p>
+                    </div>
+                  )}
+                  {tune.tuning && (
+                    <div>
+                      <strong className="text-amber-900">Tuning:</strong>
+                      <p className="text-amber-800">{tune.tuning}</p>
+                    </div>
+                  )}
+                  {tune.tags && (
+                    <div>
+                      <strong className="text-amber-900">Tags:</strong>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {tune.tags.split(',').map((tag, i) => (
+                          <Badge key={i} variant="outline" className="text-xs border-amber-300">
+                            {tag.trim()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
+              {/* External Resources */}
+              <Card className="bg-white/90 backdrop-blur border-amber-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-900">
+                    <FileText className="w-5 h-5" />
+                    External Resources
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
                   {tune.locUrl && (
-                    <a
-                      href={tune.locUrl}
-                      target="_blank"
+                    <a 
+                      href={tune.locUrl} 
+                      target="_blank" 
                       rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 group-hover:text-amber-900">
-                          Library of Congress
-                        </span>
-                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-amber-700" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Historic recordings collection
-                      </p>
+                      <ExternalLink className="w-4 h-4" />
+                      Library of Congress
                     </a>
                   )}
-
+                  {tune.theSessionId && (
+                    <a 
+                      href={`https://thesession.org/tunes/${tune.theSessionId}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      TheSession.org
+                    </a>
+                  )}
+                  {tune.taterJoeUrl && (
+                    <a 
+                      href={tune.taterJoeUrl}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Tater Joe's Transcriptions
+                    </a>
+                  )}
                   {tune.folkwaysUrl && (
-                    <a
+                    <a 
                       href={tune.folkwaysUrl}
-                      target="_blank"
+                      target="_blank" 
                       rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 group-hover:text-amber-900">
-                          Smithsonian Folkways
-                        </span>
-                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-amber-700" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Classic recordings archive
-                      </p>
+                      <ExternalLink className="w-4 h-4" />
+                      Smithsonian Folkways
                     </a>
                   )}
-
                   {tune.transcriptUrl && tune.transcriptUrl !== tune.taterJoeUrl && (
-                    <a
+                    <a 
                       href={tune.transcriptUrl}
-                      target="_blank"
+                      target="_blank" 
                       rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 group-hover:text-amber-900">
-                          Sheet Music
-                        </span>
-                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-amber-700" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        View notation
-                      </p>
+                      <ExternalLink className="w-4 h-4" />
+                      Transcript
                     </a>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-gray-200 bg-gradient-to-br from-amber-50 to-orange-50">
+              {/* Practice Tips */}
+              <Card className="bg-orange-50 border-orange-300">
                 <CardHeader>
-                  <CardTitle className="text-lg">Practice Tips</CardTitle>
+                  <CardTitle className="text-sm text-orange-900">💡 Practice Tip</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm text-gray-700">
-                  <p>🎵 Start by listening to the full-speed version multiple times</p>
-                  <p>🐌 Use 0.5x speed to learn the melody note-by-note</p>
-                  <p>📝 Follow along with the notation from Tater Joe\'s</p>
-                  <p>⏫ Gradually increase speed as you gain confidence</p>
-                  <p>🔄 Practice in small sections and loop difficult passages</p>
+                <CardContent className="text-xs text-orange-800 space-y-2">
+                  <p>Use the YouTube player's speed control (gear icon) to slow down to 0.5x or 0.75x for learning.</p>
+                  <p>Compare the ABC notation with the video to understand variations.</p>
                 </CardContent>
               </Card>
             </div>
           </div>
-        </main>
-
-        <footer className="border-t bg-white/80 mt-16 py-8">
-          <div className="container mx-auto px-4 text-center text-gray-600 text-sm">
-            <p>TuneVault - Preserving Old Time Fiddle traditions</p>
-          </div>
-        </footer>
+        </div>
       </div>
     );
   }
