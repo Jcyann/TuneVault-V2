@@ -41,6 +41,8 @@ export const tunes = pgTable("tunes", {
   popularity: integer("popularity").default(5),
   tags: text("tags"),
   notes: text("notes"),
+  audioSource: text("audio_source"),
+  audioAttribution: text("audio_attribution"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

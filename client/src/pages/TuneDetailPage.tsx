@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen } from "lucide-react";
 import type { Tune } from "@shared/schema";
+import AudioPlayer from "@/components/AudioPlayer";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-300",
@@ -77,6 +78,9 @@ export default function TuneDetailPage() {
               Also known as: {tune.alternativeTitles}
             </p>
           )}
+          {(tune.audioUrl || tune.locItemId) && (
+            <AudioPlayer tune={tune} />
+          )}
         </div>
       </div>
 
@@ -104,9 +108,6 @@ export default function TuneDetailPage() {
                     <Video className="w-5 h-5 text-red-500" />
                     Video Performance
                   </CardTitle>
-                  <CardDescription>
-                    Click the gear icon (⚙️) inside the player to set playback speed — try 0.5× or 0.75× to slow it down for learning
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
@@ -114,13 +115,17 @@ export default function TuneDetailPage() {
                       data-testid="video-youtube"
                       width="100%"
                       height="100%"
-                      src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
+                      src={`https://www.youtube.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
                       title={tune.title}
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="no-referrer-when-downgrade"
                       allowFullScreen
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Use the gear icon ⚙️ inside the player to slow down to 0.5× for learning
+                  </p>
                 </CardContent>
               </Card>
             )}
