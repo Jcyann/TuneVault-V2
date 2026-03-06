@@ -2,18 +2,42 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Heart, Headphones, ChevronLeft, ChevronRight } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Heart, Headphones, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Tune } from "@shared/schema";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "bg-green-100 text-green-800 border-green-300",
-  intermediate: "bg-amber-100 text-amber-800 border-amber-300",
-  advanced: "bg-red-100 text-red-800 border-red-300",
+  beginner: "bg-green-100 text-green-800 border-green-200",
+  intermediate: "bg-amber-100 text-amber-800 border-amber-200",
+  advanced: "bg-red-100 text-red-800 border-red-200",
+};
+
+const TUNE_TYPE_COLORS: Record<string, string> = {
+  breakdown: "#F59E0B",
+  reel: "#0EA5E9",
+  waltz: "#8B5CF6",
+  jig: "#10B981",
+  modal: "#F43F5E",
+  polka: "#F97316",
+  march: "#6366F1",
+  hornpipe: "#14B8A6",
+  polska: "#A855F7",
+  schottische: "#EC4899",
+};
+
+const TUNE_TYPE_BADGE: Record<string, string> = {
+  breakdown: "bg-amber-50 text-amber-700 border-amber-200",
+  reel: "bg-sky-50 text-sky-700 border-sky-200",
+  waltz: "bg-violet-50 text-violet-700 border-violet-200",
+  jig: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  modal: "bg-rose-50 text-rose-700 border-rose-200",
+  polka: "bg-orange-50 text-orange-700 border-orange-200",
+  march: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  hornpipe: "bg-teal-50 text-teal-700 border-teal-200",
+  polska: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
 const KEY_ORDER = ["A", "Am", "D", "Dm", "G", "Gm", "C", "Em", "F", "Bm"];
@@ -27,17 +51,41 @@ interface TunesResponse {
   limit: number;
 }
 
+function getUrlParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    search: p.get("search") || "",
+    key: p.get("key") || "all",
+    difficulty: p.get("difficulty") || "all",
+    region: p.get("region") || "all",
+    tuneType: p.get("tuneType") || "all",
+    page: parseInt(p.get("page") || "1", 10),
+  };
+}
+
 export default function HomePage() {
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [selectedKey, setSelectedKey] = useState("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
-  const [selectedRegion, setSelectedRegion] = useState("all");
-  const [selectedType, setSelectedType] = useState("all");
-  const [page, setPage] = useState(1);
+  const init = getUrlParams();
+  const [searchInput, setSearchInput] = useState(init.search);
+  const [search, setSearch] = useState(init.search);
+  const [selectedKey, setSelectedKey] = useState(init.key);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(init.difficulty);
+  const [selectedRegion, setSelectedRegion] = useState(init.region);
+  const [selectedType, setSelectedType] = useState(init.tuneType);
+  const [page, setPage] = useState(init.page);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search input
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (search) p.set("search", search);
+    if (selectedKey !== "all") p.set("key", selectedKey);
+    if (selectedDifficulty !== "all") p.set("difficulty", selectedDifficulty);
+    if (selectedRegion !== "all") p.set("region", selectedRegion);
+    if (selectedType !== "all") p.set("tuneType", selectedType);
+    if (page > 1) p.set("page", String(page));
+    const qs = p.toString();
+    window.history.replaceState(null, "", qs ? "?" + qs : window.location.pathname);
+  }, [search, selectedKey, selectedDifficulty, selectedRegion, selectedType, page]);
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -47,7 +95,6 @@ export default function HomePage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  // Reset page when filters change
   useEffect(() => { setPage(1); }, [selectedKey, selectedDifficulty, selectedRegion, selectedType]);
 
   const queryParams = new URLSearchParams({
@@ -65,297 +112,303 @@ export default function HomePage() {
     queryFn: () => fetch(`/api/tunes?${queryParams}`).then((r) => r.json()),
   });
 
-  const { data: keys = [] } = useQuery<{ key: string; count: number }[]>({
-    queryKey: ["/api/keys"],
-  });
-
-  const { data: regions = [] } = useQuery<{ region: string; count: number }[]>({
-    queryKey: ["/api/regions"],
-  });
-
-  const { data: tuneTypes = [] } = useQuery<{ tuneType: string; count: number }[]>({
-    queryKey: ["/api/types"],
-  });
-
-  const { data: stats } = useQuery<{ total: number; withVideo: number; withAbc: number; withAudio: number }>({
-    queryKey: ["/api/stats"],
-  });
+  const { data: keys = [] } = useQuery<{ key: string; count: number }[]>({ queryKey: ["/api/keys"] });
+  const { data: regions = [] } = useQuery<{ region: string; count: number }[]>({ queryKey: ["/api/regions"] });
+  const { data: tuneTypes = [] } = useQuery<{ tuneType: string; count: number }[]>({ queryKey: ["/api/types"] });
+  const { data: stats } = useQuery<{ total: number; withVideo: number; withAbc: number; withAudio: number }>({ queryKey: ["/api/stats"] });
 
   const tunes = data?.tunes ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
   const sortedKeys = [...keys].sort((a, b) => {
-    const ai = KEY_ORDER.indexOf(a.key);
-    const bi = KEY_ORDER.indexOf(b.key);
+    const ai = KEY_ORDER.indexOf(a.key), bi = KEY_ORDER.indexOf(b.key);
     if (ai === -1 && bi === -1) return a.key.localeCompare(b.key);
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
+    if (ai === -1) return 1; if (bi === -1) return -1;
     return ai - bi;
   });
 
   const hasFilters = selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "";
 
   const clearFilters = () => {
-    setSearchInput("");
-    setSearch("");
-    setSelectedKey("all");
-    setSelectedDifficulty("all");
-    setSelectedRegion("all");
-    setSelectedType("all");
+    setSearchInput(""); setSearch("");
+    setSelectedKey("all"); setSelectedDifficulty("all");
+    setSelectedRegion("all"); setSelectedType("all");
     setPage(1);
+  };
+
+  const changePage = (n: number) => {
+    setPage(n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Banner */}
+
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div
-        className="text-primary-foreground py-14 px-4 shadow-lg border-b border-white/15"
-        style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)" }}
+        className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
+        style={{
+          backgroundImage: [
+            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.05) 22px, rgba(255,255,255,0.05) 23px)",
+            "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
+          ].join(", "),
+        }}
       >
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center gap-4 mb-3">
-            <Music2 className="w-14 h-14 opacity-90" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
+
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <div className="flex items-center gap-4 mb-1">
+            <Music2 className="w-12 h-12 opacity-90 drop-shadow" />
             <div>
-              <h1 className="text-5xl font-bold tracking-tight font-serif">TuneVault</h1>
-              <p className="text-lg opacity-80 mt-1">A Treasury of Old-Time Fiddle Music</p>
+              <h1 className="text-5xl font-bold tracking-tight font-serif drop-shadow-sm">TuneVault</h1>
+              <p className="text-base opacity-75 mt-0.5 tracking-wide">A Treasury of Old-Time Fiddle Music</p>
             </div>
           </div>
-          <p className="mt-5 max-w-3xl opacity-85 text-base leading-relaxed">
-            A comprehensive, scholarly collection of{" "}
-            <strong>{stats?.total?.toLocaleString() ?? "1,000+"} traditional American fiddle tunes</strong> organized
-            by key, region, and difficulty — with embedded audio, video, and ABC notation.
-            Built for lifelong learners and serious history buffs.
-          </p>
+
+          {/* Hero search */}
+          <div className="relative max-w-2xl mt-7">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-foreground/50 pointer-events-none" />
+            <input
+              data-testid="input-search"
+              className="w-full rounded-full bg-white/15 border border-white/25 text-primary-foreground placeholder:text-primary-foreground/55 pl-12 pr-10 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-white/35 transition-all"
+              placeholder={`Search ${stats?.total?.toLocaleString() ?? "1,000+"} old-time tunes…`}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            {searchInput && (
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
+                onClick={() => { setSearchInput(""); setSearch(""); }}
+                data-testid="button-clear-search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Stats */}
           {stats && (
-            <div className="flex flex-wrap gap-6 mt-6 text-sm opacity-80">
-              <span className="flex items-center gap-2" data-testid="stat-audio">
-                <Headphones className="w-4 h-4" /> {stats.withAudio?.toLocaleString()} with audio
+            <div className="flex flex-wrap gap-x-7 gap-y-2 mt-5 text-sm">
+              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-total">
+                <Disc className="w-4 h-4" />
+                <strong>{stats.total?.toLocaleString()}</strong> tunes
               </span>
-              <span className="flex items-center gap-2" data-testid="stat-video">
-                <Video className="w-4 h-4" /> {stats.withVideo?.toLocaleString()} with video
+              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-audio">
+                <Headphones className="w-4 h-4" />
+                <strong>{stats.withAudio?.toLocaleString()}</strong> with audio
               </span>
-              <span className="flex items-center gap-2" data-testid="stat-abc">
-                <BookOpen className="w-4 h-4" /> {stats.withAbc?.toLocaleString()} with ABC notation
+              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-video">
+                <Video className="w-4 h-4" />
+                <strong>{stats.withVideo?.toLocaleString()}</strong> with video
               </span>
-              <span className="flex items-center gap-2" data-testid="stat-total">
-                <Disc className="w-4 h-4" /> {stats.total?.toLocaleString()} tunes total
+              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-abc">
+                <BookOpen className="w-4 h-4" />
+                <strong>{stats.withAbc?.toLocaleString()}</strong> with notation
               </span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        {/* Search & Filters */}
-        <Card className="mb-8 shadow-md">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Search className="w-5 h-5" /> Search & Filter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="lg:col-span-2">
-                <Input
-                  data-testid="input-search"
-                  placeholder="Search tunes, fiddlers, alternate names..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
-              <Select value={selectedKey} onValueChange={setSelectedKey}>
-                <SelectTrigger data-testid="select-key">
-                  <SelectValue placeholder="All Keys" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Keys</SelectItem>
-                  {sortedKeys.map((k) => (
-                    <SelectItem key={k.key} value={k.key}>
-                      Key of {k.key} ({k.count})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                <SelectTrigger data-testid="select-difficulty">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-3 items-center">
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger data-testid="select-region" className="w-44">
-                  <SelectValue placeholder="All Regions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Regions</SelectItem>
-                  {regions.map((r) => (
-                    <SelectItem key={r.region} value={r.region}>
-                      {r.region} ({r.count})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger data-testid="select-type" className="w-44">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {tuneTypes.map((t) => (
-                    <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
-                      {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {hasFilters && (
-                <Button variant="outline" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Sticky filter strip ───────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="container mx-auto max-w-5xl px-4 py-2 flex flex-wrap items-center gap-2">
+          <Select value={selectedKey} onValueChange={setSelectedKey}>
+            <SelectTrigger data-testid="select-key" className="h-8 w-36 text-xs rounded-full border-border">
+              <SelectValue placeholder="All Keys" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Keys</SelectItem>
+              {sortedKeys.map((k) => (
+                <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Results Count */}
-        <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-          <p className="text-muted-foreground text-sm" data-testid="text-results-count">
-            {isLoading ? (
-              "Loading…"
-            ) : (
-              <>
-                Showing <strong className="text-foreground">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</strong>{" "}
-                of <strong className="text-foreground">{total.toLocaleString()}</strong>{" "}
-                {total === 1 ? "tune" : "tunes"}
-              </>
-            )}
-          </p>
-          {totalPages > 1 && !isLoading && (
-            <p className="text-muted-foreground text-xs">
-              Page {page} of {totalPages}
-            </p>
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger data-testid="select-type" className="h-8 w-36 text-xs rounded-full border-border">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {tuneTypes.map((t) => (
+                <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
+                  {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+            <SelectTrigger data-testid="select-region" className="h-8 w-40 text-xs rounded-full border-border">
+              <SelectValue placeholder="All Regions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {regions.map((r) => (
+                <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+            <SelectTrigger data-testid="select-difficulty" className="h-8 w-36 text-xs rounded-full border-border">
+              <SelectValue placeholder="All Levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 text-xs rounded-full text-muted-foreground hover:text-foreground"
+              onClick={clearFilters}
+              data-testid="button-clear-filters"
+            >
+              <X className="w-3 h-3 mr-1" /> Clear
+            </Button>
           )}
-        </div>
 
-        {/* Tunes Grid */}
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums hidden sm:block" data-testid="text-results-count">
+            {isLoading ? "…" : `${total.toLocaleString()} tunes`}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Main content ─────────────────────────────────────────────── */}
+      <div className="container mx-auto max-w-5xl px-4 py-6">
+
+        {/* Page position */}
+        {!isLoading && total > 0 && (
+          <p className="text-xs text-muted-foreground mb-4" data-testid="text-page-position">
+            Showing <strong className="text-foreground">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</strong>{" "}
+            of <strong className="text-foreground">{total.toLocaleString()}</strong>
+            {totalPages > 1 && ` · Page ${page} of ${totalPages}`}
+          </p>
+        )}
+
+        {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="h-40">
                 <CardHeader>
-                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-5 w-3/4 mb-2" />
                   <Skeleton className="h-4 w-1/2" />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-3 w-full mb-2" />
+                  <Skeleton className="h-3 w-5/6" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : tunes.length === 0 ? (
           <div className="text-center py-20">
-            <Music2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-40" />
-            <p className="text-lg text-muted-foreground">No tunes found matching your criteria.</p>
-            <Button variant="outline" className="mt-4" onClick={clearFilters}>
-              Clear Filters
-            </Button>
+            <Music2 className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <p className="text-lg text-muted-foreground">No tunes found.</p>
+            <Button variant="outline" className="mt-4 rounded-full" onClick={clearFilters}>Clear Filters</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {tunes.map((tune) => (
-              <Link key={tune.id} href={`/tune/${tune.id}`}>
-                <Card
-                  data-testid={`card-tune-${tune.id}`}
-                  className="h-full cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-primary/40 hover:-translate-y-0.5"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg leading-snug">{tune.title}</CardTitle>
-                      {(tune.popularity ?? 0) >= 9 && (
-                        <Badge variant="secondary" className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">
-                          Essential
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tunes.map((tune) => {
+              const leftColor = TUNE_TYPE_COLORS[tune.tuneType ?? ""] ?? "hsl(var(--primary) / 0.35)";
+              const typeBadge = TUNE_TYPE_BADGE[tune.tuneType ?? ""] ?? "bg-muted text-muted-foreground border-muted";
+              return (
+                <Link key={tune.id} href={`/tune/${tune.id}`}>
+                  <Card
+                    data-testid={`card-tune-${tune.id}`}
+                    className="h-full cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                    style={{ borderLeftColor: leftColor, borderLeftWidth: "3px" }}
+                  >
+                    <CardHeader className="pb-2 pt-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base font-bold font-serif leading-snug">
+                          {tune.title}
+                        </CardTitle>
+                        {(tune.popularity ?? 0) >= 9 && (
+                          <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300 font-medium">
+                            Essential
+                          </Badge>
+                        )}
+                      </div>
+                      <CardDescription className="flex flex-wrap gap-1 mt-1.5">
+                        <Badge variant="outline" className="text-xs border-primary/40 text-primary font-semibold">
+                          Key of {tune.key}
                         </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="flex flex-wrap gap-1.5 mt-2">
-                      <Badge variant="outline" className="border-primary/50 text-primary font-semibold">
-                        Key of {tune.key}
-                      </Badge>
-                      {tune.tuneType && (
-                        <Badge variant="outline" className="capitalize">
-                          {tune.tuneType}
-                        </Badge>
-                      )}
-                      {tune.difficulty && (
-                        <Badge variant="outline" className={DIFFICULTY_COLORS[tune.difficulty] ?? ""}>
-                          {tune.difficulty}
-                        </Badge>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1 text-sm">
-                      {tune.region && <p><span className="font-medium">Region:</span> <span className="text-muted-foreground">{tune.region}</span></p>}
-                      {tune.sourceFiddler && <p><span className="font-medium">Source:</span> <span className="text-muted-foreground">{tune.sourceFiddler}</span></p>}
-                      {tune.era && <p><span className="font-medium">Era:</span> <span className="text-muted-foreground">{tune.era}</span></p>}
-                    </div>
-                    {tune.description && (
-                      <p className="text-xs text-muted-foreground mt-3 line-clamp-2 leading-relaxed">
-                        {tune.description}
-                      </p>
-                    )}
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      {tune.audioUrl && (
-                        <Badge variant="secondary" className="text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200" data-testid={`badge-audio-${tune.id}`}>
-                          <Headphones className="w-3 h-3" /> Audio
-                        </Badge>
-                      )}
-                      {tune.youtubeVideoId && (
-                        <Badge variant="secondary" className="text-xs gap-1">
-                          <Video className="w-3 h-3" /> Video
-                        </Badge>
-                      )}
-                      {tune.abcNotation && (
-                        <Badge variant="secondary" className="text-xs gap-1">
-                          <BookOpen className="w-3 h-3" /> ABC
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                        {tune.tuneType && (
+                          <Badge variant="outline" className={`text-xs capitalize ${typeBadge}`}>
+                            {tune.tuneType}
+                          </Badge>
+                        )}
+                        {tune.difficulty && (
+                          <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
+                            {tune.difficulty}
+                          </Badge>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-4">
+                      {tune.description ? (
+                        <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed mb-2">
+                          {tune.description}
+                        </p>
+                      ) : tune.region ? (
+                        <p className="text-xs text-muted-foreground mb-2">{tune.region}</p>
+                      ) : null}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(tune.audioUrl || tune.locItemId) && (
+                          <Badge variant="secondary" className="text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 py-0" data-testid={`badge-audio-${tune.id}`}>
+                            <Headphones className="w-3 h-3" /> Audio
+                          </Badge>
+                        )}
+                        {tune.youtubeVideoId && (
+                          <Badge variant="secondary" className="text-xs gap-1 bg-red-50 text-red-600 border-red-200 py-0" data-testid={`badge-video-${tune.id}`}>
+                            <Video className="w-3 h-3" /> Video
+                          </Badge>
+                        )}
+                        {tune.abcNotation && (
+                          <Badge variant="secondary" className="text-xs gap-1 bg-sky-50 text-sky-700 border-sky-200 py-0" data-testid={`badge-abc-${tune.id}`}>
+                            <BookOpen className="w-3 h-3" /> Notation
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && !isLoading && (
-          <div className="flex items-center justify-center gap-4 mt-10">
+          <div className="flex items-center justify-center gap-3 mt-10">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="rounded-full px-5"
+              onClick={() => changePage(Math.max(1, page - 1))}
               disabled={page <= 1}
               data-testid="button-prev-page"
             >
               <ChevronLeft className="w-4 h-4 mr-1" /> Previous
             </Button>
-            <span className="text-sm text-muted-foreground" data-testid="text-page-indicator">
-              Page {page} of {totalPages}
+            <span className="text-sm text-muted-foreground tabular-nums min-w-[90px] text-center" data-testid="text-page-indicator">
+              {page} / {totalPages}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="rounded-full px-5"
+              onClick={() => changePage(Math.min(totalPages, page + 1))}
               disabled={page >= totalPages}
               data-testid="button-next-page"
             >
@@ -364,12 +417,12 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Archive Footer */}
-        <div className="mt-16 py-8 border-t border-border">
+        {/* Footer */}
+        <div className="mt-16 pt-10 border-t border-border">
           <h3 className="text-center text-muted-foreground text-xs font-semibold uppercase tracking-widest mb-6">
             Source Archives
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
             {[
               { name: "Library of Congress", url: "https://www.loc.gov/collections/henry-reed-fiddle-tunes/", desc: "Henry Reed Collection" },
               { name: "TheSession.org", url: "https://thesession.org", desc: "ABC Notation Database" },
@@ -381,14 +434,15 @@ export default function HomePage() {
                 href={src.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 rounded-lg border border-border hover:border-primary/40 hover:bg-muted/50 transition-colors"
+                className="p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-colors"
                 data-testid={`link-archive-${src.name.replace(/\s+/g, "-").toLowerCase()}`}
               >
-                <p className="font-semibold">{src.name}</p>
+                <p className="font-semibold text-xs">{src.name}</p>
                 <p className="text-muted-foreground text-xs mt-1">{src.desc}</p>
               </a>
             ))}
           </div>
+
           <div className="mt-10 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Heart className="w-4 h-4 text-rose-400 fill-rose-400" />
@@ -399,7 +453,7 @@ export default function HomePage() {
               target="_blank"
               rel="noopener noreferrer"
               data-testid="link-tip-jar"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-opacity hover:opacity-90 active:opacity-75"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-opacity hover:opacity-90 active:opacity-75"
               style={{ backgroundColor: "#3D95CE" }}
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
@@ -408,7 +462,7 @@ export default function HomePage() {
               Tip jar — @Jason-Chinchen
             </a>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-6">
+          <p className="text-center text-xs text-muted-foreground mt-6 opacity-60">
             TuneVault — Built for serious learners and history buffs
           </p>
         </div>

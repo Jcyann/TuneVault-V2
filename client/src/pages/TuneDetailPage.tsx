@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen } from "lucide-react";
 import type { Tune } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -41,9 +40,9 @@ export default function TuneDetailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg text-muted-foreground mb-4">Tune not found</p>
-          <Link href="/">
-            <Button><ArrowLeft className="w-4 h-4 mr-2" />Back to Collection</Button>
-          </Link>
+          <Button onClick={() => history.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />Back to Collection
+          </Button>
         </div>
       </div>
     );
@@ -53,16 +52,25 @@ export default function TuneDetailPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div
-        className="text-primary-foreground py-10 px-4 shadow-lg border-b border-white/15"
-        style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)" }}
+        className="relative text-primary-foreground py-10 px-4 shadow-lg border-b border-white/12 overflow-hidden"
+        style={{
+          backgroundImage: [
+            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.05) 22px, rgba(255,255,255,0.05) 23px)",
+            "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
+          ].join(", "),
+        }}
       >
-        <div className="container mx-auto max-w-5xl">
-          <Link href="/">
-            <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10 mb-4 -ml-2">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to TuneVault
-            </Button>
-          </Link>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.14),transparent_60%)] pointer-events-none" />
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <Button
+            variant="ghost"
+            className="text-primary-foreground hover:bg-primary-foreground/10 mb-4 -ml-2"
+            onClick={() => history.back()}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to TuneVault
+          </Button>
           <div className="flex flex-wrap items-start gap-3 mb-2">
             <Badge variant="secondary" className="text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 shadow-sm">
               Key of {tune.key}
@@ -136,9 +144,8 @@ export default function TuneDetailPage() {
                       src={`https://www.youtube.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
                       title={tune.title}
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       referrerPolicy="no-referrer-when-downgrade"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                       allowFullScreen
                     />
                   </div>
