@@ -18,6 +18,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showRawAbc, setShowRawAbc] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   const { data: tune, isLoading, isError } = useQuery<Tune>({
     queryKey: [`/api/tunes/${id}`],
@@ -136,18 +137,43 @@ export default function TuneDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
-                    <iframe
-                      data-testid="video-youtube"
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
-                      title={tune.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      allowFullScreen
-                    />
+                  <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg relative">
+                    {videoPlaying ? (
+                      <iframe
+                        data-testid="video-youtube"
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1&autoplay=1`}
+                        title={tune.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <button
+                        data-testid="button-play-video"
+                        onClick={() => setVideoPlaying(true)}
+                        className="w-full h-full relative group focus:outline-none"
+                        aria-label={`Play video for ${tune.title}`}
+                      >
+                        <img
+                          src={`https://img.youtube.com/vi/${tune.youtubeVideoId}/hqdefault.jpg`}
+                          alt={`${tune.title} video thumbnail`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                          <div className="w-16 h-16 rounded-full bg-red-600 group-hover:bg-red-500 transition-colors flex items-center justify-center shadow-xl">
+                            <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center justify-center mt-2 gap-4">
                     <p className="text-xs text-muted-foreground">
