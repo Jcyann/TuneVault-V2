@@ -37,7 +37,7 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
 
   return (
     <div
-      className="mt-4 rounded-lg bg-black/20 px-4 py-3 flex items-center gap-3"
+      className="mt-4 rounded-lg bg-gradient-to-r from-black/30 to-black/10 ring-1 ring-white/10 px-4 py-3 flex items-center gap-3"
       data-testid="audio-player"
     >
       <div className="flex items-center gap-2 shrink-0">
@@ -62,13 +62,19 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
         />
       ) : null}
 
-      {tune.audioSource && !loading && (
-        <span
-          className="text-xs text-primary-foreground/50 shrink-0 hidden sm:block"
-          data-testid="audio-source-badge"
-        >
-          {tune.audioSource}
-        </span>
+      {!loading && resolvedUrl && (
+        <div className="shrink-0 text-right hidden sm:block">
+          {tune.sourceFiddler && (
+            <p className="text-xs text-primary-foreground/60 leading-tight" data-testid="audio-fiddler-credit">
+              Performed by {tune.sourceFiddler}
+            </p>
+          )}
+          {tune.audioSource && (
+            <p className="text-xs text-primary-foreground/40 leading-tight mt-0.5" data-testid="audio-source-badge">
+              {tune.audioSource}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

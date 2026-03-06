@@ -109,7 +109,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Banner */}
-      <div className="bg-primary text-primary-foreground py-14 px-4 shadow-lg">
+      <div
+        className="text-primary-foreground py-14 px-4 shadow-lg border-b border-white/15"
+        style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)" }}
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="flex items-center gap-4 mb-3">
             <Music2 className="w-14 h-14 opacity-90" />

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen } from "lucide-react";
 import type { Tune } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
+import AbcStaffRenderer from "@/components/AbcStaffRenderer";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-300",
@@ -16,6 +18,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [showRawAbc, setShowRawAbc] = useState(false);
 
   const { data: tune, isLoading, isError } = useQuery<Tune>({
     queryKey: [`/api/tunes/${id}`],
@@ -49,7 +52,10 @@ export default function TuneDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground py-10 px-4 shadow-lg">
+      <div
+        className="text-primary-foreground py-10 px-4 shadow-lg border-b border-white/15"
+        style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)" }}
+      >
         <div className="container mx-auto max-w-5xl">
           <Link href="/">
             <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10 mb-4 -ml-2">
@@ -58,16 +64,16 @@ export default function TuneDetailPage() {
             </Button>
           </Link>
           <div className="flex flex-wrap items-start gap-3 mb-2">
-            <Badge variant="secondary" className="text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+            <Badge variant="secondary" className="text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 shadow-sm">
               Key of {tune.key}
             </Badge>
             {tune.tuneType && (
-              <Badge variant="secondary" className="capitalize text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+              <Badge variant="secondary" className="capitalize text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 shadow-sm">
                 {tune.tuneType}
               </Badge>
             )}
             {tune.difficulty && (
-              <Badge variant="secondary" className={`text-base px-3 py-1 ${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
+              <Badge variant="secondary" className={`text-base px-3 py-1 shadow-sm ${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
                 {tune.difficulty}
               </Badge>
             )}
@@ -90,7 +96,7 @@ export default function TuneDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* About */}
             {tune.description && (
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>About This Tune</CardTitle>
                 </CardHeader>
@@ -100,9 +106,21 @@ export default function TuneDetailPage() {
               </Card>
             )}
 
+            {/* Performance Notes — tune-specific only */}
+            {tune.notes && (
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle>Performance Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="leading-relaxed text-muted-foreground">{tune.notes}</p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Embedded Video */}
             {tune.youtubeVideoId && (
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Video className="w-5 h-5 text-red-500" />
@@ -118,43 +136,69 @@ export default function TuneDetailPage() {
                       src={`https://www.youtube.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
                       title={tune.title}
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                       referrerPolicy="no-referrer-when-downgrade"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                       allowFullScreen
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    Use the gear icon ⚙️ inside the player to slow down to 0.5× for learning
-                  </p>
+                  <div className="flex items-center justify-center mt-2 gap-4">
+                    <p className="text-xs text-muted-foreground">
+                      Use the gear icon ⚙️ to slow down to 0.5× for learning
+                    </p>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline shrink-0"
+                      data-testid="link-youtube-fallback"
+                    >
+                      ▶ Watch on YouTube
+                    </a>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* ABC Notation */}
+            {/* Sheet Music + ABC Notation */}
             {tune.abcNotation && (
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
-                    ABC Notation
+                    Sheet Music & ABC Notation
                   </CardTitle>
                   <CardDescription>
-                    Standard ABC format from TheSession.org — paste into any ABC player or notation software
+                    Standard notation rendered from ABC format
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <pre
-                    data-testid="text-abc-notation"
-                    className="bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono text-foreground border border-border whitespace-pre-wrap"
-                  >
-                    {tune.abcNotation}
-                  </pre>
+                <CardContent className="space-y-4">
+                  <AbcStaffRenderer notation={tune.abcNotation} />
+
+                  <div>
+                    <button
+                      onClick={() => setShowRawAbc((v) => !v)}
+                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                      data-testid="button-toggle-raw-abc"
+                    >
+                      {showRawAbc ? "Hide raw ABC text" : "Show raw ABC text"}
+                    </button>
+                    {showRawAbc && (
+                      <pre
+                        data-testid="text-abc-notation"
+                        className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono text-foreground border border-border whitespace-pre-wrap"
+                      >
+                        {tune.abcNotation}
+                      </pre>
+                    )}
+                  </div>
+
                   {tune.theSessionId && (
                     <a
                       href={`https://thesession.org/tunes/${tune.theSessionId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-3"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                       data-testid="link-thesession"
                     >
                       <ExternalLink className="w-3 h-3" />
@@ -164,24 +208,12 @@ export default function TuneDetailPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Performance Notes */}
-            {tune.notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="leading-relaxed text-muted-foreground">{tune.notes}</p>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Historical Details */}
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base">Historical Details</CardTitle>
               </CardHeader>
@@ -214,11 +246,14 @@ export default function TuneDetailPage() {
                     </div>
                   </div>
                 )}
+                {!tune.sourceFiddler && !tune.era && !tune.region && !tune.tags && (
+                  <p className="text-xs text-muted-foreground">No historical details on record</p>
+                )}
               </CardContent>
             </Card>
 
-            {/* External Archives */}
-            <Card>
+            {/* Source Archives */}
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <FileText className="w-4 h-4" />
@@ -289,18 +324,6 @@ export default function TuneDetailPage() {
                 {!tune.locUrl && !tune.theSessionId && !tune.taterJoeUrl && !tune.folkwaysUrl && (
                   <p className="text-xs text-muted-foreground">No external links on record</p>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Practice Tip */}
-            <Card className="bg-muted/50 border-border">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">💡 Practice Tip</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p>Click the gear icon in the video to slow down to <strong>0.5×</strong> speed while you learn the melody.</p>
-                <p>Once you have the melody, try <strong>0.75×</strong> before playing at full tempo.</p>
-                <p>Use the ABC notation to check notes while you listen.</p>
               </CardContent>
             </Card>
           </div>

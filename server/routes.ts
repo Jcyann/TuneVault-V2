@@ -30,11 +30,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+      const hasFilter = conditions.length > 0;
+      const orderBy = hasFilter
+        ? [tunes.title]
+        : [desc(tunes.popularity), tunes.title];
+
       const [countResult, results] = await Promise.all([
         db.select({ count: sql<number>`count(*)` }).from(tunes).where(whereClause),
         whereClause
-          ? db.select().from(tunes).where(whereClause).orderBy(desc(tunes.popularity), tunes.title).limit(limitNum).offset(offset)
-          : db.select().from(tunes).orderBy(desc(tunes.popularity), tunes.title).limit(limitNum).offset(offset),
+          ? db.select().from(tunes).where(whereClause).orderBy(...orderBy).limit(limitNum).offset(offset)
+          : db.select().from(tunes).orderBy(...orderBy).limit(limitNum).offset(offset),
       ]);
 
       const total = Number(countResult[0]?.count ?? 0);
