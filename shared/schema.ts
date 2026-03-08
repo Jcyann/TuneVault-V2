@@ -49,3 +49,25 @@ export const tunes = pgTable("tunes", {
 export const insertTuneSchema = createInsertSchema(tunes).omit({ id: true, createdAt: true });
 export type InsertTune = z.infer<typeof insertTuneSchema>;
 export type Tune = typeof tunes.$inferSelect;
+
+export const recordings = pgTable("recordings", {
+  id: serial("id").primaryKey(),
+  tuneId: integer("tune_id").notNull(),
+  audioUrl: text("audio_url"),
+  locItemId: text("loc_item_id"),
+  youtubeVideoId: text("youtube_video_id"),
+  audioSource: text("audio_source"),
+  audioAttribution: text("audio_attribution"),
+  sourceFiddler: text("source_fiddler"),
+  collection: text("collection"),
+  era: text("era"),
+  key: text("key"),
+  tuning: text("tuning"),
+  notes: text("notes"),
+  slipperyHillSlug: text("slippery_hill_slug"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRecordingSchema = createInsertSchema(recordings).omit({ id: true, createdAt: true });
+export type InsertRecording = z.infer<typeof insertRecordingSchema>;
+export type Recording = typeof recordings.$inferSelect;
