@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePlaylist } from "@/context/PlaylistContext";
 import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw } from "lucide-react";
 import { Link } from "wouter";
+import { useSwipe } from "@/hooks/useSwipe";
 
 const TUNE_TYPE_COLORS: Record<string, string> = {
   breakdown: "#F59E0B",
@@ -97,6 +98,8 @@ export default function MiniPlayer() {
 
   const toggleMode = () => setPlayMode(playMode === "shuffle" ? "chronological" : "shuffle");
 
+  const swipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
+
   if (!isActive || !current) return null;
 
   const typeColor = TUNE_TYPE_COLORS[current.tuneType ?? ""] ?? "#F59E0B";
@@ -106,6 +109,7 @@ export default function MiniPlayer() {
     <div
       className="fixed bottom-0 left-0 right-0 z-50 shadow-2xl border-t border-border"
       style={{ background: "hsl(var(--card))" }}
+      {...swipe}
       data-testid="mini-player"
     >
       {/* Progress bar */}

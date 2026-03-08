@@ -8,6 +8,7 @@ import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star } from
 import type { Tune, Recording } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
+import YoutubePlayer from "@/components/YoutubePlayer";
 import TipJar from "@/components/TipJar";
 import { useFavorites } from "@/hooks/useFavorites";
 
@@ -21,6 +22,7 @@ export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showRawAbc, setShowRawAbc] = useState(false);
   const [recordingIndex, setRecordingIndex] = useState(0);
+  const [videoAvailable, setVideoAvailable] = useState(true);
 
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -216,7 +218,7 @@ export default function TuneDetailPage() {
             )}
 
             {/* Video */}
-            {tune.youtubeVideoId && (
+            {tune.youtubeVideoId && videoAvailable && (
               <Card className="shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -225,20 +227,13 @@ export default function TuneDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-video rounded-lg overflow-hidden shadow-md bg-black">
-                    <iframe
-                      data-testid="video-youtube"
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
-                      title={tune.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
+                  <YoutubePlayer
+                    videoId={tune.youtubeVideoId}
+                    title={tune.title}
+                    onUnavailable={() => setVideoAvailable(false)}
+                  />
                   <p className="text-xs text-muted-foreground mt-2">
-                    ⚙ Use the gear icon inside the player → Speed → 0.5× to slow down for learning
+                    ⚙ Gear icon inside the player → Speed → 0.5× to slow it down for learning
                   </p>
                 </CardContent>
               </Card>
