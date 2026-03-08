@@ -4,10 +4,11 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star, Loader2 } from "lucide-react";
+import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star } from "lucide-react";
 import type { Tune, Recording } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
+import TipJar from "@/components/TipJar";
 import { useFavorites } from "@/hooks/useFavorites";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -19,9 +20,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showRawAbc, setShowRawAbc] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
-  const [videoChecking, setVideoChecking] = useState(false);
-  const [videoUnavailable, setVideoUnavailable] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const [recordingIndex, setRecordingIndex] = useState(0);
 
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -53,7 +52,7 @@ export default function TuneDetailPage() {
         <div className="text-center">
           <p className="text-lg text-muted-foreground mb-4">Tune not found</p>
           <Button onClick={() => history.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />Back to Collection
+            <ArrowLeft className="w-4 h-4 mr-2" />Back
           </Button>
         </div>
       </div>
@@ -61,30 +60,10 @@ export default function TuneDetailPage() {
   }
 
   const faved = isFavorite(tune.id);
-
-  const handlePlayVideo = async () => {
-    if (!tune.youtubeVideoId) return;
-    setVideoChecking(true);
-    try {
-      const res = await fetch(`/api/youtube-check/${tune.youtubeVideoId}`);
-      const { embeddable } = await res.json();
-      if (embeddable) {
-        setVideoPlaying(true);
-      } else {
-        setVideoUnavailable(true);
-      }
-    } catch {
-      setVideoPlaying(true);
-    } finally {
-      setVideoChecking(false);
-    }
-  };
-
   const currentRecording = recordings[recordingIndex] ?? null;
-  const hasExtraRecordings = recordings.length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div
         className="relative text-primary-foreground py-10 px-4 shadow-lg border-b border-white/12 overflow-hidden"
@@ -109,35 +88,42 @@ export default function TuneDetailPage() {
             </Button>
             <button
               onClick={() => toggleFavorite(tune.id)}
-              className="flex items-center gap-1.5 text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors px-2 py-1 rounded-full hover:bg-primary-foreground/10"
+              className="flex items-center gap-1.5 text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors px-3 py-1.5 rounded-full hover:bg-primary-foreground/10"
               data-testid="button-favorite-detail"
-              aria-label={faved ? "Remove from favorites" : "Add to favorites"}
             >
-              <Star className={`w-4 h-4 transition-colors ${faved ? "fill-amber-300 text-amber-300" : ""}`} />
+              <Star className={`w-4 h-4 ${faved ? "fill-amber-300 text-amber-300" : ""}`} />
               {faved ? "Saved" : "Save"}
             </button>
           </div>
-          <div className="flex flex-wrap items-start gap-3 mb-2">
-            <Badge variant="secondary" className="text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 shadow-sm">
+
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <Badge className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/25 font-semibold">
               Key of {tune.key}
             </Badge>
             {tune.tuneType && (
-              <Badge variant="secondary" className="capitalize text-base px-3 py-1 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 shadow-sm">
+              <Badge className="capitalize bg-primary-foreground/20 text-primary-foreground border-primary-foreground/25">
                 {tune.tuneType}
               </Badge>
             )}
             {tune.difficulty && (
-              <Badge variant="secondary" className={`text-base px-3 py-1 shadow-sm ${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
+              <Badge className={`${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
                 {tune.difficulty}
               </Badge>
             )}
+            {tune.era && (
+              <Badge className="bg-primary-foreground/10 text-primary-foreground/70 border-primary-foreground/15 text-xs">
+                {tune.era}
+              </Badge>
+            )}
           </div>
-          <h1 className="text-4xl font-bold font-serif">{tune.title}</h1>
+
+          <h1 className="text-4xl font-bold font-serif leading-tight">{tune.title}</h1>
           {tune.alternativeTitles && (
-            <p className="text-primary-foreground/70 mt-1 text-sm">
+            <p className="text-primary-foreground/65 mt-1.5 text-sm italic">
               Also known as: {tune.alternativeTitles}
             </p>
           )}
+
           {(tune.audioUrl || tune.locItemId) && (
             <AudioPlayer tune={tune} />
           )}
@@ -148,74 +134,68 @@ export default function TuneDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* About */}
             {tune.description && (
               <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle>About This Tune</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">About This Tune</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="leading-relaxed text-muted-foreground">{tune.description}</p>
+                  <p className="leading-relaxed text-muted-foreground text-sm">{tune.description}</p>
                 </CardContent>
               </Card>
             )}
 
             {/* Performance Notes */}
             {tune.notes && (
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle>Performance Notes</CardTitle>
+              <Card className="shadow-sm border-amber-200 bg-amber-50/40 dark:bg-amber-950/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base text-amber-800 dark:text-amber-400">Performance Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="leading-relaxed text-muted-foreground">{tune.notes}</p>
+                  <p className="leading-relaxed text-amber-900/80 dark:text-amber-300/80 text-sm">{tune.notes}</p>
                 </CardContent>
               </Card>
             )}
 
             {/* Additional Recordings */}
-            {hasExtraRecordings && (
+            {recordings.length > 0 && (
               <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Music2 className="w-5 h-5 text-amber-600" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Music2 className="w-4 h-4 text-amber-600" />
                     Recorded Versions ({recordings.length})
                   </CardTitle>
-                  <CardDescription>Multiple historical recordings of this tune</CardDescription>
+                  <CardDescription className="text-xs">Historical recordings from field collections</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2">
                   {recordings.map((rec, i) => (
-                    <div
+                    <button
                       key={rec.id}
-                      className={`p-3 rounded-lg border transition-colors cursor-pointer ${i === recordingIndex ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-muted/40"}`}
+                      className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
+                        i === recordingIndex
+                          ? "border-primary/50 bg-primary/5 shadow-sm"
+                          : "border-border hover:border-primary/30 hover:bg-muted/50"
+                      }`}
                       onClick={() => setRecordingIndex(i)}
                       data-testid={`recording-item-${rec.id}`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">
-                            {rec.sourceFiddler ?? "Unknown performer"}
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {rec.audioSource && (
-                              <span className="text-xs text-muted-foreground">{rec.audioSource}</span>
-                            )}
-                            {rec.collection && (
-                              <span className="text-xs text-muted-foreground">· {rec.collection}</span>
-                            )}
-                            {rec.era && (
-                              <span className="text-xs text-muted-foreground">· {rec.era}</span>
-                            )}
-                            {rec.key && (
-                              <Badge variant="outline" className="text-xs px-1 py-0 h-4">Key of {rec.key}</Badge>
-                            )}
-                            {rec.tuning && (
-                              <Badge variant="outline" className="text-xs px-1 py-0 h-4">{rec.tuning}</Badge>
-                            )}
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-medium">{rec.sourceFiddler ?? "Unknown performer"}</span>
+                          <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
+                            {rec.audioSource && <span>{rec.audioSource}</span>}
+                            {rec.collection && <span>· {rec.collection}</span>}
+                            {rec.era && <span>· {rec.era}</span>}
+                            {rec.key && <span>· Key of {rec.key}</span>}
                           </div>
                         </div>
-                        {i === recordingIndex && <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">Playing</Badge>}
+                        {i === recordingIndex && (
+                          <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">Now Playing</Badge>
+                        )}
                       </div>
-                    </div>
+                    </button>
                   ))}
 
                   {currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
@@ -236,80 +216,50 @@ export default function TuneDetailPage() {
               </Card>
             )}
 
-            {/* Embedded Video */}
+            {/* Video */}
             {tune.youtubeVideoId && (
               <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Video className="w-5 h-5 text-red-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Video className="w-4 h-4 text-red-500" />
                     Video Performance
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg relative">
-                    {videoPlaying ? (
+                  {videoError ? (
+                    <div className="aspect-video rounded-lg overflow-hidden bg-gray-900 flex flex-col items-center justify-center gap-4 text-white p-6 text-center">
+                      <Video className="w-10 h-10 text-gray-500" />
+                      <div>
+                        <p className="font-semibold">Embedding restricted</p>
+                        <p className="text-sm text-gray-400 mt-1">Watch directly on YouTube</p>
+                      </div>
+                      <a
+                        href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 transition-colors text-sm font-semibold"
+                        data-testid="link-youtube-external"
+                      >
+                        ▶ Watch on YouTube ↗
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="aspect-video rounded-lg overflow-hidden shadow-md">
                       <iframe
                         data-testid="video-youtube"
                         width="100%"
                         height="100%"
-                        src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1&autoplay=1`}
+                        src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
                         title={tune.title}
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        referrerPolicy="no-referrer-when-downgrade"
                         allowFullScreen
+                        onError={() => setVideoError(true)}
                       />
-                    ) : videoUnavailable ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gray-900 text-white p-6 text-center">
-                        <Video className="w-10 h-10 text-gray-500" />
-                        <div>
-                          <p className="font-semibold text-lg">Can't play here</p>
-                          <p className="text-sm text-gray-400 mt-1">This video is restricted from embedding</p>
-                        </div>
-                        <a
-                          href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 transition-colors text-sm font-semibold"
-                          data-testid="link-youtube-unavailable"
-                        >
-                          ▶ Watch on YouTube ↗
-                        </a>
-                      </div>
-                    ) : (
-                      <button
-                        data-testid="button-play-video"
-                        onClick={handlePlayVideo}
-                        disabled={videoChecking}
-                        className="w-full h-full relative group focus:outline-none"
-                        aria-label={`Play video for ${tune.title}`}
-                      >
-                        <img
-                          src={`https://img.youtube.com/vi/${tune.youtubeVideoId}/hqdefault.jpg`}
-                          alt={`${tune.title} video thumbnail`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                          {videoChecking ? (
-                            <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center shadow-xl">
-                              <Loader2 className="w-7 h-7 text-white animate-spin" />
-                            </div>
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-red-600 group-hover:bg-red-500 transition-colors flex items-center justify-center shadow-xl">
-                              <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-center mt-2 gap-4">
-                    <p className="text-xs text-muted-foreground">
-                      Use the gear icon ⚙️ to slow down to 0.5× for learning
-                    </p>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground">⚙ Gear icon → speed → 0.5× to slow down for learning</p>
                     <a
                       href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
                       target="_blank"
@@ -317,46 +267,41 @@ export default function TuneDetailPage() {
                       className="text-xs text-primary hover:underline shrink-0"
                       data-testid="link-youtube-fallback"
                     >
-                      ▶ Watch on YouTube
+                      Open on YouTube ↗
                     </a>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Sheet Music + ABC Notation */}
+            {/* Sheet Music */}
             {tune.abcNotation && (
               <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <BookOpen className="w-4 h-4" />
                     Sheet Music & ABC Notation
                   </CardTitle>
-                  <CardDescription>
-                    Standard notation rendered from ABC format
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <AbcStaffRenderer notation={tune.abcNotation} />
-
                   <div>
                     <button
                       onClick={() => setShowRawAbc((v) => !v)}
                       className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
                       data-testid="button-toggle-raw-abc"
                     >
-                      {showRawAbc ? "Hide raw ABC text" : "Show raw ABC text"}
+                      {showRawAbc ? "Hide ABC text" : "Show ABC text"}
                     </button>
                     {showRawAbc && (
                       <pre
                         data-testid="text-abc-notation"
-                        className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono text-foreground border border-border whitespace-pre-wrap"
+                        className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-xs font-mono border border-border whitespace-pre-wrap"
                       >
                         {tune.abcNotation}
                       </pre>
                     )}
                   </div>
-
                   {tune.theSessionId && (
                     <a
                       href={`https://thesession.org/tunes/${tune.theSessionId}`}
@@ -366,7 +311,7 @@ export default function TuneDetailPage() {
                       data-testid="link-thesession"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      View all versions on TheSession.org
+                      All versions on TheSession.org
                     </a>
                   )}
                 </CardContent>
@@ -375,34 +320,34 @@ export default function TuneDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Historical Details */}
             <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Historical Details</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Historical Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {tune.sourceFiddler && (
                   <div>
-                    <p className="font-semibold text-foreground">Source Fiddler</p>
+                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Source Fiddler</p>
                     <p className="text-muted-foreground">{tune.sourceFiddler}</p>
                   </div>
                 )}
                 {tune.era && (
                   <div>
-                    <p className="font-semibold text-foreground">Era</p>
+                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Era</p>
                     <p className="text-muted-foreground">{tune.era}</p>
                   </div>
                 )}
                 {tune.region && (
                   <div>
-                    <p className="font-semibold text-foreground">Region</p>
+                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Region</p>
                     <p className="text-muted-foreground">{tune.region}</p>
                   </div>
                 )}
                 {tune.tags && (
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Tags</p>
+                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1">Tags</p>
                     <div className="flex flex-wrap gap-1">
                       {tune.tags.split(",").map((tag, i) => (
                         <Badge key={i} variant="outline" className="text-xs">{tag.trim()}</Badge>
@@ -411,81 +356,67 @@ export default function TuneDetailPage() {
                   </div>
                 )}
                 {!tune.sourceFiddler && !tune.era && !tune.region && !tune.tags && (
-                  <p className="text-xs text-muted-foreground">No historical details on record</p>
+                  <p className="text-xs text-muted-foreground italic">No historical details on record</p>
                 )}
               </CardContent>
             </Card>
 
             {/* Source Archives */}
             <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="w-4 h-4" />
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <FileText className="w-3.5 h-3.5" />
                   Source Archives
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 text-sm">
                 {tune.locUrl && (
-                  <a href={tune.locUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-loc">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Library of Congress
+                  <a href={tune.locUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-loc">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Library of Congress
                   </a>
                 )}
                 {tune.theSessionId && (
-                  <a href={`https://thesession.org/tunes/${tune.theSessionId}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-thesession-sidebar">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    TheSession.org
+                  <a href={`https://thesession.org/tunes/${tune.theSessionId}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-thesession-sidebar">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> TheSession.org
                   </a>
                 )}
                 {tune.taterJoeUrl && (
-                  <a href={tune.taterJoeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-taterjoe">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Tater Joe's Transcriptions
+                  <a href={tune.taterJoeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-taterjoe">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Tater Joe's Transcriptions
                   </a>
                 )}
                 {tune.folkwaysUrl && (
-                  <a href={tune.folkwaysUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-folkways">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Smithsonian Folkways
+                  <a href={tune.folkwaysUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-folkways">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Smithsonian Folkways
                   </a>
                 )}
-                {tune.transcriptUrl && tune.transcriptUrl !== tune.taterJoeUrl && (
-                  <a href={tune.transcriptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-transcript">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Sheet Music / Transcript
-                  </a>
-                )}
-
-                <div className="pt-2 mt-2 border-t border-border space-y-2">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Find More Recordings</p>
+                <div className="pt-2 mt-1 border-t border-border space-y-2">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">More Recordings</p>
                   <a
                     href={`https://www.slippery-hill.com/tune-search?title=${encodeURIComponent(tune.title)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    className="flex items-center gap-2 text-primary hover:underline"
                     data-testid="link-slippery-hill"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Slippery Hill (15,000+ recordings)
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Slippery Hill (15,000+ recordings)
                   </a>
                   <a
                     href={`https://tunearch.org/wiki/${encodeURIComponent(tune.title.replace(/ /g, "_"))}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    className="flex items-center gap-2 text-primary hover:underline"
                     data-testid="link-tunearch"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    Traditional Tune Archive
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Traditional Tune Archive
                   </a>
-                  {!tune.locUrl && !tune.theSessionId && !tune.taterJoeUrl && !tune.folkwaysUrl && (
-                    null
-                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        <TipJar />
       </div>
     </div>
   );

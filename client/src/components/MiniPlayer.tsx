@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePlaylist } from "@/context/PlaylistContext";
-import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2 } from "lucide-react";
+import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw } from "lucide-react";
+import { Link } from "wouter";
 
 const TUNE_TYPE_COLORS: Record<string, string> = {
   breakdown: "#F59E0B",
@@ -16,7 +17,7 @@ const TUNE_TYPE_COLORS: Record<string, string> = {
 };
 
 export default function MiniPlayer() {
-  const { playlist, currentIndex, isActive, next, prev, reshuffle, dismiss } = usePlaylist();
+  const { playlist, currentIndex, isActive, next, prev, reshuffle, dismiss, playMode, setPlayMode } = usePlaylist();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -39,12 +40,8 @@ export default function MiniPlayer() {
       fetch(`/api/loc-audio/${current.locItemId}`)
         .then((r) => r.json())
         .then((d) => {
-          if (d.audioUrl) {
-            setResolvedUrl(d.audioUrl);
-            setSkipping(false);
-          } else {
-            setTimeout(next, 1200);
-          }
+          if (d.audioUrl) { setResolvedUrl(d.audioUrl); setSkipping(false); }
+          else setTimeout(next, 1200);
         })
         .catch(() => setTimeout(next, 1200));
     } else {
@@ -57,18 +54,13 @@ export default function MiniPlayer() {
     if (!audio || !resolvedUrl) return;
     audio.src = resolvedUrl;
     audio.load();
-    if (isPlaying) {
-      audio.play().catch(() => setIsPlaying(false));
-    }
+    if (isPlaying) audio.play().catch(() => setIsPlaying(false));
   }, [resolvedUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onTimeUpdate = () => {
-      setProgress(audio.currentTime);
-      setDuration(audio.duration || 0);
-    };
+    const onTimeUpdate = () => { setProgress(audio.currentTime); setDuration(audio.duration || 0); };
     const onEnded = () => next();
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -87,7 +79,7 @@ export default function MiniPlayer() {
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !resolvedUrl) return;
-    if (isPlaying) { audio.pause(); } else { audio.play().catch(() => {}); }
+    if (isPlaying) audio.pause(); else audio.play().catch(() => {});
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,14 +92,15 @@ export default function MiniPlayer() {
 
   const fmt = (s: number) => {
     if (!s || isNaN(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
+
+  const toggleMode = () => setPlayMode(playMode === "shuffle" ? "chronological" : "shuffle");
 
   if (!isActive || !current) return null;
 
   const typeColor = TUNE_TYPE_COLORS[current.tuneType ?? ""] ?? "#F59E0B";
+  const progressPct = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
     <div
@@ -115,70 +108,105 @@ export default function MiniPlayer() {
       style={{ background: "hsl(var(--card))" }}
       data-testid="mini-player"
     >
-      <div className="h-0.5 w-full" style={{ background: typeColor }} />
+      {/* Progress bar */}
+      <div className="h-0.5 w-full bg-border relative overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-full transition-all duration-300"
+          style={{ width: `${progressPct}%`, background: typeColor }}
+        />
+      </div>
 
       <audio ref={audioRef} preload="auto" />
 
-      <div className="container mx-auto max-w-5xl px-4 py-2">
+      <div className="container mx-auto max-w-5xl px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Music2 className="w-4 h-4 shrink-0" style={{ color: typeColor }} />
+
+          {/* Tune info */}
+          <Link href={`/tune/${current.id}`} className="flex items-center gap-2.5 min-w-0 flex-1 group">
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: typeColor + "22", border: `1px solid ${typeColor}44` }}
+            >
+              <Music2 className="w-3.5 h-3.5" style={{ color: typeColor }} />
+            </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate" data-testid="mini-player-title">
+              <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors" data-testid="mini-player-title">
                 {current.title}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {skipping ? "Loading audio…" : `Key of ${current.key} · ${currentIndex + 1} of ${playlist.length}`}
+                {skipping ? "Loading…" : `Key of ${current.key}${current.tuneType ? ` · ${current.tuneType}` : ""} · ${currentIndex + 1}/${playlist.length}`}
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex items-center gap-1 shrink-0">
+          {/* Controls */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              onClick={toggleMode}
+              title={playMode === "shuffle" ? "Switch to chronological" : "Switch to shuffle"}
+              className={`p-1.5 rounded-full transition-colors ${playMode === "shuffle" ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}
+              data-testid="mini-player-mode-toggle"
+              aria-label={`Mode: ${playMode}`}
+            >
+              {playMode === "shuffle"
+                ? <Shuffle className="w-3.5 h-3.5" />
+                : <ListOrdered className="w-3.5 h-3.5" />
+              }
+            </button>
+
             <button
               onClick={prev}
               className="p-1.5 rounded-full hover:bg-muted transition-colors"
               data-testid="mini-player-prev"
-              aria-label="Previous tune"
+              aria-label="Previous"
             >
               <SkipBack className="w-4 h-4" />
             </button>
+
             <button
               onClick={togglePlay}
-              disabled={!resolvedUrl}
-              className="p-2 rounded-full text-primary-foreground transition-colors disabled:opacity-40"
+              disabled={!resolvedUrl && !skipping}
+              className="mx-1 p-2 rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 shadow-sm"
               style={{ background: typeColor }}
               data-testid="mini-player-play-pause"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
             </button>
+
             <button
               onClick={next}
               className="p-1.5 rounded-full hover:bg-muted transition-colors"
               data-testid="mini-player-next"
-              aria-label="Next tune"
+              aria-label="Next"
             >
               <SkipForward className="w-4 h-4" />
             </button>
-            <button
-              onClick={reshuffle}
-              className="p-1.5 rounded-full hover:bg-muted transition-colors"
-              data-testid="mini-player-shuffle"
-              aria-label="Reshuffle playlist"
-            >
-              <Shuffle className="w-4 h-4 text-muted-foreground" />
-            </button>
+
+            {playMode === "shuffle" && (
+              <button
+                onClick={reshuffle}
+                title="Reshuffle"
+                className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                data-testid="mini-player-reshuffle"
+                aria-label="Reshuffle"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             <button
               onClick={dismiss}
-              className="p-1.5 rounded-full hover:bg-muted transition-colors ml-1"
+              className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-1"
               data-testid="mini-player-dismiss"
               aria-label="Close player"
             >
-              <X className="w-4 h-4 text-muted-foreground" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
+        {/* Seek bar */}
         {duration > 0 && (
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">{fmt(progress)}</span>

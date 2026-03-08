@@ -1,15 +1,20 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { Tune } from "@shared/schema";
 
+export type PlayMode = "shuffle" | "chronological";
+
 interface PlaylistContextValue {
   playlist: Tune[];
+  originalOrder: Tune[];
   currentIndex: number;
   isActive: boolean;
-  startPlaylist: (tunes: Tune[]) => void;
+  playMode: PlayMode;
+  startPlaylist: (tunes: Tune[], mode?: PlayMode) => void;
   next: () => void;
   prev: () => void;
   setIndex: (i: number) => void;
   reshuffle: () => void;
+  setPlayMode: (mode: PlayMode) => void;
   dismiss: () => void;
 }
 
@@ -26,12 +31,16 @@ function shuffle<T>(arr: T[]): T[] {
 
 export function PlaylistProvider({ children }: { children: ReactNode }) {
   const [playlist, setPlaylist] = useState<Tune[]>([]);
+  const [originalOrder, setOriginalOrder] = useState<Tune[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [playMode, setPlayModeState] = useState<PlayMode>("shuffle");
 
-  const startPlaylist = useCallback((tunes: Tune[]) => {
+  const startPlaylist = useCallback((tunes: Tune[], mode: PlayMode = "shuffle") => {
     const withAudio = tunes.filter((t) => t.audioUrl || t.locItemId);
     if (withAudio.length === 0) return;
-    setPlaylist(shuffle(withAudio));
+    setOriginalOrder(withAudio);
+    setPlayModeState(mode);
+    setPlaylist(mode === "shuffle" ? shuffle(withAudio) : [...withAudio]);
     setCurrentIndex(0);
   }, []);
 
@@ -48,8 +57,15 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(0);
   }, []);
 
+  const setPlayMode = useCallback((mode: PlayMode) => {
+    setPlayModeState(mode);
+    setCurrentIndex(0);
+    setPlaylist(mode === "shuffle" ? shuffle(originalOrder) : [...originalOrder]);
+  }, [originalOrder]);
+
   const dismiss = useCallback(() => {
     setPlaylist([]);
+    setOriginalOrder([]);
     setCurrentIndex(0);
   }, []);
 
@@ -57,13 +73,16 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     <PlaylistContext.Provider
       value={{
         playlist,
+        originalOrder,
         currentIndex,
         isActive: playlist.length > 0,
+        playMode,
         startPlaylist,
         next,
         prev,
         setIndex: setCurrentIndex,
         reshuffle,
+        setPlayMode,
         dismiss,
       }}
     >
