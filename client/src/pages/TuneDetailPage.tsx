@@ -20,7 +20,6 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showRawAbc, setShowRawAbc] = useState(false);
-  const [videoError, setVideoError] = useState(false);
   const [recordingIndex, setRecordingIndex] = useState(0);
 
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -226,50 +225,21 @@ export default function TuneDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {videoError ? (
-                    <div className="aspect-video rounded-lg overflow-hidden bg-gray-900 flex flex-col items-center justify-center gap-4 text-white p-6 text-center">
-                      <Video className="w-10 h-10 text-gray-500" />
-                      <div>
-                        <p className="font-semibold">Embedding restricted</p>
-                        <p className="text-sm text-gray-400 mt-1">Watch directly on YouTube</p>
-                      </div>
-                      <a
-                        href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 transition-colors text-sm font-semibold"
-                        data-testid="link-youtube-external"
-                      >
-                        ▶ Watch on YouTube ↗
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="aspect-video rounded-lg overflow-hidden shadow-md">
-                      <iframe
-                        data-testid="video-youtube"
-                        width="100%"
-                        height="100%"
-                        src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
-                        title={tune.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        onError={() => setVideoError(true)}
-                      />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-muted-foreground">⚙ Gear icon → speed → 0.5× to slow down for learning</p>
-                    <a
-                      href={`https://www.youtube.com/watch?v=${tune.youtubeVideoId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline shrink-0"
-                      data-testid="link-youtube-fallback"
-                    >
-                      Open on YouTube ↗
-                    </a>
+                  <div className="aspect-video rounded-lg overflow-hidden shadow-md bg-black">
+                    <iframe
+                      data-testid="video-youtube"
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube-nocookie.com/embed/${tune.youtubeVideoId}?rel=0&modestbranding=1`}
+                      title={tune.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ⚙ Use the gear icon inside the player → Speed → 0.5× to slow down for learning
+                  </p>
                 </CardContent>
               </Card>
             )}
