@@ -11,6 +11,7 @@ import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
 import TipJar from "@/components/TipJar";
+import { useSwipe } from "@/hooks/useSwipe";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-200",
@@ -158,6 +159,11 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => { if (!showFavorites && page < totalPages) changePage(page + 1); },
+    onSwipeRight: () => { if (!showFavorites && page > 1) changePage(page - 1); },
+  });
+
   const tunesWithAudio = tunes.filter((t) => t.audioUrl || t.locItemId);
 
   const handleShufflePlay = useCallback(async () => {
@@ -185,7 +191,7 @@ export default function HomePage() {
   }, [favData, startPlaylist]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24" {...swipeHandlers}>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div
