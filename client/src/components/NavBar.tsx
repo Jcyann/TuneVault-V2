@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Music2, Calendar, Info, BookOpen } from "lucide-react";
 
 const navLinks = [
-  { href: "/", label: "TuneVault", icon: Music2 },
+  { href: "/", label: "Home", icon: Music2 },
   { href: "/tune-of-the-day", label: "Tune of the Day", icon: Calendar },
   { href: "/about", label: "About", icon: Info },
 ];
@@ -18,15 +18,15 @@ export default function NavBar() {
       }}
     >
       <div className="container mx-auto max-w-5xl px-4 h-12 flex items-center justify-between gap-4">
-        {/* Left: logo + nav links */}
+        {/* Left: logo + all nav tabs */}
         <div className="flex items-center gap-1">
-          <Link href="/" data-testid="nav-logo" className="flex items-center gap-1.5 mr-3">
+          <Link href="/" data-testid="nav-logo" className="flex items-center gap-1.5 mr-2">
             <Music2 className="w-5 h-5 text-amber-200 drop-shadow" />
-            <span className="font-serif font-bold text-white text-base tracking-tight leading-none">TuneVault</span>
+            <span className="font-serif font-bold text-white text-base tracking-tight leading-none hidden md:inline">TuneVault</span>
           </Link>
 
-          {navLinks.slice(1).map(({ href, label }) => {
-            const active = location === href;
+          {navLinks.map(({ href, label }) => {
+            const active = location === href || (href === "/" && location === "");
             return (
               <Link
                 key={href}
@@ -48,7 +48,7 @@ export default function NavBar() {
         <Link
           href="/book-a-lesson"
           data-testid="nav-book-lesson"
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 ${
             location === "/book-a-lesson"
               ? "bg-amber-400 border-amber-400 text-amber-900"
               : "border-amber-300/60 text-amber-200 hover:border-amber-300 hover:text-white hover:bg-white/10"
@@ -59,10 +59,10 @@ export default function NavBar() {
         </Link>
       </div>
 
-      {/* Mobile bottom links */}
+      {/* Mobile bottom links — all tabs including Home */}
       <div className="sm:hidden flex border-t border-white/10">
-        {navLinks.slice(1).map(({ href, label, icon: Icon }) => {
-          const active = location === href;
+        {navLinks.map(({ href, label, icon: Icon }) => {
+          const active = location === href || (href === "/" && location === "");
           return (
             <Link
               key={href}
