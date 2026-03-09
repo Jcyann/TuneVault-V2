@@ -240,33 +240,56 @@ export default function TuneDetailPage() {
             )}
 
             {/* Sheet Music */}
-            {tune.abcNotation && (
+            {(tune.abcNotation || tune.transcriptUrl) && (
               <Card className="shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <BookOpen className="w-4 h-4" />
-                    Sheet Music & ABC Notation
+                    Sheet Music{tune.abcNotation ? " & ABC Notation" : ""}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <AbcStaffRenderer notation={tune.abcNotation} />
-                  <div>
-                    <button
-                      onClick={() => setShowRawAbc((v) => !v)}
-                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                      data-testid="button-toggle-raw-abc"
-                    >
-                      {showRawAbc ? "Hide ABC text" : "Show ABC text"}
-                    </button>
-                    {showRawAbc && (
-                      <pre
-                        data-testid="text-abc-notation"
-                        className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-xs font-mono border border-border whitespace-pre-wrap"
-                      >
-                        {tune.abcNotation}
-                      </pre>
-                    )}
-                  </div>
+                  {tune.abcNotation && (
+                    <>
+                      <AbcStaffRenderer notation={tune.abcNotation} />
+                      <div>
+                        <button
+                          onClick={() => setShowRawAbc((v) => !v)}
+                          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          data-testid="button-toggle-raw-abc"
+                        >
+                          {showRawAbc ? "Hide ABC text" : "Show ABC text"}
+                        </button>
+                        {showRawAbc && (
+                          <pre
+                            data-testid="text-abc-notation"
+                            className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-xs font-mono border border-border whitespace-pre-wrap"
+                          >
+                            {tune.abcNotation}
+                          </pre>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  {tune.transcriptUrl && (
+                    <div data-testid="sheet-music-image">
+                      <a href={tune.transcriptUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={tune.transcriptUrl}
+                          alt={`Sheet music for ${tune.title}`}
+                          className="w-full rounded border border-border shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in"
+                          loading="lazy"
+                        />
+                      </a>
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        Transcription via{" "}
+                        <a href="https://fiddletunes.net" target="_blank" rel="noopener noreferrer" className="underline">
+                          FiddleTunes.net
+                        </a>
+                        {" "}· Click to enlarge
+                      </p>
+                    </div>
+                  )}
                   {tune.theSessionId && (
                     <a
                       href={`https://thesession.org/tunes/${tune.theSessionId}`}
