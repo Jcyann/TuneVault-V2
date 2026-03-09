@@ -30,16 +30,28 @@ A comprehensive, searchable treasury of Old-Time fiddle tunes for serious learne
 - **Back button**: Uses `history.back()` instead of `<Link href="/">` to preserve URL state
 - **Tune type colors**: breakdown=amber, reel=sky, waltz=violet, jig=emerald, modal=rose, polka=orange, march=indigo, hornpipe=teal
 
+## Pages
+
+- `/` — HomePage: browse/search 997 tunes with filters, favorites, swipe pagination
+- `/tune/:id` — TuneDetailPage: audio, video, ABC notation, sheet music, history
+- `/tune-of-the-day` — TuneOfTheDayPage: daily featured tune (deterministic date hash), last 7 days list
+- `/about` — AboutPage: app FAQ, how-to guide, badge explanations, Old-Time intro
+- `/book-a-lesson` — BookALessonPage: lesson info page, "Coming Soon" booking button
+
 ## Project Structure
 
 ```
 client/src/
-  App.tsx              — Routing (/, /tune/:id)
+  App.tsx              — Routing (all 5 routes + NavBar wrapper)
   index.css            — TailwindCSS + Americana theme CSS vars
   pages/
     HomePage.tsx       — Main browse/search with URL-state filters + modern hero
     TuneDetailPage.tsx — Tune detail: YouTube, ABC notation, AudioPlayer, sidebar
+    TuneOfTheDayPage.tsx — Daily featured tune with full history + Last 7 Days
+    AboutPage.tsx      — App FAQ and how-to guide
+    BookALessonPage.tsx — Lesson info page (booking coming soon)
   components/
+    NavBar.tsx         — Fixed amber gradient navbar with nav links + Book a Lesson CTA
     AudioPlayer.tsx    — Audio player with "Recorded by / Featuring" credits
     AbcStaffRenderer.tsx — abcjs-powered sheet music renderer
 

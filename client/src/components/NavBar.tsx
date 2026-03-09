@@ -1,0 +1,82 @@
+import { Link, useLocation } from "wouter";
+import { Music2, Calendar, Info, BookOpen } from "lucide-react";
+
+const navLinks = [
+  { href: "/", label: "TuneVault", icon: Music2 },
+  { href: "/tune-of-the-day", label: "Tune of the Day", icon: Calendar },
+  { href: "/about", label: "About", icon: Info },
+];
+
+export default function NavBar() {
+  const [location] = useLocation();
+
+  return (
+    <nav
+      className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 backdrop-blur-md"
+      style={{
+        backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
+      }}
+    >
+      <div className="container mx-auto max-w-5xl px-4 h-12 flex items-center justify-between gap-4">
+        {/* Left: logo + nav links */}
+        <div className="flex items-center gap-1">
+          <Link href="/" data-testid="nav-logo" className="flex items-center gap-1.5 mr-3">
+            <Music2 className="w-5 h-5 text-amber-200 drop-shadow" />
+            <span className="font-serif font-bold text-white text-base tracking-tight leading-none">TuneVault</span>
+          </Link>
+
+          {navLinks.slice(1).map(({ href, label }) => {
+            const active = location === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                className={`hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  active
+                    ? "bg-white/20 text-white"
+                    : "text-white/75 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Right: Book a Lesson */}
+        <Link
+          href="/book-a-lesson"
+          data-testid="nav-book-lesson"
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+            location === "/book-a-lesson"
+              ? "bg-amber-400 border-amber-400 text-amber-900"
+              : "border-amber-300/60 text-amber-200 hover:border-amber-300 hover:text-white hover:bg-white/10"
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Book a Lesson</span>
+        </Link>
+      </div>
+
+      {/* Mobile bottom links */}
+      <div className="sm:hidden flex border-t border-white/10">
+        {navLinks.slice(1).map(({ href, label, icon: Icon }) => {
+          const active = location === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex-1 flex flex-col items-center py-1.5 text-[10px] font-medium transition-colors ${
+                active ? "text-amber-200" : "text-white/60 hover:text-white"
+              }`}
+            >
+              <Icon className="w-4 h-4 mb-0.5" />
+              {label}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

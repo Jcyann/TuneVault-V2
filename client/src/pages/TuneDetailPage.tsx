@@ -64,7 +64,7 @@ export default function TuneDetailPage() {
   const currentRecording = recordings[recordingIndex] ?? null;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
       {/* Header */}
       <div
         className="relative text-primary-foreground py-10 px-4 shadow-lg border-b border-white/12 overflow-hidden"

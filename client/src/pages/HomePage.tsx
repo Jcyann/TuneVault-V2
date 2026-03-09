@@ -191,7 +191,7 @@ export default function HomePage() {
   }, [favData, startPlaylist]);
 
   return (
-    <div className="min-h-screen bg-background pb-24" {...swipeHandlers}>
+    <div className="min-h-screen bg-background pb-24 pt-12 sm:pt-12" {...swipeHandlers}>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div
