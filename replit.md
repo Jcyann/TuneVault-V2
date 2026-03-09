@@ -20,7 +20,13 @@ A comprehensive, searchable treasury of Old-Time fiddle tunes for serious learne
 - Filter by key, region, difficulty, tune type — state persisted in URL params
 - Alphabetical sort when filters active; popularity sort on default browse
 - Modern "Warm Premium" UI: staff-line hero, tune-type left-border color coding, pill filter strip
-- Venmo tip jar (@Jason-Chinchen) in footer
+- Venmo tip jar (@Jason-Chinchen) in footer, with "Book a Lesson" link below it
+- **4-tab NavBar**: Home, Tune of the Day, About, Lessons — active indicator on current tab
+- **Lessons page** (`/book-a-lesson`): 4 instrument cards (Old-Time Fiddle, Clawhammer Banjo, Old-Time Guitar, Bass); CTA with "Soon" badge on booking button
+- **About page** (`/about`): Tightened FAQ — "What is Old-Time Music?", usage guide, badge legend, FAQ with correct "random" Tune of Day description
+- **Tune of the Day** (`/tune-of-the-day`): Fully random on each load; shuffle button picks another random tune
+- **SEO**: Per-page dynamic document.title via useEffect; static OG/Twitter tags in index.html; sitemap.xml at /sitemap.xml (1,001 URLs); robots.txt at /robots.txt with Sitemap link
+- **Known data issue**: B=298 in key distribution is suspicious (Old-Time has essentially no B-major tunes); confirmed errors fixed (Beaux of Albany→D, Big John McNeil→G, Twinkle Little Star→G); bulk of B-key entries require tune-by-tune research to correct
 
 ## Key Design Decisions
 

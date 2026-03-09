@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight, ChevronRight } from "lucide-react";
@@ -53,6 +53,11 @@ export default function TuneOfTheDayPage() {
   });
 
   const tune = data?.tunes?.[0] ?? null;
+
+  useEffect(() => {
+    if (tune) document.title = `Tune of the Day: ${tune.title} | TuneVault`;
+    return () => { document.title = "TuneVault — Old-Time Fiddle Treasury"; };
+  }, [tune]);
   const faved = tune ? isFavorite(tune.id) : false;
 
   const todayLabel = new Date().toLocaleDateString("en-US", {

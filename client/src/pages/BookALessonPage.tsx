@@ -1,16 +1,35 @@
 import { Link } from "wouter";
-import { BookOpen, Music2, ChevronRight, Clock } from "lucide-react";
+import { GraduationCap, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import TipJar from "@/components/TipJar";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
-const LESSON_HIGHLIGHTS = [
-  { icon: Music2, title: "Any level welcome", desc: "Absolute beginners through advanced players. We start where you are." },
-  { icon: BookOpen, title: "Tune-based learning", desc: "Every lesson centers on real tunes from the tradition — you leave with something you can play at a session." },
-  { icon: Clock, title: "History and context", desc: "You learn not just the notes, but where the tune came from, who played it, and why it sounds the way it does." },
+const INSTRUMENTS = [
+  {
+    name: "Old-Time Fiddle",
+    desc: "The heart of the tradition. Learn bow technique, left-hand position, tone production, and repertoire from the full Old-Time canon. Beginners welcome.",
+  },
+  {
+    name: "Clawhammer Banjo",
+    desc: "The driving pulse of Old-Time music. Learn the bum-ditty stroke, drop-thumb technique, and how to lock in with the fiddle at a session.",
+  },
+  {
+    name: "Old-Time Guitar",
+    desc: "The rhythmic backbone. Learn boom-chick rhythm, bass runs, and how to comp sensitively behind a melody without overpowering the groove.",
+  },
+  {
+    name: "Bass",
+    desc: "The foundation. Learn walking bass lines, chord tones, and the art of holding the pocket in a jam. Electric or upright welcome.",
+  },
 ];
 
 export default function BookALessonPage() {
+  usePageMeta(
+    "Book a Lesson",
+    "Online lessons in Old-Time fiddle, clawhammer banjo, Old-Time guitar, and bass. All levels welcome. Tune-based learning with deep historical context."
+  );
+
   return (
     <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
       {/* Hero */}
@@ -26,10 +45,10 @@ export default function BookALessonPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
         <div className="container mx-auto max-w-3xl relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <BookOpen className="w-10 h-10 opacity-90" />
+            <GraduationCap className="w-10 h-10 opacity-90" />
             <div>
               <h1 className="text-4xl font-bold tracking-tight font-serif drop-shadow-sm">Book a Lesson</h1>
-              <p className="text-primary-foreground/70 text-sm mt-0.5">Old-Time fiddle instruction for all levels</p>
+              <p className="text-primary-foreground/70 text-sm mt-0.5">Fiddle · Clawhammer Banjo · Guitar · Bass</p>
             </div>
           </div>
         </div>
@@ -39,36 +58,50 @@ export default function BookALessonPage() {
         {/* Intro */}
         <div className="space-y-4 text-muted-foreground leading-relaxed">
           <p>
-            Old-Time fiddle is one of the most rewarding musical traditions you can dive into. The repertoire is vast, the community is welcoming, and the music sits right in the sweet spot where history, feel, and technique come together.
+            Old-Time music is one of the most rewarding traditions you can dive into — the repertoire is deep, the community is welcoming, and the music lives at the intersection of history, feel, and technique. Lessons draw directly from the TuneVault repertoire so every tune comes with context, recordings, and a real reason to play it.
           </p>
           <p>
-            Lessons draw directly from the TuneVault repertoire — each tune comes with historical context, playing notes, and recordings so you can explore the tradition deeply, not just mechanically. Whether you're picking up a bow for the first time or looking to refine your bow arm and get your tunes session-ready, there's a path forward.
-          </p>
-          <p>
-            Lessons are available online. All skill levels are welcome.
+            Whether you're picking up an instrument for the first time or looking to get your tunes session-ready, lessons are available online at all skill levels.
           </p>
         </div>
 
-        {/* Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {LESSON_HIGHLIGHTS.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="p-5 rounded-xl border border-border bg-card flex flex-col gap-3">
-              <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
-                <Icon className="w-4.5 h-4.5 text-amber-700" />
+        {/* Instruments */}
+        <div>
+          <h2 className="text-xl font-serif font-bold text-foreground mb-4">What We Teach</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {INSTRUMENTS.map(({ name, desc }) => (
+              <div key={name} className="p-5 rounded-xl border border-border bg-card flex flex-col gap-2">
+                <p className="font-semibold text-foreground">{name}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
               </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{title}</p>
-                <p className="text-muted-foreground text-xs leading-relaxed mt-1">{desc}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* What to expect */}
+        <div>
+          <h2 className="text-xl font-serif font-bold text-foreground mb-3">What to Expect</h2>
+          <ul className="space-y-2 text-muted-foreground text-sm">
+            {[
+              "Tune-based learning — you leave every lesson with something you can play at a session",
+              "Historical context for every tune — the who, where, and why",
+              "Technique tailored to your instrument and level",
+              "Video call lessons — no travel, no scheduling headaches",
+              "All levels welcome, including complete beginners",
+            ].map((item) => (
+              <li key={item} className="flex gap-2">
+                <ChevronRight className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Booking CTA */}
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center space-y-4">
           <h2 className="text-2xl font-serif font-bold text-amber-900">Ready to get started?</h2>
           <p className="text-amber-800 text-sm max-w-sm mx-auto">
-            Online booking is coming soon. Check back shortly — or explore the tune library in the meantime to find what you want to learn first.
+            Online booking is coming soon. Check back shortly — or explore the tune library to find what you want to learn first.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <div className="relative inline-block">
@@ -78,7 +111,7 @@ export default function BookALessonPage() {
                 data-testid="button-book-lesson"
                 className="bg-amber-500 hover:bg-amber-500 text-white font-semibold px-8 opacity-80 cursor-not-allowed"
               >
-                <BookOpen className="w-4 h-4 mr-2" />
+                <GraduationCap className="w-4 h-4 mr-2" />
                 Book a Lesson
               </Button>
               <Badge className="absolute -top-2 -right-3 bg-amber-700 text-white text-[10px] px-1.5 py-0.5 rounded-full border-0">
@@ -86,12 +119,12 @@ export default function BookALessonPage() {
               </Badge>
             </div>
           </div>
-          <p className="text-amber-700/60 text-xs">No account needed. Lessons via video call.</p>
+          <p className="text-amber-700/60 text-xs">Lessons via video call. No account needed.</p>
         </div>
 
         {/* Secondary CTA */}
         <div className="text-center">
-          <p className="text-muted-foreground text-sm mb-3">In the meantime, explore the tune library to find what you'd like to learn:</p>
+          <p className="text-muted-foreground text-sm mb-3">Explore the tune library to find what you'd like to learn:</p>
           <Link href="/" data-testid="link-explore-from-booking">
             <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
               Explore TuneVault <ChevronRight className="w-3.5 h-3.5 ml-1" />

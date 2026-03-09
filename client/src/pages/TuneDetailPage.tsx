@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,6 +35,13 @@ export default function TuneDetailPage() {
     queryKey: [`/api/tunes/${id}/recordings`],
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (tune) {
+      document.title = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
+    }
+    return () => { document.title = "TuneVault — Old-Time Fiddle Treasury"; };
+  }, [tune]);
 
   if (isLoading) {
     return (

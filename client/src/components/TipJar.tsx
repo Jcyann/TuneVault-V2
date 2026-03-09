@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { Link } from "wouter";
 
 export default function TipJar() {
   return (
@@ -20,6 +21,13 @@ export default function TipJar() {
         </svg>
         Tip Jar — @Jason-Chinchen on Venmo
       </a>
+      <Link
+        href="/book-a-lesson"
+        data-testid="link-book-lesson-footer"
+        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+      >
+        Book a lesson in Old-Time fiddle, clawhammer banjo, guitar, or bass
+      </Link>
       <p className="text-xs text-muted-foreground opacity-50">TuneVault — Built for serious learners and history buffs</p>
     </div>
   );
