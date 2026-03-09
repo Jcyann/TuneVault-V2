@@ -1,10 +1,13 @@
 import { pool } from "./db";
 import { log } from "./index";
-import { readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// Resolve seed data directory without import.meta.url (unsafe in CJS bundles)
+// In production: dist/seedData/ | In development: server/seedData/
+const prodPath = join(process.cwd(), "dist", "seedData");
+const devPath = join(process.cwd(), "server", "seedData");
+const SEED_DIR = existsSync(prodPath) ? prodPath : devPath;
 
 interface TuneRow {
   id: number;
@@ -66,8 +69,8 @@ export async function autoSeed(): Promise<void> {
 
     log("Database is empty — seeding from bundled data...", "autoSeed");
 
-    const tunesPath = join(__dirname, "seedData", "tunes.json");
-    const recordingsPath = join(__dirname, "seedData", "recordings.json");
+    const tunesPath = join(SEED_DIR, "tunes.json");
+    const recordingsPath = join(SEED_DIR, "recordings.json");
 
     const tunes: TuneRow[] = JSON.parse(readFileSync(tunesPath, "utf8"));
     const recordings: RecordingRow[] = JSON.parse(readFileSync(recordingsPath, "utf8"));
