@@ -627,23 +627,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/sitemap.xml", async (_req, res) => {
     try {
-      const rows = await db.select({ id: tunes.id, title: tunes.title }).from(tunes);
+      const rows = await db
+        .select({ id: tunes.id, popularity: tunes.popularity, createdAt: tunes.createdAt })
+        .from(tunes);
       const base = "https://tunevault.org";
+      const today = new Date().toISOString().slice(0, 10);
       const staticUrls = [
-        { loc: base, priority: "1.0", changefreq: "weekly" },
-        { loc: `${base}/tune-of-the-day`, priority: "0.8", changefreq: "daily" },
-        { loc: `${base}/about`, priority: "0.6", changefreq: "monthly" },
-        { loc: `${base}/book-a-lesson`, priority: "0.7", changefreq: "monthly" },
+        { loc: base, priority: "1.0", changefreq: "weekly", lastmod: today },
+        { loc: `${base}/tune-of-the-day`, priority: "0.8", changefreq: "daily", lastmod: today },
+        { loc: `${base}/about`, priority: "0.6", changefreq: "monthly", lastmod: today },
+        { loc: `${base}/book-a-lesson`, priority: "0.7", changefreq: "monthly", lastmod: today },
       ];
-      const tuneUrls = rows.map((t) => ({
-        loc: `${base}/tunes/${t.id}`,
-        priority: "0.5",
-        changefreq: "monthly",
-      }));
+      const tuneUrls = rows.map((t) => {
+        const pop = t.popularity ?? 5;
+        const priority = pop >= 9 ? "0.9" : pop >= 7 ? "0.7" : pop >= 5 ? "0.5" : "0.3";
+        const lastmod = t.createdAt ? new Date(t.createdAt).toISOString().slice(0, 10) : today;
+        return { loc: `${base}/tunes/${t.id}`, priority, changefreq: "monthly", lastmod };
+      });
       const urlElements = [...staticUrls, ...tuneUrls]
         .map(
-          ({ loc, priority, changefreq }) =>
-            `  <url><loc>${loc}</loc><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
+          ({ loc, priority, changefreq, lastmod }) =>
+            `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
         )
         .join("\n");
       const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlElements}\n</urlset>`;

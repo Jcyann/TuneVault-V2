@@ -37,10 +37,86 @@ export default function TuneDetailPage() {
   });
 
   useEffect(() => {
-    if (tune) {
-      document.title = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
+    if (!tune) return;
+
+    const pageTitle = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
+    const pageUrl = `https://tunevault.org/tunes/${tune.id}`;
+    const pageDesc = tune.description
+      ? tune.description.slice(0, 155).replace(/\s\S*$/, "") + "…"
+      : `${tune.title}: a ${tune.key} ${tune.tuneType} from the Old-Time fiddle tradition. Audio, history, ABC notation, and video on TuneVault.`;
+
+    const setMeta = (sel: string, attr: string, val: string) => {
+      let el = document.querySelector(sel) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta") as HTMLMetaElement;
+        const [attrName, attrVal] = attr.split("=");
+        el.setAttribute(attrName, attrVal.replace(/"/g, ""));
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", val);
+    };
+
+    document.title = pageTitle;
+    setMeta('meta[name="description"]', 'name="description"', pageDesc);
+    setMeta('meta[property="og:title"]', 'property="og:title"', pageTitle);
+    setMeta('meta[property="og:description"]', 'property="og:description"', pageDesc);
+    setMeta('meta[property="og:url"]', 'property="og:url"', pageUrl);
+    setMeta('meta[property="og:type"]', 'property="og:type"', "article");
+    setMeta('meta[name="twitter:title"]', 'name="twitter:title"', pageTitle);
+    setMeta('meta[name="twitter:description"]', 'name="twitter:description"', pageDesc);
+
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link") as HTMLLinkElement;
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
     }
-    return () => { document.title = "TuneVault — Old-Time Fiddle Treasury"; };
+    canonical.setAttribute("href", pageUrl);
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "MusicComposition",
+      "name": tune.title,
+      "alternateName": tune.alternativeTitles ?? undefined,
+      "url": pageUrl,
+      "description": tune.description ?? undefined,
+      "musicalKey": tune.key,
+      "genre": ["Old-Time", "Appalachian", tune.tuneType],
+      "composer": tune.sourceFiddler
+        ? { "@type": "Person", "name": tune.sourceFiddler }
+        : undefined,
+      "dateCreated": tune.era ?? undefined,
+      "inLanguage": "en",
+      "publisher": {
+        "@type": "Organization",
+        "name": "TuneVault",
+        "url": "https://tunevault.org",
+      },
+    };
+
+    let ldScript = document.getElementById("tune-jsonld") as HTMLScriptElement | null;
+    if (!ldScript) {
+      ldScript = document.createElement("script") as HTMLScriptElement;
+      ldScript.id = "tune-jsonld";
+      ldScript.type = "application/ld+json";
+      document.head.appendChild(ldScript);
+    }
+    ldScript.textContent = JSON.stringify(jsonLd);
+
+    return () => {
+      document.title = "TuneVault — Old-Time Fiddle Treasury";
+      setMeta('meta[name="description"]', 'name="description"', "1,031+ Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.");
+      setMeta('meta[property="og:title"]', 'property="og:title"', "TuneVault — Old-Time Fiddle Treasury");
+      setMeta('meta[property="og:description"]', 'property="og:description"', "1,031+ Old-Time fiddle tunes with audio, history, notation, and video — the definitive online tune library.");
+      setMeta('meta[property="og:url"]', 'property="og:url"', "https://tunevault.org");
+      setMeta('meta[property="og:type"]', 'property="og:type"', "website");
+      setMeta('meta[name="twitter:title"]', 'name="twitter:title"', "TuneVault — Old-Time Fiddle Treasury");
+      setMeta('meta[name="twitter:description"]', 'name="twitter:description"', "1,031+ Old-Time fiddle tunes with audio, history, notation, and video.");
+      const canon = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (canon) canon.setAttribute("href", "https://tunevault.org");
+      const ld = document.getElementById("tune-jsonld");
+      if (ld) ld.remove();
+    };
   }, [tune]);
 
   if (isLoading) {
