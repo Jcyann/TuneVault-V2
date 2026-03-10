@@ -351,10 +351,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       .toLowerCase()
       .replace(/\(.*?\)/g, "")
       .replace(/\[.*?\]/g, "")
-      .replace(/[-–—_#]/g, " ")
+      .replace(/[-–—_#'`]/g, " ")
       .replace(/[^a-z0-9 ]/g, "")
       .replace(/\s+/g, " ")
       .trim();
+  }
+
+  const YT_STOP = new Set([
+    "the","and","with","for","from","old","new","some","this","that",
+    "its","our","her","his","your","my","at","by","in","on","of","to",
+    "up","as","an","a","tune","fiddle","old-time","oldtime","otaf",
+    "appalachian","time","playing","straight","style","duo","duet",
+  ]);
+
+  function keyWords(norm: string): string[] {
+    return norm.split(" ").filter(w => w.length >= 3 && !YT_STOP.has(w));
+  }
+
+  function wordPrefixMatch(a: string, b: string): boolean {
+    // handles eye/eyed, reel/reels, fiddle/fiddler, hunter/hunters etc.
+    return a === b || a.startsWith(b) || b.startsWith(a);
+  }
+
+  function matchScore(videoNorm: string, tuneNorm: string): number {
+    const tuneKW = keyWords(tuneNorm);
+    if (tuneKW.length === 0) return 0;
+    const videoKW = keyWords(videoNorm);
+    const hits = tuneKW.filter(tw => videoKW.some(vw => wordPrefixMatch(tw, vw))).length;
+    return hits / tuneKW.length;
+  }
+
+  function isFuzzyMatch(videoNorm: string, tuneNorm: string): boolean {
+    const tuneKW = keyWords(tuneNorm);
+    const score = matchScore(videoNorm, tuneNorm);
+    // 1-2 key words: need all; 3+ key words: need 70%
+    const threshold = tuneKW.length <= 2 ? 1.0 : 0.70;
+    return score >= threshold;
   }
 
   async function ytFetch(url: string) {
@@ -435,14 +467,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         const normVideo = normalizeTitle(v.title);
         let found: { id: number; title: string; hasVideo: boolean } | undefined;
 
-        // Exact match first
+        // 1. Exact normalized match
         found = tuneMap.get(normVideo);
 
-        // Partial: video title contains a tune title
+        // 2. Video title contains the full tune key (substring)
         if (!found) {
           for (const [key, tune] of tuneMap) {
             if (key.length >= 4 && normVideo.includes(key)) { found = tune; break; }
           }
+        }
+
+        // 3. Fuzzy: prefix-based word overlap (catches eye/eyed, plural-s, etc.)
+        //    Requires ≥2 key words in the tune so single-word tunes don't over-match
+        if (!found) {
+          let bestScore = 0;
+          let bestTune: typeof found;
+          for (const [key, tune] of tuneMap) {
+            if (key.length < 4) continue;
+            const tuneKW = keyWords(key);
+            if (tuneKW.length < 2) continue;  // single-word titles rely on substring only
+            const score = matchScore(normVideo, key);
+            const threshold = tuneKW.length <= 2 ? 1.0 : 0.70;
+            if (score >= threshold && score > bestScore) {
+              bestScore = score;
+              bestTune = tune;
+            }
+          }
+          found = bestTune;
         }
 
         if (found) {
