@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
+import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw } from "lucide-react";
 import type { LessonInquiry, Suggestion, RecordingSubmission } from "@shared/schema";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Button } from "@/components/ui/button";
@@ -193,8 +193,184 @@ function SubmissionCard({ sub, onApprove, onReject, isPending }: {
 
 export default function AdminPage() {
   usePageMeta("Admin — TuneVault", "TuneVault admin dashboard");
-  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions">("inquiries");
+  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions" | "youtube">("inquiries");
   const { toast } = useToast();
+
+  // ── YouTube tab state ──
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncResult, setSyncResult] = useState<null | { total: number; matched: any[]; unmatched: any[] }>(null);
+  const [syncChecked, setSyncChecked] = useState<Set<string>>(new Set());
+  const [applyingSync, setApplyingSync] = useState(false);
+
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState<null | { searched: number; found: number; results: any[] }>(null);
+  const [bulkChecked, setBulkChecked] = useState<Set<number>>(new Set());
+  const [applyingBulk, setApplyingBulk] = useState(false);
+  const [bulkLimit, setBulkLimit] = useState(50);
+
+  function normalizeTitle(t: string): string {
+    return t
+      .toLowerCase()
+      .replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "")
+      .replace(/[-–—_#]/g, " ").replace(/[^a-z0-9 ]/g, "")
+      .replace(/\s+/g, " ").trim();
+  }
+
+  async function getYtKey(): Promise<string> {
+    const res = await fetch("/api/admin/youtube-key");
+    if (!res.ok) throw new Error("YouTube API key not configured");
+    const { key } = await res.json();
+    return key;
+  }
+
+  async function ytGet(url: string): Promise<any> {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`YouTube API error ${r.status}`);
+    return r.json();
+  }
+
+  async function fetchChannelVideos(apiKey: string, handle: string): Promise<{ videoId: string; title: string }[]> {
+    const chanData = await ytGet(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`);
+    const uploadsId = chanData?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsId) throw new Error("Channel not found or has no public uploads");
+    const videos: { videoId: string; title: string }[] = [];
+    let pageToken = "";
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+      const data = await ytGet(url);
+      for (const item of data.items ?? []) {
+        const videoId = item.snippet?.resourceId?.videoId;
+        const title = item.snippet?.title;
+        if (videoId && title) videos.push({ videoId, title });
+      }
+      pageToken = data.nextPageToken ?? "";
+    } while (pageToken);
+    return videos;
+  }
+
+  async function runChannelSync() {
+    setSyncLoading(true);
+    setSyncResult(null);
+    setSyncChecked(new Set());
+    try {
+      const [apiKey, tunesRes] = await Promise.all([getYtKey(), fetch("/api/admin/tune-titles")]);
+      const allTunes: { id: number; title: string; altTitles: string | null; hasVideo: string | null }[] = await tunesRes.json();
+      const videos = await fetchChannelVideos(apiKey, "jasonnchinchen");
+
+      const tuneMap = new Map<string, { id: number; title: string; hasVideo: boolean }>();
+      for (const t of allTunes) {
+        tuneMap.set(normalizeTitle(t.title), { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
+        if (t.altTitles) {
+          for (const alt of t.altTitles.split(/[,;|]/)) {
+            const n = normalizeTitle(alt.trim());
+            if (n) tuneMap.set(n, { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
+          }
+        }
+      }
+
+      const matched: any[] = [];
+      const unmatched: any[] = [];
+      for (const v of videos) {
+        const normVideo = normalizeTitle(v.title);
+        let found = tuneMap.get(normVideo);
+        if (!found) {
+          for (const [key, tune] of tuneMap) {
+            if (key.length >= 4 && normVideo.includes(key)) { found = tune; break; }
+          }
+        }
+        if (found) {
+          matched.push({ videoId: v.videoId, videoTitle: v.title, tuneId: found.id, tuneTitle: found.title, alreadyHasVideo: found.hasVideo });
+        } else {
+          unmatched.push({ videoId: v.videoId, videoTitle: v.title });
+        }
+      }
+
+      setSyncResult({ total: videos.length, matched, unmatched });
+      setSyncChecked(new Set(matched.map((m) => m.videoId)));
+    } catch (err: any) {
+      toast({ title: "Channel scan failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
+  async function applyChannelSync() {
+    if (!syncResult) return;
+    setApplyingSync(true);
+    try {
+      const matches = syncResult.matched.filter((m) => syncChecked.has(m.videoId))
+        .map((m) => ({ videoId: m.videoId, tuneId: m.tuneId, alreadyHasVideo: m.alreadyHasVideo }));
+      const res = await fetch("/api/admin/youtube-apply", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matches }),
+      });
+      const data = await res.json();
+      toast({ title: `Applied! ${data.updated} tunes updated, ${data.addedRecording} recordings added.` });
+      setSyncResult(null);
+    } catch (err: any) {
+      toast({ title: "Apply failed", description: err.message, variant: "destructive" });
+    } finally {
+      setApplyingSync(false);
+    }
+  }
+
+  async function runBulkSearch() {
+    setBulkLoading(true);
+    setBulkResult(null);
+    setBulkChecked(new Set());
+    try {
+      const [apiKey, tunesRes] = await Promise.all([getYtKey(), fetch("/api/admin/tune-titles")]);
+      const allTunes: { id: number; title: string; hasVideo: string | null }[] = await tunesRes.json();
+      const missing = allTunes.filter((t) => !t.hasVideo).slice(0, bulkLimit);
+
+      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+      const results: any[] = [];
+
+      for (const tune of missing) {
+        try {
+          const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(tune.title + " old time fiddle")}&key=${apiKey}`;
+          const data = await ytGet(url);
+          const top = data.items?.[0];
+          if (top?.id?.videoId) {
+            results.push({
+              tuneId: tune.id, tuneTitle: tune.title,
+              videoId: top.id.videoId, videoTitle: top.snippet?.title,
+              channel: top.snippet?.channelTitle,
+              thumbnail: top.snippet?.thumbnails?.default?.url,
+            });
+          }
+        } catch {}
+        await delay(150);
+      }
+
+      setBulkResult({ searched: missing.length, found: results.length, results });
+      setBulkChecked(new Set(results.map((r) => r.tuneId)));
+    } catch (err: any) {
+      toast({ title: "Bulk search failed", description: err.message, variant: "destructive" });
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
+  async function applyBulkSearch() {
+    if (!bulkResult) return;
+    setApplyingBulk(true);
+    try {
+      const matches = bulkResult.results.filter((r) => bulkChecked.has(r.tuneId))
+        .map((r) => ({ tuneId: r.tuneId, videoId: r.videoId }));
+      const res = await fetch("/api/admin/youtube-bulk-apply", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matches }),
+      });
+      const data = await res.json();
+      toast({ title: `Linked ${data.applied} videos to tunes!` });
+      setBulkResult(null);
+    } catch (err: any) {
+      toast({ title: "Apply failed", description: err.message, variant: "destructive" });
+    } finally {
+      setApplyingBulk(false);
+    }
+  }
 
   const { data: inquiries = [], isLoading: loadingInq } = useQuery<LessonInquiry[]>({
     queryKey: ["/api/admin/lesson-inquiries"],
@@ -290,6 +466,18 @@ export default function AdminPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setTab("youtube")}
+            data-testid="tab-youtube"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === "youtube"
+                ? "bg-amber-500 text-white"
+                : "border border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Youtube className="w-4 h-4" />
+            YouTube
+          </button>
         </div>
 
         {tab === "inquiries" && (
@@ -342,6 +530,200 @@ export default function AdminPage() {
                 />
               ))
             )}
+          </div>
+        )}
+
+        {tab === "youtube" && (
+          <div className="space-y-8">
+
+            {/* ── Section 1: Your Channel ── */}
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4" data-testid="youtube-channel-section">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="text-lg font-bold font-serif flex items-center gap-2">
+                    <Youtube className="w-5 h-5 text-red-500" />
+                    Sync Your Channel
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Scans <span className="font-medium text-foreground">@jasonnchinchen</span> and matches your video titles to tunes in the database.
+                  </p>
+                </div>
+                <Button
+                  onClick={runChannelSync}
+                  disabled={syncLoading}
+                  data-testid="button-channel-sync"
+                  className="bg-red-600 hover:bg-red-700 text-white shrink-0"
+                >
+                  {syncLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning…</> : <><RefreshCw className="w-4 h-4 mr-2" />Scan Channel</>}
+                </Button>
+              </div>
+
+              {syncResult && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span><strong className="text-foreground">{syncResult.total}</strong> videos found</span>
+                    <span><strong className="text-green-600">{syncResult.matched.length}</strong> matched to tunes</span>
+                    <span><strong className="text-muted-foreground">{syncResult.unmatched.length}</strong> unmatched</span>
+                  </div>
+
+                  {syncResult.matched.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground">Matched ({syncChecked.size} selected)</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => setSyncChecked(new Set(syncResult.matched.map((m) => m.videoId)))} className="text-xs text-amber-600 hover:underline">All</button>
+                          <button onClick={() => setSyncChecked(new Set())} className="text-xs text-muted-foreground hover:underline">None</button>
+                        </div>
+                      </div>
+                      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+                        {syncResult.matched.map((m) => (
+                          <label key={m.videoId} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 cursor-pointer hover:bg-muted/60" data-testid={`sync-match-${m.videoId}`}>
+                            <input
+                              type="checkbox"
+                              checked={syncChecked.has(m.videoId)}
+                              onChange={(e) => {
+                                const next = new Set(syncChecked);
+                                e.target.checked ? next.add(m.videoId) : next.delete(m.videoId);
+                                setSyncChecked(next);
+                              }}
+                              className="accent-amber-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{m.tuneTitle}</p>
+                              <p className="text-xs text-muted-foreground truncate">"{m.videoTitle}"</p>
+                            </div>
+                            {m.alreadyHasVideo && (
+                              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 shrink-0">+recording</span>
+                            )}
+                            <a href={`https://youtube.com/watch?v=${m.videoId}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-red-500 shrink-0">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </label>
+                        ))}
+                      </div>
+                      <Button
+                        onClick={applyChannelSync}
+                        disabled={applyingSync || syncChecked.size === 0}
+                        data-testid="button-apply-sync"
+                        className="bg-green-600 hover:bg-green-700 text-white w-full"
+                      >
+                        {applyingSync ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Applying…</> : <><CheckCircle2 className="w-4 h-4 mr-2" />Apply {syncChecked.size} Matches</>}
+                      </Button>
+                    </div>
+                  )}
+
+                  {syncResult.unmatched.length > 0 && (
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium">
+                        {syncResult.unmatched.length} unmatched videos (click to expand)
+                      </summary>
+                      <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                        {syncResult.unmatched.map((u) => (
+                          <li key={u.videoId} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <a href={`https://youtube.com/watch?v=${u.videoId}`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline truncate">{u.videoTitle}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Section 2: Bulk Search ── */}
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4" data-testid="youtube-bulk-section">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="text-lg font-bold font-serif flex items-center gap-2">
+                    <Search className="w-5 h-5 text-amber-500" />
+                    Find Videos for Missing Tunes
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Searches YouTube for tunes that don't have a video yet. Review results before applying.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={bulkLimit}
+                    onChange={(e) => setBulkLimit(Number(e.target.value))}
+                    data-testid="select-bulk-limit"
+                    className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
+                  >
+                    <option value={25}>25 tunes</option>
+                    <option value={50}>50 tunes</option>
+                    <option value={100}>100 tunes</option>
+                    <option value={200}>200 tunes</option>
+                  </select>
+                  <Button
+                    onClick={runBulkSearch}
+                    disabled={bulkLoading}
+                    data-testid="button-bulk-search"
+                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                  >
+                    {bulkLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Searching…</> : <><Search className="w-4 h-4 mr-2" />Search YouTube</>}
+                  </Button>
+                </div>
+              </div>
+
+              {bulkLoading && (
+                <p className="text-sm text-muted-foreground italic">This can take a minute — searching {bulkLimit} tunes…</p>
+              )}
+
+              {bulkResult && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span><strong className="text-foreground">{bulkResult.searched}</strong> tunes searched</span>
+                    <span><strong className="text-green-600">{bulkResult.found}</strong> videos found</span>
+                    <span><strong className="text-amber-600">{bulkChecked.size}</strong> selected</span>
+                  </div>
+
+                  {bulkResult.results.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground">Results — review before applying</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => setBulkChecked(new Set(bulkResult.results.map((r) => r.tuneId)))} className="text-xs text-amber-600 hover:underline">All</button>
+                          <button onClick={() => setBulkChecked(new Set())} className="text-xs text-muted-foreground hover:underline">None</button>
+                        </div>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto space-y-1.5 pr-1">
+                        {bulkResult.results.map((r) => (
+                          <label key={r.tuneId} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 cursor-pointer hover:bg-muted/60" data-testid={`bulk-result-${r.tuneId}`}>
+                            <input
+                              type="checkbox"
+                              checked={bulkChecked.has(r.tuneId)}
+                              onChange={(e) => {
+                                const next = new Set(bulkChecked);
+                                e.target.checked ? next.add(r.tuneId) : next.delete(r.tuneId);
+                                setBulkChecked(next);
+                              }}
+                              className="accent-amber-500"
+                            />
+                            {r.thumbnail && <img src={r.thumbnail} alt="" className="w-10 h-7 rounded object-cover shrink-0" />}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{r.tuneTitle}</p>
+                              <p className="text-xs text-muted-foreground truncate">"{r.videoTitle}" — {r.channel}</p>
+                            </div>
+                            <a href={`https://youtube.com/watch?v=${r.videoId}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-red-500 shrink-0">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </label>
+                        ))}
+                      </div>
+                      <Button
+                        onClick={applyBulkSearch}
+                        disabled={applyingBulk || bulkChecked.size === 0}
+                        data-testid="button-apply-bulk"
+                        className="bg-green-600 hover:bg-green-700 text-white w-full"
+                      >
+                        {applyingBulk ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Applying…</> : <><CheckCircle2 className="w-4 h-4 mr-2" />Link {bulkChecked.size} Videos to Tunes</>}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>

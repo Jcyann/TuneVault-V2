@@ -345,6 +345,229 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── YouTube Sync ──────────────────────────────────────────────
+  function normalizeTitle(t: string): string {
+    return t
+      .toLowerCase()
+      .replace(/\(.*?\)/g, "")
+      .replace(/\[.*?\]/g, "")
+      .replace(/[-–—_#]/g, " ")
+      .replace(/[^a-z0-9 ]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  async function ytFetch(url: string) {
+    const r = await fetch(url, {
+      headers: {
+        "Referer": "https://tunevault.org/",
+        "Origin": "https://tunevault.org",
+      },
+    });
+    if (!r.ok) throw new Error(`YouTube API error ${r.status}: ${await r.text()}`);
+    return r.json() as Promise<any>;
+  }
+
+  async function fetchChannelVideos(apiKey: string, handle: string): Promise<{ videoId: string; title: string }[]> {
+    const chanData = await ytFetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`
+    );
+    const uploadsId = chanData?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsId) throw new Error("Could not find uploads playlist for channel");
+
+    const videos: { videoId: string; title: string }[] = [];
+    let pageToken = "";
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+      const data = await ytFetch(url);
+      for (const item of data.items ?? []) {
+        const videoId = item.snippet?.resourceId?.videoId;
+        const title = item.snippet?.title;
+        if (videoId && title) videos.push({ videoId, title });
+      }
+      pageToken = data.nextPageToken ?? "";
+    } while (pageToken);
+
+    return videos;
+  }
+
+  // GET /api/admin/youtube-key — returns the key for client-side YouTube API calls
+  app.get("/api/admin/youtube-key", (_req, res) => {
+    const key = process.env.YOUTUBE_API_KEY;
+    if (!key) return res.status(500).json({ error: "YOUTUBE_API_KEY not configured" });
+    res.json({ key });
+  });
+
+  // GET /api/admin/tune-titles — returns all tune titles+ids for client-side matching
+  app.get("/api/admin/tune-titles", async (_req, res) => {
+    try {
+      const rows = await db.select({ id: tunes.id, title: tunes.title, altTitles: tunes.alternativeTitles, hasVideo: tunes.youtubeVideoId }).from(tunes);
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: "Failed" });
+    }
+  });
+
+  // GET /api/admin/youtube-sync — scan Jason's channel, return matches (no writes)
+  app.get("/api/admin/youtube-sync", async (_req, res) => {
+    try {
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "YOUTUBE_API_KEY not configured" });
+
+      const videos = await fetchChannelVideos(apiKey, "jasonnchinchen");
+      const allTunes = await db.select({ id: tunes.id, title: tunes.title, altTitles: tunes.alternativeTitles, hasVideo: tunes.youtubeVideoId }).from(tunes);
+
+      const tuneMap = new Map<string, { id: number; title: string; hasVideo: boolean }>();
+      for (const t of allTunes) {
+        tuneMap.set(normalizeTitle(t.title), { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
+        if (t.altTitles) {
+          for (const alt of t.altTitles.split(/[,;|]/)) {
+            const n = normalizeTitle(alt.trim());
+            if (n) tuneMap.set(n, { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
+          }
+        }
+      }
+
+      const matched: any[] = [];
+      const unmatched: any[] = [];
+
+      for (const v of videos) {
+        const normVideo = normalizeTitle(v.title);
+        let found: { id: number; title: string; hasVideo: boolean } | undefined;
+
+        // Exact match first
+        found = tuneMap.get(normVideo);
+
+        // Partial: video title contains a tune title
+        if (!found) {
+          for (const [key, tune] of tuneMap) {
+            if (key.length >= 4 && normVideo.includes(key)) { found = tune; break; }
+          }
+        }
+
+        if (found) {
+          matched.push({ videoId: v.videoId, videoTitle: v.title, tuneId: found.id, tuneTitle: found.title, alreadyHasVideo: found.hasVideo });
+        } else {
+          unmatched.push({ videoId: v.videoId, videoTitle: v.title });
+        }
+      }
+
+      res.json({ total: videos.length, matched, unmatched });
+    } catch (err: any) {
+      console.error("YouTube sync error:", err);
+      res.status(500).json({ error: err.message ?? "YouTube sync failed" });
+    }
+  });
+
+  // POST /api/admin/youtube-apply — apply confirmed channel matches to DB
+  app.post("/api/admin/youtube-apply", async (req, res) => {
+    try {
+      const matches: { videoId: string; tuneId: number; alreadyHasVideo: boolean }[] = req.body.matches ?? [];
+      let updated = 0; let addedRecording = 0;
+
+      for (const m of matches) {
+        const ytUrl = `https://www.youtube.com/watch?v=${m.videoId}`;
+        if (!m.alreadyHasVideo) {
+          await db.update(tunes).set({ youtubeVideoId: m.videoId, youtubeUrl: ytUrl }).where(eq(tunes.id, m.tuneId));
+          updated++;
+        } else {
+          // Check if this recording already exists
+          const existing = await db.select({ id: recordings.id }).from(recordings)
+            .where(and(eq(recordings.tuneId, m.tuneId), eq(recordings.youtubeVideoId, m.videoId))).limit(1);
+          if (!existing.length) {
+            await storage.createRecording({ tuneId: m.tuneId, youtubeVideoId: m.videoId, audioSource: "Jason Chinchen", audioAttribution: "Jason Chinchen (@jasonnchinchen)" });
+            addedRecording++;
+          }
+        }
+      }
+      res.json({ updated, addedRecording });
+    } catch (err: any) {
+      console.error("YouTube apply error:", err);
+      res.status(500).json({ error: err.message ?? "Apply failed" });
+    }
+  });
+
+  // GET /api/admin/youtube-search?q=TuneTitle — search YouTube for a single tune
+  app.get("/api/admin/youtube-search", async (req, res) => {
+    try {
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "YOUTUBE_API_KEY not configured" });
+      const q = typeof req.query.q === "string" ? req.query.q : "";
+      if (!q) return res.status(400).json({ error: "q required" });
+
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(q + " old time fiddle")}&key=${apiKey}`;
+      const data = await ytFetch(url);
+      const results = (data.items ?? []).map((item: any) => ({
+        videoId: item.id?.videoId,
+        title: item.snippet?.title,
+        channel: item.snippet?.channelTitle,
+        thumbnail: item.snippet?.thumbnails?.default?.url,
+      })).filter((i: any) => i.videoId);
+      res.json({ results });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message ?? "Search failed" });
+    }
+  });
+
+  // POST /api/admin/youtube-bulk-search — search YouTube for all tunes missing videos (batched, returns preview)
+  app.post("/api/admin/youtube-bulk-search", async (req, res) => {
+    try {
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "YOUTUBE_API_KEY not configured" });
+
+      const limit = Math.min(parseInt(req.body.limit as string) || 50, 200);
+      const missing = await db
+        .select({ id: tunes.id, title: tunes.title })
+        .from(tunes)
+        .where(sql`youtube_video_id IS NULL`)
+        .limit(limit);
+
+      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+      const results: any[] = [];
+
+      for (const tune of missing) {
+        try {
+          const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(tune.title + " old time fiddle")}&key=${apiKey}`;
+          const data = await ytFetch(url);
+          const top = data.items?.[0];
+          if (top?.id?.videoId) {
+            results.push({
+              tuneId: tune.id,
+              tuneTitle: tune.title,
+              videoId: top.id.videoId,
+              videoTitle: top.snippet?.title,
+              channel: top.snippet?.channelTitle,
+              thumbnail: top.snippet?.thumbnails?.default?.url,
+            });
+          }
+        } catch {}
+        await delay(120);
+      }
+
+      res.json({ searched: missing.length, found: results.length, results });
+    } catch (err: any) {
+      console.error("Bulk search error:", err);
+      res.status(500).json({ error: err.message ?? "Bulk search failed" });
+    }
+  });
+
+  // POST /api/admin/youtube-bulk-apply — apply bulk search results
+  app.post("/api/admin/youtube-bulk-apply", async (req, res) => {
+    try {
+      const matches: { tuneId: number; videoId: string }[] = req.body.matches ?? [];
+      let count = 0;
+      for (const m of matches) {
+        await db.update(tunes)
+          .set({ youtubeVideoId: m.videoId, youtubeUrl: `https://www.youtube.com/watch?v=${m.videoId}` })
+          .where(and(eq(tunes.id, m.tuneId), sql`youtube_video_id IS NULL`));
+        count++;
+      }
+      res.json({ applied: count });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message ?? "Apply failed" });
+    }
+  });
+
   app.get("/robots.txt", (_req, res) => {
     res.type("text/plain").send(
       "User-agent: *\nAllow: /\nSitemap: https://tunevault.org/sitemap.xml\n"
