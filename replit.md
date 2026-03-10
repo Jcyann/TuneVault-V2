@@ -12,8 +12,8 @@ A comprehensive, searchable treasury of Old-Time fiddle tunes for serious learne
 
 ## Features
 
-- **997 tunes** — 892 from oldtimefiddletunes.net (Lamancusa), 105 hand-crafted entries
-- **938 with audio** — Slippery Hill (slippery-hill.com), Canote Brothers (mossyroof.com), LOC proxy, Old Time Fiddle Tunes
+- **1,027 tunes** — 892 from oldtimefiddletunes.net (Lamancusa), 135 hand-crafted entries
+- **947+ with audio** — Slippery Hill (slippery-hill.com), Canote Brothers (mossyroof.com), LOC proxy, Old Time Fiddle Tunes
 - **50 with sheet music** — FiddleTunes.net (fiddletunes.net) JPEG transcriptions as transcript_url
 - **134 with YouTube video** — embedded player (sandbox removed — was blocking playback)
 - **15 with ABC notation** — rendered as sheet music via abcjs, raw text toggle

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Music2, Calendar, Info, BookOpen, GraduationCap } from "lucide-react";
+import { Music2, Calendar, Info, GraduationCap } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Music2 },
@@ -18,33 +18,24 @@ export default function NavBar() {
         backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
       }}
     >
-      <div className="container mx-auto max-w-5xl px-4 h-12 flex items-center gap-2">
-        {/* Logo */}
-        <Link href="/" data-testid="nav-logo" className="flex items-center gap-1.5 mr-3 shrink-0">
-          <Music2 className="w-5 h-5 text-amber-200 drop-shadow" />
-          <span className="font-serif font-bold text-white text-base tracking-tight leading-none hidden md:inline">TuneVault</span>
-        </Link>
-
-        {/* Nav tabs — all links including Lessons */}
-        <div className="flex items-center gap-1 flex-1">
-          {navLinks.map(({ href, label }) => {
-            const active = location === href || (href === "/" && location === "");
-            return (
-              <Link
-                key={href}
-                href={href}
-                data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                className={`hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                  active
-                    ? "bg-white/20 text-white"
-                    : "text-white/75 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+      <div className="container mx-auto max-w-5xl px-4 h-12 flex items-center gap-1">
+        {navLinks.map(({ href, label }) => {
+          const active = location === href || (href === "/" && location === "");
+          return (
+            <Link
+              key={href}
+              href={href}
+              data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
+              className={`hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                active
+                  ? "bg-white/20 text-white"
+                  : "text-white/75 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Mobile bottom tab strip */}

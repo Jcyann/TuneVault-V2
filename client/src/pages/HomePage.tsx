@@ -207,7 +207,7 @@ export default function HomePage() {
 
         <div className="container mx-auto max-w-5xl relative z-10">
           <div className="flex items-center gap-4 mb-1">
-            <Music2 className="w-12 h-12 opacity-90 drop-shadow" />
+            <Music2 className="w-16 h-16 drop-shadow" style={{ strokeWidth: 3 }} />
             <div>
               <h1 className="text-5xl font-bold tracking-tight font-serif drop-shadow-sm">TuneVault</h1>
               <p className="text-base opacity-75 mt-0.5 tracking-wide">A Treasury of Old-Time Fiddle Music</p>

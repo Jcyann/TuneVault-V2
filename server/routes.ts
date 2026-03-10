@@ -237,6 +237,63 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/admin/slippery-hill-match", async (_req, res) => {
+    try {
+      const missing = await db.select({ id: tunes.id, title: tunes.title })
+        .from(tunes)
+        .where(sql`audio_url IS NULL`);
+
+      const normalize = (title: string): string[] => {
+        const clean = title
+          .replace(/['']/g, "")
+          .replace(/[^a-zA-Z0-9\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const words = clean.split(" ");
+        const camel = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+        const lower = words.join("").toLowerCase();
+        const hyphen = words.map(w => w.toLowerCase()).join("-");
+        const underscore = words.map(w => w.toLowerCase()).join("_");
+        const pascal = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("");
+        return [...new Set([camel, lower, hyphen, underscore, pascal])];
+      };
+
+      const base = "https://www.slippery-hill.com/system/files/recordings/";
+      let checked = 0;
+      let matched = 0;
+      const results: { title: string; url: string }[] = [];
+
+      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+      for (const tune of missing) {
+        const variants = normalize(tune.title);
+        let found = false;
+        for (const variant of variants) {
+          if (found) break;
+          const url = `${base}${variant}.mp3`;
+          try {
+            const resp = await fetch(url, { method: "HEAD" });
+            if (resp.status === 200) {
+              await db.update(tunes)
+                .set({ audioUrl: url, audioSource: "Slippery Hill", audioAttribution: "slippery-hill.com" })
+                .where(eq(tunes.id, tune.id));
+              results.push({ title: tune.title, url });
+              matched++;
+              found = true;
+            }
+          } catch {}
+          await delay(150);
+        }
+        checked++;
+      }
+
+      res.json({ checked, matched, results });
+    } catch (err) {
+      console.error("Slippery Hill matcher error:", err);
+      res.status(500).json({ error: "Matcher failed" });
+    }
+  });
+
   app.get("/api/loc-audio/:itemId", async (req, res) => {
     try {
       const { itemId } = req.params;
