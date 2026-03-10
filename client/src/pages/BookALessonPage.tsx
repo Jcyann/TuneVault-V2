@@ -19,15 +19,15 @@ const INSTRUMENTS = [
     desc: "The rhythmic backbone. Learn boom-chick rhythm, bass runs, and how to comp sensitively behind a melody without overpowering the groove.",
   },
   {
-    name: "Bass",
-    desc: "The foundation. Learn walking bass lines, chord tones, and the art of holding the pocket in a jam. Electric or upright welcome.",
+    name: "Upright Bass",
+    desc: "The rhythmic foundation of Old-Time music. Learn to hold a steady, even pulse — two beats per bar, roots and fifths — and support the group without drawing attention to yourself. The goal is invisibility through reliability.",
   },
 ];
 
 export default function BookALessonPage() {
   usePageMeta(
     "Book a Lesson",
-    "Online lessons in Old-Time fiddle, clawhammer banjo, Old-Time guitar, and bass. All levels welcome. Tune-based learning with deep historical context."
+    "Online lessons in Old-Time fiddle, clawhammer banjo, Old-Time guitar, and upright bass. All levels welcome. Tune-based learning with deep historical context."
   );
 
   return (
@@ -48,7 +48,7 @@ export default function BookALessonPage() {
             <GraduationCap className="w-10 h-10 opacity-90" />
             <div>
               <h1 className="text-4xl font-bold tracking-tight font-serif drop-shadow-sm">Book a Lesson</h1>
-              <p className="text-primary-foreground/70 text-sm mt-0.5">Fiddle · Clawhammer Banjo · Guitar · Bass</p>
+              <p className="text-primary-foreground/70 text-sm mt-0.5">Fiddle · Clawhammer Banjo · Guitar · Upright Bass</p>
             </div>
           </div>
         </div>

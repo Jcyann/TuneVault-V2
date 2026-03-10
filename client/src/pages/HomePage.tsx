@@ -46,6 +46,7 @@ const TUNE_TYPE_BADGE: Record<string, string> = {
 
 const KEY_ORDER = ["A", "Am", "D", "Dm", "G", "Gm", "C", "Em", "F", "Bm"];
 const PAGE_SIZE = 48;
+const SESSION_STORAGE_KEY = "tunevault_search";
 
 interface TunesResponse {
   tunes: Tune[];
@@ -55,20 +56,52 @@ interface TunesResponse {
   limit: number;
 }
 
-function getUrlParams() {
+interface SearchState {
+  search: string;
+  key: string;
+  difficulty: string;
+  region: string;
+  tuneType: string;
+  page: number;
+}
+
+function loadSession(): SearchState | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(state: SearchState) {
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
+function getInitialState(): SearchState {
   const p = new URLSearchParams(window.location.search);
-  return {
-    search: p.get("search") || "",
-    key: p.get("key") || "all",
-    difficulty: p.get("difficulty") || "all",
-    region: p.get("region") || "all",
-    tuneType: p.get("tuneType") || "all",
-    page: parseInt(p.get("page") || "1", 10),
-  };
+  const hasUrl =
+    p.has("search") || p.has("key") || p.has("difficulty") ||
+    p.has("region") || p.has("tuneType") || p.has("page");
+  if (hasUrl) {
+    return {
+      search: p.get("search") || "",
+      key: p.get("key") || "all",
+      difficulty: p.get("difficulty") || "all",
+      region: p.get("region") || "all",
+      tuneType: p.get("tuneType") || "all",
+      page: parseInt(p.get("page") || "1", 10),
+    };
+  }
+  const stored = loadSession();
+  if (stored) return stored;
+  return { search: "", key: "all", difficulty: "all", region: "all", tuneType: "all", page: 1 };
 }
 
 export default function HomePage() {
-  const init = getUrlParams();
+  const init = getInitialState();
   const [searchInput, setSearchInput] = useState(init.search);
   const [search, setSearch] = useState(init.search);
   const [selectedKey, setSelectedKey] = useState(init.key);
@@ -85,6 +118,15 @@ export default function HomePage() {
 
   useEffect(() => {
     if (showFavorites) return;
+    const state: SearchState = {
+      search,
+      key: selectedKey,
+      difficulty: selectedDifficulty,
+      region: selectedRegion,
+      tuneType: selectedType,
+      page,
+    };
+    saveSession(state);
     const p = new URLSearchParams();
     if (search) p.set("search", search);
     if (selectedKey !== "all") p.set("key", selectedKey);

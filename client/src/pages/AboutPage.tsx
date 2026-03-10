@@ -6,7 +6,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 const FAQ_ITEMS = [
   {
     q: "How many tunes are in TuneVault?",
-    a: "Nearly 1,000 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 930 of them.",
+    a: "Over 1,000 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 940 of them.",
   },
   {
     q: "Where does the audio come from?",
@@ -19,10 +19,6 @@ const FAQ_ITEMS = [
   {
     q: "Does TuneVault work on mobile?",
     a: "Yes — fully mobile-responsive. Swipe left/right on the home page to page through tunes. In the mini player, swipe left for next and right for previous.",
-  },
-  {
-    q: "What is the Tune of the Day?",
-    a: "A randomly selected featured tune from the vault. Shuffle anytime to discover another. Each shows the full history, audio, video, and notation if available.",
   },
   {
     q: "Can I suggest a tune?",
