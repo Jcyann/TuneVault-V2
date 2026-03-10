@@ -55,7 +55,7 @@ export default function MiniPlayer() {
     if (!audio || !resolvedUrl) return;
     audio.src = resolvedUrl;
     audio.load();
-    if (isPlaying) audio.play().catch(() => setIsPlaying(false));
+    audio.play().catch(() => setIsPlaying(false));
   }, [resolvedUrl]);
 
   useEffect(() => {

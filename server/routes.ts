@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { db } from "./db";
-import { tunes, recordings } from "@shared/schema";
+import { tunes, recordings, lessonInquiries, insertLessonInquirySchema } from "@shared/schema";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
 
 const youtubeEmbedCache = new Map<string, boolean>();
@@ -200,6 +200,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json({ ...tuneStats, recordingsCount: Number(recStats?.count ?? 0) });
     } catch (err) {
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  app.post("/api/lesson-inquiry", async (req, res) => {
+    try {
+      const parsed = insertLessonInquirySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid form data", details: parsed.error.issues });
+      }
+      const [row] = await db.insert(lessonInquiries).values(parsed.data).returning();
+      res.json({ ok: true, id: row.id });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to save inquiry" });
     }
   });
 

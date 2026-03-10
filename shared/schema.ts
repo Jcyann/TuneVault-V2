@@ -50,6 +50,25 @@ export const insertTuneSchema = createInsertSchema(tunes).omit({ id: true, creat
 export type InsertTune = z.infer<typeof insertTuneSchema>;
 export type Tune = typeof tunes.$inferSelect;
 
+export const lessonInquiries = pgTable("lesson_inquiries", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  instrument: text("instrument").notNull(),
+  experienceLevel: text("experience_level").notNull(),
+  yearsPlaying: text("years_playing"),
+  currentGoals: text("current_goals"),
+  specificTunes: text("specific_tunes"),
+  availability: text("availability"),
+  timezone: text("timezone"),
+  additionalNotes: text("additional_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertLessonInquirySchema = createInsertSchema(lessonInquiries).omit({ id: true, createdAt: true });
+export type InsertLessonInquiry = z.infer<typeof insertLessonInquirySchema>;
+export type LessonInquiry = typeof lessonInquiries.$inferSelect;
+
 export const recordings = pgTable("recordings", {
   id: serial("id").primaryKey(),
   tuneId: integer("tune_id").notNull(),
