@@ -44,3 +44,8 @@ outputType = "webview"
 
 [agent]
 integrations = ["javascript_database:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+VITE_GA_MEASUREMENT_ID = "G-ZG7NE7DJCP"

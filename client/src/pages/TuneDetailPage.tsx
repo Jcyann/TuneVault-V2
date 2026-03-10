@@ -11,6 +11,7 @@ import AbcStaffRenderer from "@/components/AbcStaffRenderer";
 import YoutubePlayer from "@/components/YoutubePlayer";
 import TipJar from "@/components/TipJar";
 import { useFavorites } from "@/hooks/useFavorites";
+import { trackEvent } from "@/lib/analytics";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-300",
@@ -38,6 +39,8 @@ export default function TuneDetailPage() {
 
   useEffect(() => {
     if (!tune) return;
+
+    trackEvent("tune_view", "tune", tune.title);
 
     const pageTitle = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
     const pageUrl = `https://tunevault.org/tunes/${tune.id}`;

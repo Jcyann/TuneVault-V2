@@ -4,6 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PlaylistProvider } from "@/context/PlaylistContext";
+import { useEffect } from "react";
+import { initGA } from "@/lib/analytics";
+import { useAnalytics } from "@/hooks/use-analytics";
 import HomePage from "@/pages/HomePage";
 import TuneDetailPage from "@/pages/TuneDetailPage";
 import AboutPage from "@/pages/AboutPage";
@@ -16,6 +19,7 @@ import MiniPlayer from "@/components/MiniPlayer";
 import NavBar from "@/components/NavBar";
 
 function Router() {
+  useAnalytics();
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -31,6 +35,10 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    initGA();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
