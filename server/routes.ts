@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { db } from "./db";
-import { tunes, recordings, lessonInquiries, insertLessonInquirySchema } from "@shared/schema";
+import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggestions, insertSuggestionSchema } from "@shared/schema";
+import { sendNotificationEmail, lessonInquiryEmail, suggestionEmail } from "./email";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
 
 const youtubeEmbedCache = new Map<string, boolean>();
@@ -210,9 +211,48 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ error: "Invalid form data", details: parsed.error.issues });
       }
       const [row] = await db.insert(lessonInquiries).values(parsed.data).returning();
+      sendNotificationEmail(
+        `New Lesson Inquiry — ${parsed.data.name} (${parsed.data.instrument})`,
+        lessonInquiryEmail(parsed.data)
+      ).catch(() => {});
       res.json({ ok: true, id: row.id });
     } catch (err) {
       res.status(500).json({ error: "Failed to save inquiry" });
+    }
+  });
+
+  app.post("/api/suggestion", async (req, res) => {
+    try {
+      const parsed = insertSuggestionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid form data", details: parsed.error.issues });
+      }
+      const [row] = await db.insert(suggestions).values(parsed.data).returning();
+      sendNotificationEmail(
+        `New Suggestion — TuneVault${parsed.data.name ? ` from ${parsed.data.name}` : ""}`,
+        suggestionEmail(parsed.data)
+      ).catch(() => {});
+      res.json({ ok: true, id: row.id });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to save suggestion" });
+    }
+  });
+
+  app.get("/api/admin/lesson-inquiries", async (_req, res) => {
+    try {
+      const rows = await db.select().from(lessonInquiries).orderBy(desc(lessonInquiries.createdAt));
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch inquiries" });
+    }
+  });
+
+  app.get("/api/admin/suggestions", async (_req, res) => {
+    try {
+      const rows = await db.select().from(suggestions).orderBy(desc(suggestions.createdAt));
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch suggestions" });
     }
   });
 

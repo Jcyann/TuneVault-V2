@@ -12,6 +12,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
 import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
+import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-200",
@@ -240,9 +241,13 @@ export default function HomePage() {
         className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
         style={{
           backgroundImage: [
-            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.05) 22px, rgba(255,255,255,0.05) 23px)",
-            "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
+            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.03) 22px, rgba(255,255,255,0.03) 23px)",
+            "linear-gradient(150deg, hsla(25,70%,14%,0.90) 0%, hsla(25,65%,20%,0.85) 100%)",
+            `url(${fiddleHero})`,
           ].join(", "),
+          backgroundSize: "auto, auto, cover",
+          backgroundPosition: "center, center, center 30%",
+          backgroundRepeat: "repeat, no-repeat, no-repeat",
         }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />

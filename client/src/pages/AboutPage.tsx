@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion } from "lucide-react";
+import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { apiRequest } from "@/lib/queryClient";
 
 const FAQ_ITEMS = [
   {
@@ -22,7 +28,8 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I suggest a tune?",
-    a: "Yes — reach out via the Venmo tip jar or book a lesson and leave a note. The goal is to cover the full canon of Old-Time repertoire.",
+    a: "Absolutely — use the suggestion box below. The goal is to cover the full canon of Old-Time repertoire.",
+    anchor: "#suggestion-box",
   },
 ];
 
@@ -38,6 +45,27 @@ export default function AboutPage() {
     "About & FAQ",
     "Learn how to use TuneVault — nearly 1,000 Old-Time fiddle tunes with audio, history, notation, and video. FAQ for serious learners and session players."
   );
+
+  const [sugName, setSugName] = useState("");
+  const [sugMessage, setSugMessage] = useState("");
+  const [sugError, setSugError] = useState("");
+  const [sugSubmitting, setSugSubmitting] = useState(false);
+  const [sugSubmitted, setSugSubmitted] = useState(false);
+
+  const handleSuggestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sugMessage.trim()) { setSugError("Please enter a message."); return; }
+    setSugError("");
+    setSugSubmitting(true);
+    try {
+      await apiRequest("POST", "/api/suggestion", { name: sugName.trim() || null, message: sugMessage.trim() });
+      setSugSubmitted(true);
+    } catch {
+      setSugError("Something went wrong. Please try again.");
+    } finally {
+      setSugSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
@@ -143,13 +171,81 @@ export default function AboutPage() {
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Frequently Asked Questions</h2>
           <div className="space-y-4">
-            {FAQ_ITEMS.map(({ q, a }) => (
+            {FAQ_ITEMS.map(({ q, a, anchor }) => (
               <div key={q} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <p className="font-semibold text-foreground text-sm mb-1">{q}</p>
-                <p className="text-muted-foreground text-sm leading-relaxed">{a}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {a}
+                  {anchor && (
+                    <a
+                      href={anchor}
+                      className="ml-1 text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
+                      data-testid="link-suggestion-box"
+                    >
+                      Open the box ↓
+                    </a>
+                  )}
+                </p>
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Suggestion box */}
+        <section id="suggestion-box" data-testid="suggestion-box-section">
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-1">Suggest a Tune</h2>
+          <p className="text-muted-foreground text-sm mb-6">
+            Know a tune that should be here? Drop the name, region, fiddler, or any detail that helps us find it.
+          </p>
+
+          {sugSubmitted ? (
+            <div className="rounded-2xl border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-7 text-center space-y-2" data-testid="suggestion-success">
+              <CheckCircle2 className="w-9 h-9 text-green-500 mx-auto" />
+              <p className="font-semibold text-green-900 dark:text-green-300">Got it — thanks!</p>
+              <p className="text-green-700 dark:text-green-400 text-sm">We'll look into adding it to TuneVault.</p>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSuggestion}
+              className="rounded-2xl border border-border bg-card p-6 space-y-4"
+              data-testid="suggestion-form"
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="sug-name">Your name <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  id="sug-name"
+                  data-testid="input-suggestion-name"
+                  placeholder="Jane Smith"
+                  value={sugName}
+                  onChange={(e) => setSugName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sug-message">Tune suggestion *</Label>
+                <Textarea
+                  id="sug-message"
+                  data-testid="textarea-suggestion-message"
+                  placeholder="Tune title, region, fiddler, recording, or any context that helps us find it..."
+                  value={sugMessage}
+                  onChange={(e) => setSugMessage(e.target.value)}
+                  rows={4}
+                />
+                {sugError && <p className="text-xs text-destructive" data-testid="suggestion-error">{sugError}</p>}
+              </div>
+              <Button
+                type="submit"
+                disabled={sugSubmitting}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                data-testid="button-submit-suggestion"
+              >
+                {sugSubmitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
+                ) : (
+                  <><Send className="w-4 h-4 mr-2" />Send Suggestion</>
+                )}
+              </Button>
+            </form>
+          )}
         </section>
 
         <TipJar />
