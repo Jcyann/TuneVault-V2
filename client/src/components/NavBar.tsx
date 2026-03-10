@@ -47,7 +47,7 @@ export default function NavBar() {
               key={href}
               href={href}
               className={`flex-1 flex flex-col items-center py-1.5 text-[9px] font-medium transition-colors ${
-                active ? "text-amber-200" : "text-white/60 hover:text-white"
+                active ? "text-amber-400" : "text-white/60 hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4 mb-0.5" />

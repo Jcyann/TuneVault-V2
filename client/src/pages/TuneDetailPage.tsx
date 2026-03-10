@@ -47,7 +47,7 @@ export default function TuneDetailPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Music2 className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse" />
+          <Music2 className="w-16 h-16 mx-auto mb-4 animate-pulse" style={{ color: "#F59E0B" }} />
           <p className="text-lg text-muted-foreground">Loading tune...</p>
         </div>
       </div>
@@ -76,10 +76,7 @@ export default function TuneDetailPage() {
       <div
         className="relative text-primary-foreground py-10 px-4 shadow-lg border-b border-white/12 overflow-hidden"
         style={{
-          backgroundImage: [
-            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.05) 22px, rgba(255,255,255,0.05) 23px)",
-            "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-          ].join(", "),
+          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
         }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.14),transparent_60%)] pointer-events-none" />

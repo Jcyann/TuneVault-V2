@@ -73,10 +73,7 @@ export default function AboutPage() {
       <div
         className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
         style={{
-          backgroundImage: [
-            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.05) 22px, rgba(255,255,255,0.05) 23px)",
-            "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-          ].join(", "),
+          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
         }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />

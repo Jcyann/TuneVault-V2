@@ -241,23 +241,22 @@ export default function HomePage() {
         className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
         style={{
           backgroundImage: [
-            "repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(255,255,255,0.03) 22px, rgba(255,255,255,0.03) 23px)",
-            "linear-gradient(150deg, hsla(25,70%,14%,0.90) 0%, hsla(25,65%,20%,0.85) 100%)",
+            "linear-gradient(150deg, hsla(25,65%,16%,0.80) 0%, hsla(25,60%,22%,0.72) 100%)",
             `url(${fiddleHero})`,
           ].join(", "),
-          backgroundSize: "auto, auto, cover",
-          backgroundPosition: "center, center, center 30%",
-          backgroundRepeat: "repeat, no-repeat, no-repeat",
+          backgroundSize: "auto, cover",
+          backgroundPosition: "center, center 30%",
+          backgroundRepeat: "no-repeat, no-repeat",
         }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
 
         <div className="container mx-auto max-w-5xl relative z-10">
           <div className="flex items-center gap-4 mb-1">
-            <Music2 className="w-16 h-16 drop-shadow" style={{ strokeWidth: 3 }} />
+            <Music2 className="w-16 h-16 drop-shadow" style={{ strokeWidth: 3, color: "#F59E0B" }} />
             <div>
               <h1 className="text-5xl font-bold tracking-tight font-serif drop-shadow-sm">TuneVault</h1>
-              <p className="text-base opacity-75 mt-0.5 tracking-wide">A Treasury of Old-Time Fiddle Music</p>
+              <p className="text-base opacity-80 mt-0.5 tracking-wide" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 500 }}>A Treasury of Old-Time Fiddle Music</p>
             </div>
           </div>
 
