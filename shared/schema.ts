@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -101,3 +101,27 @@ export const recordings = pgTable("recordings", {
 export const insertRecordingSchema = createInsertSchema(recordings).omit({ id: true, createdAt: true });
 export type InsertRecording = z.infer<typeof insertRecordingSchema>;
 export type Recording = typeof recordings.$inferSelect;
+
+export const recordingSubmissions = pgTable("recording_submissions", {
+  id: serial("id").primaryKey(),
+  tuneId: integer("tune_id").notNull(),
+  submitterName: text("submitter_name").notNull(),
+  submitterEmail: text("submitter_email").notNull(),
+  instrument: text("instrument").notNull(),
+  youtubeUrl: text("youtube_url"),
+  audioUrl: text("audio_url"),
+  attributionName: text("attribution_name"),
+  releaseGranted: boolean("release_granted").notNull().default(false),
+  status: text("status").notNull().default("pending"),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRecordingSubmissionSchema = createInsertSchema(recordingSubmissions).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  adminNotes: true,
+});
+export type InsertRecordingSubmission = z.infer<typeof insertRecordingSubmissionSchema>;
+export type RecordingSubmission = typeof recordingSubmissions.$inferSelect;

@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { db } from "./db";
-import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggestions, insertSuggestionSchema } from "@shared/schema";
+import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggestions, insertSuggestionSchema, recordingSubmissions, insertRecordingSubmissionSchema } from "@shared/schema";
+import { storage } from "./storage";
 import { sendNotificationEmail, lessonInquiryEmail, suggestionEmail } from "./email";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
 
@@ -253,6 +254,94 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json(rows);
     } catch (err) {
       res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+
+  // ── Recording Submissions ──────────────────────────────────────
+  function extractYoutubeVideoId(url: string): string | null {
+    if (!url) return null;
+    const patterns = [
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      /\/shorts\/([a-zA-Z0-9_-]{11})/,
+      /\/embed\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+      const m = url.match(pattern);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  app.post("/api/recording-submission", async (req, res) => {
+    try {
+      const parsed = insertRecordingSubmissionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid submission data", details: parsed.error.issues });
+      }
+      if (!parsed.data.youtubeUrl && !parsed.data.audioUrl) {
+        return res.status(400).json({ error: "Please provide a YouTube URL or audio URL." });
+      }
+      if (!parsed.data.releaseGranted) {
+        return res.status(400).json({ error: "You must agree to the rights release to submit." });
+      }
+      const sub = await storage.createRecordingSubmission(parsed.data);
+      const tuneRow = await db.select({ title: tunes.title }).from(tunes).where(eq(tunes.id, sub.tuneId)).limit(1);
+      const tuneTitle = tuneRow[0]?.title ?? `Tune #${sub.tuneId}`;
+      const body = `New recording submission for "${tuneTitle}"\n\nFrom: ${sub.submitterName} <${sub.submitterEmail}>\nInstrument: ${sub.instrument}\nCredit as: ${sub.attributionName || sub.submitterName}\n${sub.youtubeUrl ? `YouTube: ${sub.youtubeUrl}\n` : ""}${sub.audioUrl ? `Audio: ${sub.audioUrl}\n` : ""}`;
+      await sendNotificationEmail("New Recording Submission — TuneVault", body).catch(() => {});
+      res.status(201).json(sub);
+    } catch (err) {
+      console.error("Recording submission error:", err);
+      res.status(500).json({ error: "Failed to save submission" });
+    }
+  });
+
+  app.get("/api/admin/recording-submissions", async (req, res) => {
+    try {
+      const status = typeof req.query.status === "string" ? req.query.status : undefined;
+      const rows = await storage.getRecordingSubmissions(status);
+      const enriched = await Promise.all(rows.map(async (row) => {
+        const tuneRow = await db.select({ title: tunes.title }).from(tunes).where(eq(tunes.id, row.tuneId)).limit(1);
+        return { ...row, tuneTitle: tuneRow[0]?.title ?? `Tune #${row.tuneId}` };
+      }));
+      res.json(enriched);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
+  app.patch("/api/admin/recording-submissions/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [sub] = await db.select().from(recordingSubmissions).where(eq(recordingSubmissions.id, id)).limit(1);
+      if (!sub) return res.status(404).json({ error: "Submission not found" });
+      const youtubeVideoId = sub.youtubeUrl ? extractYoutubeVideoId(sub.youtubeUrl) : null;
+      await storage.createRecording({
+        tuneId: sub.tuneId,
+        youtubeVideoId: youtubeVideoId ?? undefined,
+        audioUrl: sub.audioUrl ?? undefined,
+        audioSource: sub.submitterName,
+        audioAttribution: sub.attributionName || sub.submitterName,
+        sourceFiddler: sub.submitterName,
+        notes: `Submitted via TuneVault community submissions. Instrument: ${sub.instrument}.`,
+      });
+      const updated = await storage.updateRecordingSubmissionStatus(id, "approved");
+      res.json(updated);
+    } catch (err) {
+      console.error("Approve submission error:", err);
+      res.status(500).json({ error: "Failed to approve submission" });
+    }
+  });
+
+  app.patch("/api/admin/recording-submissions/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const adminNotes = typeof req.body.adminNotes === "string" ? req.body.adminNotes : undefined;
+      const updated = await storage.updateRecordingSubmissionStatus(id, "rejected", adminNotes);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to reject submission" });
     }
   });
 
