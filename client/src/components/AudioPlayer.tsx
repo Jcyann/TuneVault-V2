@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Headphones, Loader2, Mic2 } from "lucide-react";
+import { Headphones, Loader2, Mic2, Play, Music2 } from "lucide-react";
 import type { Tune } from "@shared/schema";
+import { usePlaylist } from "@/context/PlaylistContext";
 
 interface AudioPlayerProps {
   tune: Tune;
@@ -10,6 +11,7 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(tune.audioUrl ?? null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const { startPlaylist, playlist, currentIndex, isActive } = usePlaylist();
 
   useEffect(() => {
     if (tune.audioUrl) {
@@ -35,7 +37,12 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
   if (!tune.audioUrl && !tune.locItemId) return null;
   if (failed) return null;
 
-  const showCredits = !loading && resolvedUrl && (tune.audioSource || tune.sourceFiddler);
+  const isCurrentlyPlaying = isActive && playlist[currentIndex]?.id === tune.id;
+  const showCredits = !loading && (resolvedUrl || tune.locItemId) && (tune.audioSource || tune.sourceFiddler);
+
+  const handlePlay = () => {
+    startPlaylist([tune]);
+  };
 
   return (
     <div className="mt-4 space-y-1.5" data-testid="audio-player">
@@ -52,22 +59,28 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Loading audio…</span>
           </div>
-        ) : resolvedUrl ? (
-          <audio
-            controls
-            src={resolvedUrl}
-            className="flex-1 h-8 min-w-0"
-            preload="none"
-            data-testid="audio-element"
-          />
-        ) : null}
+        ) : isCurrentlyPlaying ? (
+          <div className="flex-1 flex items-center gap-2">
+            <Music2 className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span className="text-sm text-primary-foreground/80">Playing in mini player↓</span>
+          </div>
+        ) : (
+          <button
+            onClick={handlePlay}
+            disabled={!resolvedUrl && !tune.locItemId}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-40 text-white shadow-sm"
+            style={{ background: "#F59E0B" }}
+            data-testid="audio-play-button"
+            aria-label={`Play ${tune.title}`}
+          >
+            <Play className="w-3.5 h-3.5 fill-white" />
+            Play
+          </button>
+        )}
       </div>
 
       {showCredits && (
-        <div
-          className="flex items-start gap-2 px-1"
-          data-testid="audio-credits"
-        >
+        <div className="flex items-start gap-2 px-1" data-testid="audio-credits">
           <Mic2 className="w-3.5 h-3.5 mt-0.5 text-primary-foreground/40 shrink-0" />
           <div className="text-xs text-primary-foreground/55 leading-snug">
             {tune.audioSource && (

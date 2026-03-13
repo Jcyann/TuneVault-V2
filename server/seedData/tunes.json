@@ -2810,8 +2810,8 @@
     "description": "Named for the Scioto River (pronounced 'sy-OH-tuh') in central Ohio, 'Big Scioty' is a tune from the Midwest fiddle tradition. The Scioto Valley was one of the first regions of Ohio settled by pioneers coming from Virginia and Kentucky in the early 1800s — they brought their Appalachian fiddle traditions with them, adapting them to Midwestern contest and dance hall settings. The tune appeared in early Ohio fiddle contest records.",
     "source_fiddler": null,
     "era": "19th century",
-    "youtube_url": "https://www.youtube.com/watch?v=O9reVBsOaGk",
-    "youtube_video_id": "O9reVBsOaGk",
+    "youtube_url": "https://www.youtube.com/watch?v=pCFrlJn_LH4",
+    "youtube_video_id": "pCFrlJn_LH4",
     "audio_url": null,
     "abc_notation": null,
     "transcript_url": "https://fiddletunes.net/Big%20Scioty.jpg",
@@ -2825,7 +2825,9 @@
     "notes": "An Ohio fiddle tune with a broad, rolling character — the 'big' in the name should be in the playing. The Scioto River Valley was the heart of Ohio's early settlement, and this tune has the confident stride of a prosperous agricultural community. Keep the tempo moderate and the bow arm relaxed but firm. Works beautifully in a bluegrass or Old-Time context.",
     "audio_source": null,
     "audio_attribution": null,
-    "created_at": "2026-03-06T04:20:57.843Z"
+    "created_at": "2026-03-06T04:20:57.843Z",
+    "youtubeVideoId": "pCFrlJn_LH4",
+    "youtubeUrl": "https://www.youtube.com/watch?v=pCFrlJn_LH4"
   },
   {
     "id": 102,
@@ -10090,8 +10092,8 @@
     "description": null,
     "source_fiddler": null,
     "era": null,
-    "youtube_url": "https://www.youtube.com/watch?v=Gj6yag008pg",
-    "youtube_video_id": "Gj6yag008pg",
+    "youtube_url": "https://www.youtube.com/watch?v=XIcLYhCjMRw",
+    "youtube_video_id": "XIcLYhCjMRw",
     "audio_url": "https://www.oldtimefiddletunes.net/tunes/audio/HappyHollow.mp3",
     "abc_notation": null,
     "transcript_url": null,
@@ -10105,7 +10107,9 @@
     "notes": null,
     "audio_source": "Old Time Fiddle Tunes",
     "audio_attribution": "oldtimefiddletunes.net",
-    "created_at": "2026-03-06T05:37:32.050Z"
+    "created_at": "2026-03-06T05:37:32.050Z",
+    "youtubeVideoId": "XIcLYhCjMRw",
+    "youtubeUrl": "https://www.youtube.com/watch?v=XIcLYhCjMRw"
   },
   {
     "id": 362,
@@ -28866,5 +28870,33 @@
     "audio_source": null,
     "audio_attribution": null,
     "created_at": "2026-03-10T03:11:33.539Z"
+  },
+  {
+    "id": 1038,
+    "title": "Falls of Richmond",
+    "alternative_titles": null,
+    "key": "D",
+    "tune_type": "reel",
+    "region": "Appalachian",
+    "difficulty": "intermediate",
+    "description": "A bright D major reel named for Richmond, Virginia, the former capital of the Confederacy and one of the great Southern fiddle cities. The Falls of the James River at Richmond were a significant geographic landmark and transportation chokepoint that shaped the city's industrial history. The tune circulates widely in Appalachian and Southern old-time jam sessions and appears in multiple fiddle collections under variant titles including simply 'Richmond.' Walt Koken, banjoist and co-founder of Highwoods String Band, plays a definitive version in D major with a strong, straight rhythmic drive typical of Southern breakdown style.",
+    "source_fiddler": null,
+    "era": "Pre-1900",
+    "youtube_url": "https://www.youtube.com/watch?v=uaQ5hN-k8zc",
+    "youtube_video_id": "uaQ5hN-k8zc",
+    "audio_url": null,
+    "abc_notation": null,
+    "transcript_url": null,
+    "loc_url": null,
+    "loc_item_id": null,
+    "folkways_url": null,
+    "tater_joe_url": null,
+    "the_session_id": null,
+    "popularity": 6,
+    "tags": "reel, virginia, dance",
+    "notes": "A clean, driving D major reel — all four open strings are available as drones. Two distinct parts: the A part climbs up the scale with confident strides; the B part has a satisfying descending run. Play it straight and hard. This is a dance tune and needs a locked groove more than ornamentation. Great for building right-hand bow arm consistency.",
+    "audio_source": null,
+    "audio_attribution": null,
+    "created_at": "2026-03-13T15:59:37.690Z"
   }
 ]

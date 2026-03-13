@@ -189,6 +189,7 @@ export default function HomePage() {
   });
 
   const hasFilters = selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "";
+  const activeFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all", search !== "", showFavorites].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchInput(""); setSearch("");
@@ -306,7 +307,12 @@ export default function HomePage() {
       </div>
 
       {/* ── Sticky filter strip ───────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+      <div className={`sticky top-0 z-20 backdrop-blur-sm border-b shadow-sm transition-colors duration-300 ${activeFilterCount > 0 ? "bg-amber-50/95 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800" : "bg-background/95 border-border"}`}>
+        {activeFilterCount > 0 && (
+          <div className="bg-amber-500 text-white text-xs text-center py-0.5 font-medium tracking-wide">
+            {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active — results are narrowed
+          </div>
+        )}
         <div className="container mx-auto max-w-5xl px-4 py-2 flex flex-wrap items-center gap-2">
           <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
             <SelectTrigger data-testid="select-key" className="h-8 w-36 text-xs rounded-full border-border">
@@ -371,13 +377,12 @@ export default function HomePage() {
 
           {(hasFilters || showFavorites) && (
             <Button
-              variant="ghost"
               size="sm"
-              className="h-8 px-3 text-xs rounded-full text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 text-xs rounded-full gap-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-sm font-semibold"
               onClick={clearFilters}
               data-testid="button-clear-filters"
             >
-              <X className="w-3 h-3 mr-1" /> Clear
+              <X className="w-3 h-3" /> Clear
             </Button>
           )}
 

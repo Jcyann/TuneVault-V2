@@ -94,7 +94,7 @@ export default function AboutPage() {
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-3">What is TuneVault?</h2>
           <p className="text-muted-foreground leading-relaxed">
-            TuneVault is a comprehensive, searchable treasury of Old-Time fiddle tunes built for serious learners, session players, and history buffs. Each tune comes with a deep historical write-up, playing notes, audio recordings, embedded YouTube performances, ABC staff notation, and sheet music where available. Nearly 1,000 tunes spanning every major Old-Time form — all in one place.
+            TuneVault is a comprehensive, searchable treasury of Old-Time fiddle tunes built for serious learners, session players, and history buffs. Each tune comes with a deep historical write-up, playing notes, audio recordings, embedded YouTube performances, ABC staff notation, and sheet music where available. Nearly 1,000 tunes spanning every major Old-Time form — all in one place. <em>Compiled by AI and fact-checked by human beings.</em>
           </p>
         </section>
 
@@ -114,7 +114,7 @@ export default function AboutPage() {
           <h2 className="text-2xl font-serif font-bold text-foreground mb-4">Quick Start</h2>
           <div className="space-y-3">
             {[
-              { title: "Search & Filter", body: "Use the search bar to find tunes by name. Filter by key, difficulty, region, and tune type — all filters combine." },
+              { title: "Search & Filter", body: "Use the search bar to find tunes by name. Filter by key, difficulty, region, and tune type — all filters combine. When filters are active, the filter bar glows amber and shows a count — tap the red Clear button to reset." },
               { title: "Play & Follow Along", body: "Click a tune card to open it. Tap the play button to queue audio in the mini player. The player remembers your position and lets you shuffle or go in order." },
               { title: "Favorites", body: "Star any tune to save it locally. Filter to favorites-only with the star button in the toolbar." },
               { title: "Tune of the Day", body: "A random featured tune with full history, audio, and notation. Shuffle for a new one any time." },
