@@ -61,7 +61,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await autoSeed();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
@@ -100,6 +99,10 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      // Run autoSeed after the port is open so deployment health checks pass immediately
+      autoSeed().catch((err) => {
+        console.error("autoSeed failed:", err);
+      });
     },
   );
 })();
