@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,6 +36,11 @@ export default function TuneDetailPage() {
     queryKey: [`/api/tunes/${id}/recordings`],
     enabled: !!id,
   });
+
+  // Reset recording selection when navigating to a different tune
+  useEffect(() => {
+    setRecordingIndex(0);
+  }, [id]);
 
   useEffect(() => {
     if (!tune) return;
@@ -122,6 +127,70 @@ export default function TuneDetailPage() {
     };
   }, [tune]);
 
+  // Merge tune-level audio with recordings table into one unified list.
+  // Must be called before early returns to obey React's rules of hooks.
+  // The recordings table is the source of truth; tune-level fields are included
+  // only when they aren't already represented by a recordings-table row.
+  const allRecordings: Recording[] = useMemo(() => {
+    if (!tune) return [...recordings];
+    const items: Recording[] = [...recordings];
+
+    const alreadyCoveredByUrl = tune.audioUrl && recordings.some(r => r.audioUrl === tune.audioUrl);
+    const alreadyCoveredByLoc = tune.locItemId && recordings.some(r => r.locItemId === tune.locItemId);
+
+    // Add tune-level audio URL as first entry if not already present
+    if (tune.audioUrl && !alreadyCoveredByUrl) {
+      items.unshift({
+        id: 0,
+        tuneId: tune.id,
+        audioUrl: tune.audioUrl,
+        locItemId: null,
+        youtubeVideoId: null,
+        audioSource: tune.audioSource ?? null,
+        audioAttribution: (tune as any).audioAttribution ?? null,
+        sourceFiddler: tune.sourceFiddler ?? null,
+        collection: null,
+        era: tune.era ?? null,
+        key: tune.key ?? null,
+        tuning: null,
+        notes: null,
+        slipperyHillSlug: null,
+        createdAt: new Date(),
+      });
+    }
+
+    // Add tune-level LOC entry if not already present
+    if (tune.locItemId && !alreadyCoveredByLoc) {
+      const locEntry: Recording = {
+        id: -1,
+        tuneId: tune.id,
+        audioUrl: null,
+        locItemId: tune.locItemId,
+        youtubeVideoId: null,
+        audioSource: tune.audioSource ?? "Library of Congress",
+        audioAttribution: (tune as any).audioAttribution ?? "loc.gov",
+        sourceFiddler: tune.sourceFiddler ?? null,
+        collection: null,
+        era: tune.era ?? null,
+        key: tune.key ?? null,
+        tuning: null,
+        notes: null,
+        slipperyHillSlug: null,
+        createdAt: new Date(),
+      };
+      // Insert after the audioUrl entry if we added one, else prepend
+      if (tune.audioUrl && !alreadyCoveredByUrl) {
+        items.splice(1, 0, locEntry);
+      } else {
+        items.unshift(locEntry);
+      }
+    }
+
+    return items;
+  }, [tune, recordings]);
+
+  const currentRecording = allRecordings[recordingIndex] ?? null;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -147,7 +216,6 @@ export default function TuneDetailPage() {
   }
 
   const faved = isFavorite(tune.id);
-  const currentRecording = recordings[recordingIndex] ?? null;
 
   return (
     <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
@@ -208,8 +276,16 @@ export default function TuneDetailPage() {
             </p>
           )}
 
-          {(tune.audioUrl || tune.locItemId) && (
-            <AudioPlayer tune={tune} />
+          {/* When only 1 recording, keep player in header. When 2+, it lives inside the recordings card. */}
+          {allRecordings.length === 1 && currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
+            <AudioPlayer tune={{
+              ...tune,
+              audioUrl: currentRecording.audioUrl ?? null,
+              locItemId: currentRecording.locItemId ?? null,
+              audioSource: currentRecording.audioSource ?? null,
+              sourceFiddler: currentRecording.sourceFiddler ?? null,
+              audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
+            }} />
           )}
         </div>
       </div>
@@ -243,20 +319,22 @@ export default function TuneDetailPage() {
               </Card>
             )}
 
-            {/* Additional Recordings */}
-            {recordings.length > 0 && (
+            {/* Recordings — unified list of all audio sources */}
+            {allRecordings.length > 1 && (
               <Card className="shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Music2 className="w-4 h-4 text-amber-600" />
-                    Recorded Versions ({recordings.length})
+                    Recorded Versions ({allRecordings.length})
                   </CardTitle>
-                  <CardDescription className="text-xs">Historical recordings from field collections</CardDescription>
+                  <CardDescription className="text-xs">
+                    Select a recording to listen — click to switch
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {recordings.map((rec, i) => (
+                  {allRecordings.map((rec, i) => (
                     <button
-                      key={rec.id}
+                      key={`${rec.id}-${i}`}
                       className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
                         i === recordingIndex
                           ? "border-primary/50 bg-primary/5 shadow-sm"
@@ -266,13 +344,13 @@ export default function TuneDetailPage() {
                       data-testid={`recording-item-${rec.id}`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div>
+                        <div className="min-w-0">
                           <span className="font-medium">{rec.sourceFiddler ?? "Unknown performer"}</span>
                           <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
                             {rec.audioSource && <span>{rec.audioSource}</span>}
                             {rec.collection && <span>· {rec.collection}</span>}
                             {rec.era && <span>· {rec.era}</span>}
-                            {rec.key && <span>· Key of {rec.key}</span>}
+                            {rec.key && rec.key !== tune.key && <span>· Key of {rec.key}</span>}
                           </div>
                         </div>
                         {i === recordingIndex && (
@@ -282,16 +360,18 @@ export default function TuneDetailPage() {
                     </button>
                   ))}
 
+                  {/* Embedded player — updates when you select a different recording */}
                   {currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
-                    <div className="mt-3 pt-3 border-t border-border">
+                    <div className="mt-1 pt-3 border-t border-border">
                       <AudioPlayer
+                        key={`player-${currentRecording.id}-${recordingIndex}`}
                         tune={{
                           ...tune,
                           audioUrl: currentRecording.audioUrl ?? null,
                           locItemId: currentRecording.locItemId ?? null,
                           audioSource: currentRecording.audioSource ?? null,
                           sourceFiddler: currentRecording.sourceFiddler ?? null,
-                          audioAttribution: currentRecording.audioAttribution ?? null,
+                          audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
                         }}
                       />
                     </div>

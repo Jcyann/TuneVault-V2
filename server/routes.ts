@@ -144,6 +144,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.post("/api/recordings", async (req, res) => {
+    try {
+      const { insertRecordingSchema } = await import("@shared/schema");
+      const parsed = insertRecordingSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+      const recording = await storage.createRecording(parsed.data);
+      res.status(201).json(recording);
+    } catch (err: any) {
+      console.error("Error creating recording:", err);
+      res.status(500).json({ error: "Failed to create recording" });
+    }
+  });
+
+  app.delete("/api/recordings/:id", async (req, res) => {
+    try {
+      const recId = parseInt(req.params.id);
+      await db.delete(recordings).where(eq(recordings.id, recId));
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("Error deleting recording:", err);
+      res.status(500).json({ error: "Failed to delete recording" });
+    }
+  });
+
   app.get("/api/youtube-check/:videoId", async (req, res) => {
     try {
       const { videoId } = req.params;
