@@ -113,6 +113,7 @@ export default function HomePage() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [shuffleLoading, setShuffleLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasMounted = useRef(false);
 
   const { favorites, toggleFavorite, isFavorite, favoritesCount } = useFavorites();
   const { startPlaylist } = usePlaylist();
@@ -140,12 +141,21 @@ export default function HomePage() {
   }, [search, selectedKey, selectedDifficulty, selectedRegion, selectedType, page, showFavorites]);
 
   useEffect(() => {
+    if (!hasMounted.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  useEffect(() => { setPage(1); }, [selectedKey, selectedDifficulty, selectedRegion, selectedType]);
+  useEffect(() => {
+    if (!hasMounted.current) return;
+    setPage(1);
+  }, [selectedKey, selectedDifficulty, selectedRegion, selectedType]);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    setSearch(init.search);
+  }, []);
 
   const queryParams = new URLSearchParams({
     page: String(page),
