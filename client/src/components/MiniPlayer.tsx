@@ -48,7 +48,7 @@ export default function MiniPlayer() {
     } else {
       setTimeout(next, 800);
     }
-  }, [current?.id, currentIndex]);
+  }, [current?.id, currentIndex, current?.audioUrl, current?.locItemId]);
 
   useEffect(() => {
     const audio = audioRef.current;

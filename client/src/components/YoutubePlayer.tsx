@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink } from "lucide-react";
 
 declare global {
   interface Window {
@@ -37,15 +36,13 @@ interface YoutubePlayerProps {
   onUnavailable?: () => void;
 }
 
-export default function YoutubePlayer({ videoId, title, onUnavailable }: YoutubePlayerProps) {
+export default function YoutubePlayer({ videoId, onUnavailable }: YoutubePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
-  const [blocked, setBlocked] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setBlocked(false);
     setReady(false);
 
     loadYTApi(() => {
@@ -61,16 +58,8 @@ export default function YoutubePlayer({ videoId, title, onUnavailable }: Youtube
         playerVars: { rel: 0, modestbranding: 1, enablejsapi: 1 },
         events: {
           onReady: () => { if (!cancelled) setReady(true); },
-          onError: (e: any) => {
-            if (!cancelled) {
-              if (e.data === 100) {
-                // Video removed or private — hide entirely
-                onUnavailable?.();
-              } else if ([101, 150].includes(e.data)) {
-                // Embedding disabled — show Watch on YouTube fallback
-                setBlocked(true);
-              }
-            }
+          onError: () => {
+            if (!cancelled) onUnavailable?.();
           },
         },
       });
@@ -85,34 +74,6 @@ export default function YoutubePlayer({ videoId, title, onUnavailable }: Youtube
       }
     };
   }, [videoId]);
-
-  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
-  if (blocked) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden shadow-md bg-black relative flex items-center justify-center" data-testid="video-blocked-fallback">
-        <img
-          src={thumbnailUrl}
-          alt={title ?? "Video thumbnail"}
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-        />
-        <div className="relative z-10 text-center px-4">
-          <p className="text-white text-sm font-medium mb-3">This video can't be played here due to the creator's settings.</p>
-          <a
-            href={youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            data-testid="link-watch-youtube"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Watch on YouTube
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
