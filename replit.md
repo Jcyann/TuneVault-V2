@@ -12,11 +12,12 @@ A comprehensive, searchable treasury of Old-Time fiddle tunes for serious learne
 
 ## Features
 
-- **1,027 tunes** — 892 from oldtimefiddletunes.net (Lamancusa), 135 hand-crafted entries
-- **947+ with audio** — Slippery Hill (slippery-hill.com), Canote Brothers (mossyroof.com), LOC proxy, Old Time Fiddle Tunes
-- **50 with sheet music** — FiddleTunes.net (fiddletunes.net) JPEG transcriptions as transcript_url
-- **134 with YouTube video** — embedded player (sandbox removed — was blocking playback)
+- **1,032 tunes** — 892 from oldtimefiddletunes.net (Lamancusa), 140 hand-crafted entries
+- **948+ with audio** — Slippery Hill (slippery-hill.com), Canote Brothers (mossyroof.com), LOC proxy, Old Time Fiddle Tunes
+- **274 with YouTube video** — embedded player with "Watch on YouTube" fallback for embed-blocked videos
 - **15 with ABC notation** — rendered as sheet music via abcjs, raw text toggle
+- **Multiple recordings per tune** — unified "Recorded Versions" card merges tune-level audio + recordings table; clicking instantly starts playback in mini-player (no extra Play button needed)
+- **Performer credits**: ~117 tunes credited — scraped from Slippery Hill pages, extracted from filename patterns in oldtimefiddletunes.net URLs, and hand-researched
 - Filter by key, region, difficulty, tune type — state persisted in URL params
 - Alphabetical sort when filters active; popularity sort on default browse
 - Modern "Warm Premium" UI: staff-line hero, tune-type left-border color coding, pill filter strip
@@ -26,7 +27,8 @@ A comprehensive, searchable treasury of Old-Time fiddle tunes for serious learne
 - **About page** (`/about`): Tightened FAQ — "What is Old-Time Music?", usage guide, badge legend, FAQ with correct "random" Tune of Day description
 - **Tune of the Day** (`/tune-of-the-day`): Fully random on each load; shuffle button picks another random tune
 - **SEO**: Per-page dynamic document.title via useEffect; static OG/Twitter tags in index.html; sitemap.xml at /sitemap.xml (1,001 URLs); robots.txt at /robots.txt with Sitemap link
-- **Known data issue**: B=298 in key distribution is suspicious (Old-Time has essentially no B-major tunes); confirmed errors fixed (Beaux of Albany→D, Big John McNeil→G, Twinkle Little Star→G); bulk of B-key entries require tune-by-tune research to correct
+- **Admin** (`/admin`): 4 tabs — Lesson Inquiries, Suggestions, Recordings, YouTube (channel sync + bulk search)
+- **recordings table**: Supports multiple recordings per tune; `POST /api/recordings` + `DELETE /api/recordings/:id` for management
 
 ## Key Design Decisions
 

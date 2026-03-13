@@ -12,6 +12,7 @@ import YoutubePlayer from "@/components/YoutubePlayer";
 import TipJar from "@/components/TipJar";
 import { useFavorites } from "@/hooks/useFavorites";
 import { trackEvent } from "@/lib/analytics";
+import { usePlaylist } from "@/context/PlaylistContext";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-300",
@@ -26,6 +27,7 @@ export default function TuneDetailPage() {
   const [videoAvailable, setVideoAvailable] = useState(true);
 
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { startPlaylist } = usePlaylist();
 
   const { data: tune, isLoading, isError } = useQuery<Tune>({
     queryKey: [`/api/tunes/${id}`],
@@ -191,6 +193,29 @@ export default function TuneDetailPage() {
 
   const currentRecording = allRecordings[recordingIndex] ?? null;
 
+  // Build a Tune-shaped object for a given recording so startPlaylist can play it
+  function patchedTuneForRecording(rec: typeof allRecordings[0]): Tune {
+    if (!tune) throw new Error("no tune");
+    return {
+      ...tune,
+      audioUrl: rec.audioUrl ?? null,
+      locItemId: rec.locItemId ?? null,
+      audioSource: rec.audioSource ?? null,
+      sourceFiddler: rec.sourceFiddler ?? null,
+      audioAttribution: rec.audioAttribution ?? (tune as any).audioAttribution ?? null,
+    };
+  }
+
+  // Select a recording and immediately start it playing
+  function handleSelectRecording(i: number) {
+    setRecordingIndex(i);
+    const rec = allRecordings[i];
+    if (!rec || !tune) return;
+    if (rec.audioUrl || rec.locItemId) {
+      startPlaylist([patchedTuneForRecording(rec)]);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -332,50 +357,48 @@ export default function TuneDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {allRecordings.map((rec, i) => (
-                    <button
-                      key={`${rec.id}-${i}`}
-                      className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
-                        i === recordingIndex
-                          ? "border-primary/50 bg-primary/5 shadow-sm"
-                          : "border-border hover:border-primary/30 hover:bg-muted/50"
-                      }`}
-                      onClick={() => setRecordingIndex(i)}
-                      data-testid={`recording-item-${rec.id}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="font-medium">{rec.sourceFiddler ?? "Unknown performer"}</span>
-                          <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
-                            {rec.audioSource && <span>{rec.audioSource}</span>}
-                            {rec.collection && <span>· {rec.collection}</span>}
-                            {rec.era && <span>· {rec.era}</span>}
-                            {rec.key && rec.key !== tune.key && <span>· Key of {rec.key}</span>}
+                  {allRecordings.map((rec, i) => {
+                    const hasAudio = !!(rec.audioUrl || rec.locItemId);
+                    const isSelected = i === recordingIndex;
+                    return (
+                      <button
+                        key={`${rec.id}-${i}`}
+                        className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
+                          isSelected
+                            ? "border-amber-400/60 bg-amber-50/60 dark:bg-amber-950/30 shadow-sm"
+                            : "border-border hover:border-amber-300/50 hover:bg-muted/50"
+                        }`}
+                        onClick={() => handleSelectRecording(i)}
+                        data-testid={`recording-item-${rec.id}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              {isSelected && hasAudio && (
+                                <Music2 className="w-3.5 h-3.5 text-amber-600 animate-pulse shrink-0" />
+                              )}
+                              <span className="font-medium">{rec.sourceFiddler ?? "Unknown performer"}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
+                              {rec.audioSource && <span>{rec.audioSource}</span>}
+                              {rec.collection && <span>· {rec.collection}</span>}
+                              {rec.era && <span>· {rec.era}</span>}
+                              {rec.key && rec.key !== tune.key && <span>· Key of {rec.key}</span>}
+                            </div>
                           </div>
+                          {isSelected ? (
+                            <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">
+                              ▶ Playing
+                            </Badge>
+                          ) : hasAudio ? (
+                            <Badge variant="outline" className="shrink-0 text-xs text-muted-foreground">
+                              ▶ Play
+                            </Badge>
+                          ) : null}
                         </div>
-                        {i === recordingIndex && (
-                          <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">Now Playing</Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-
-                  {/* Embedded player — updates when you select a different recording */}
-                  {currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
-                    <div className="mt-1 pt-3 border-t border-border">
-                      <AudioPlayer
-                        key={`player-${currentRecording.id}-${recordingIndex}`}
-                        tune={{
-                          ...tune,
-                          audioUrl: currentRecording.audioUrl ?? null,
-                          locItemId: currentRecording.locItemId ?? null,
-                          audioSource: currentRecording.audioSource ?? null,
-                          sourceFiddler: currentRecording.sourceFiddler ?? null,
-                          audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
-                        }}
-                      />
-                    </div>
-                  )}
+                      </button>
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
