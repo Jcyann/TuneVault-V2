@@ -94,7 +94,8 @@ export default function AboutPage() {
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-3">What is TuneVault?</h2>
           <p className="text-muted-foreground leading-relaxed">
-            TuneVault is a comprehensive, searchable treasury of Old-Time fiddle tunes built for serious learners, session players, and history buffs. Each tune comes with a deep historical write-up, playing notes, audio recordings, embedded YouTube performances, ABC staff notation, and sheet music where available. Nearly 1,000 tunes spanning every major Old-Time form — all in one place. <em>Compiled by AI and fact-checked by human beings.</em>
+            TuneVault is a comprehensive, searchable hub for serious old-time fiddle players. It connects web-wide fiddle sources, allowing users to search, filter, and study various old-time forms.
+            Designed for practice and growth, it offers historical context, playing notes, recordings, YouTube performances, and sheet music (ABC staff notation) for each tune.
           </p>
         </section>
 
