@@ -2,6 +2,7 @@ import { pool } from "./db";
 import { log } from "./index";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { createHash } from "crypto";
 
 // Resolve seed data directory without import.meta.url (unsafe in CJS bundles)
 // In production: dist/seedData/ | In development: server/seedData/
@@ -62,11 +63,30 @@ export async function autoSeed(): Promise<void> {
     const tunesPath = join(SEED_DIR, "tunes.json");
     const recordingsPath = join(SEED_DIR, "recordings.json");
 
-    const tunes: TuneRow[] = JSON.parse(readFileSync(tunesPath, "utf8"));
-    const recordings: RecordingRow[] = JSON.parse(readFileSync(recordingsPath, "utf8"));
+    const tunesRaw = readFileSync(tunesPath, "utf8");
+    const recordingsRaw = readFileSync(recordingsPath, "utf8");
+    const currentHash = createHash("sha1")
+      .update(tunesRaw)
+      .update(recordingsRaw)
+      .digest("hex");
+
+    // Ensure seed_meta table exists
+    await client.query(`CREATE TABLE IF NOT EXISTS seed_meta (key TEXT PRIMARY KEY, value TEXT)`);
 
     const countResult = await client.query("SELECT COUNT(*) FROM tunes");
     const count = parseInt(countResult.rows[0].count, 10);
+
+    // Skip sync if DB is populated and hash hasn't changed
+    if (count > 0) {
+      const hashRow = await client.query("SELECT value FROM seed_meta WHERE key = 'tunes_hash'");
+      if (hashRow.rows[0]?.value === currentHash) {
+        log(`Seed unchanged (hash match) — skipping sync`, "autoSeed");
+        return;
+      }
+    }
+
+    const tunes: TuneRow[] = JSON.parse(tunesRaw);
+    const recordings: RecordingRow[] = JSON.parse(recordingsRaw);
 
     if (count === 0) {
       // Fresh database — full seed
@@ -110,6 +130,11 @@ export async function autoSeed(): Promise<void> {
 
       await client.query("SELECT setval('tunes_id_seq', (SELECT MAX(id) FROM tunes))");
       await client.query("SELECT setval('recordings_id_seq', (SELECT MAX(id) FROM recordings))");
+      await client.query(
+        `INSERT INTO seed_meta (key, value) VALUES ('tunes_hash', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [currentHash]
+      );
       await client.query("COMMIT");
       log(`Seeded ${tunes.length} tunes and ${recordings.length} recordings`, "autoSeed");
     } else {
@@ -170,6 +195,11 @@ export async function autoSeed(): Promise<void> {
       }
 
       await client.query("SELECT setval('tunes_id_seq', (SELECT MAX(id) FROM tunes))");
+      await client.query(
+        `INSERT INTO seed_meta (key, value) VALUES ('tunes_hash', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [currentHash]
+      );
       await client.query("COMMIT");
       log(`Sync complete: ${inserted} new, ${updated} updated (${tunes.length} total)`, "autoSeed");
     }
