@@ -62,12 +62,12 @@ interface PageConfig {
   title: string;
   description: string;
   url: string;
+  keywords?: string;
   noindex?: boolean;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const BASE = "https://tunevault.org";
-const OG_IMAGE = `${BASE}/og-image.png`;
 
 export const STATIC_PAGE_META: Record<string, PageConfig> = {
   "/": {
@@ -75,6 +75,8 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     description:
       "1,032+ Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.",
     url: BASE,
+    keywords:
+      "old time fiddle, fiddle tunes, old time music, appalachian music, clawhammer banjo, american folk music, ABC notation fiddle, free fiddle sheet music, fiddle tune database, old time fiddle tunes list, old time fiddle songs, traditional fiddle, mountain music, string band music, fiddle breakdown, fiddle reel, fiddle jig, fiddle waltz, fiddle hornpipe, fiddle polka, learn old time fiddle, fiddle notation, Southern Appalachian fiddle, Blue Ridge fiddle, Texas fiddle, Ozark fiddle, old time jam session, fiddle tune repertoire, American folk fiddle, fiddle tab, old time music songs, fiddle music free, fiddle tune list, old time tune library",
     jsonLd: [
       {
         "@context": "https://schema.org",
@@ -99,7 +101,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
         url: BASE,
         genre: ["Old-Time", "Appalachian", "American Folk Music"],
         description:
-          "A comprehensive library of over 1,032 Old-Time fiddle tunes including reels, breakdowns, waltzes, jigs, and more.",
+          "A comprehensive library of over 1,032 Old-Time fiddle tunes including reels, breakdowns, waltzes, jigs, hornpipes, polkas, and more.",
       },
     ],
   },
@@ -108,6 +110,8 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     description:
       "Learn about TuneVault: the largest free online treasury of Old-Time fiddle tunes, with audio recordings, staff notation, ABC, YouTube videos, and historical context for every tune.",
     url: `${BASE}/about`,
+    keywords:
+      "about TuneVault, old time fiddle library, fiddle tune source, fiddle tune history, old time fiddle resources, traditional American music, mountain music archive, string band repertoire, Slippery Hill fiddle, Library of Congress fiddle, old time music history, fiddle tune collection, American folk music library, old time recordings archive, fiddle notation library, O'Neill's fiddle tunes, old time fiddle community",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "AboutPage",
@@ -123,6 +127,8 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     description:
       "A fresh Old-Time fiddle tune every day — listen to the audio recording, read the history, view ABC notation and sheet music, and watch a YouTube performance.",
     url: `${BASE}/tune-of-the-day`,
+    keywords:
+      "tune of the day fiddle, daily fiddle tune, old time tune of the day, featured fiddle tune, learn a fiddle tune, old time fiddle practice, daily old time music, fiddle tune spotlight, appalachian tune of the day, old time music daily",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebPage",
@@ -138,6 +144,8 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     description:
       "Book a private Old-Time fiddle lesson with Jason Chinchen. Beginner to advanced instruction in traditional American fiddle styles — online and in-person.",
     url: `${BASE}/book-a-lesson`,
+    keywords:
+      "fiddle lessons, old time fiddle lessons, learn old time fiddle, private fiddle lessons, online fiddle lessons, fiddle instruction, Jason Chinchen fiddle, fiddle teacher, beginner fiddle lessons, old time fiddle teacher, learn traditional fiddle, old time music lessons, Appalachian fiddle lessons, American folk fiddle lessons, fiddle instructor online, fiddle coaching",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "Service",
@@ -159,6 +167,8 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     description:
       "Have a recording of an Old-Time fiddle tune? Share it with the TuneVault community. Contributions help expand the library for everyone.",
     url: `${BASE}/submit-recording`,
+    keywords:
+      "submit fiddle recording, share fiddle recording, contribute fiddle tune, old time fiddle recordings, upload fiddle tune, old time music contribution, fiddle community, fiddle tune archive, record old time tune, traditional fiddle recordings",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebPage",
@@ -178,13 +188,19 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
 };
 
 export function injectPageMeta(html: string, cfg: PageConfig): string {
-  const { title, description, url, noindex, jsonLd } = cfg;
+  const { title, description, url, keywords, noindex, jsonLd } = cfg;
 
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
   html = html.replace(
     /<meta name="description" content="[^"]*"/,
     `<meta name="description" content="${esc(description)}"`
   );
+  if (keywords) {
+    html = html.replace(
+      /<meta name="keywords" content="[^"]*"/,
+      `<meta name="keywords" content="${esc(keywords)}"`
+    );
+  }
   html = html.replace(
     /<link rel="canonical" href="[^"]*"/,
     `<link rel="canonical" href="${url}"`
@@ -251,10 +267,34 @@ export function injectTuneMeta(html: string, tune: TuneMeta): string {
       : rawDesc;
   const truncDesc = prefix + snippet;
 
+  // Tune-specific keywords: tune name variations + key/type/region signals
+  const t = tune.title;
+  const kws: string[] = [
+    `${t} fiddle`,
+    `${t} sheet music`,
+    `${t} tab`,
+    `${t} ABC notation`,
+    `${t} old time`,
+    `${t} fiddle tune`,
+    `how to play ${t} on fiddle`,
+    `${t} ${tune.tuneType}`,
+    `key of ${tune.key} ${tune.tuneType}`,
+    `old time ${tune.tuneType}`,
+    `old time fiddle ${tune.tuneType}`,
+  ];
+  if (tune.region) kws.push(`${tune.region} fiddle tune`, `${tune.region} old time`);
+  if (tune.sourceFiddler) kws.push(`${tune.sourceFiddler} fiddle`);
+  kws.push("old time fiddle", "fiddle tunes", "appalachian fiddle", "ABC notation");
+  const keywords = kws.join(", ");
+
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
   html = html.replace(
     /<meta name="description" content="[^"]*"/,
     `<meta name="description" content="${esc(truncDesc)}"`
+  );
+  html = html.replace(
+    /<meta name="keywords" content="[^"]*"/,
+    `<meta name="keywords" content="${esc(keywords)}"`
   );
   html = html.replace(
     /<link rel="canonical" href="[^"]*"/,
