@@ -5,7 +5,7 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
-import { fetchTuneForMeta, injectTuneMeta } from "./seoMeta";
+import { fetchTuneForMeta, injectTuneMeta, injectPageMeta, STATIC_PAGE_META } from "./seoMeta";
 
 const viteLogger = createLogger();
 
@@ -45,6 +45,19 @@ export async function setupVite(server: Server, app: Express) {
       const tune = await fetchTuneForMeta(req.params.id);
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       if (tune) template = injectTuneMeta(template, tune);
+      await serveHtml(req.originalUrl, template, res);
+    } catch (e) {
+      vite.ssrFixStacktrace(e as Error);
+      next(e);
+    }
+  });
+
+  const STATIC_PATHS = Object.keys(STATIC_PAGE_META);
+  app.get(STATIC_PATHS, async (req, res, next) => {
+    try {
+      const cfg = STATIC_PAGE_META[req.path];
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      if (cfg) template = injectPageMeta(template, cfg);
       await serveHtml(req.originalUrl, template, res);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);

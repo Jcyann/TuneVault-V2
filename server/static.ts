@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { fetchTuneForMeta, injectTuneMeta } from "./seoMeta";
+import { fetchTuneForMeta, injectTuneMeta, injectPageMeta, STATIC_PAGE_META } from "./seoMeta";
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -20,6 +20,18 @@ export function serveStatic(app: Express) {
       const tune = await fetchTuneForMeta(req.params.id);
       let html = fs.readFileSync(indexPath, "utf-8");
       if (tune) html = injectTuneMeta(html, tune);
+      res.set("Content-Type", "text/html").send(html);
+    } catch {
+      next();
+    }
+  });
+
+  const STATIC_PATHS = Object.keys(STATIC_PAGE_META);
+  app.get(STATIC_PATHS, (req, res, next) => {
+    try {
+      const cfg = STATIC_PAGE_META[req.path];
+      let html = fs.readFileSync(indexPath, "utf-8");
+      if (cfg) html = injectPageMeta(html, cfg);
       res.set("Content-Type", "text/html").send(html);
     } catch {
       next();
