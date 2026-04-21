@@ -787,7 +787,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/admin/blog", async (req, res) => {
     try {
-      const parsed = insertBlogPostSchema.safeParse(req.body);
+      const body = { ...req.body };
+      if (typeof body.publishedAt === "string") body.publishedAt = new Date(body.publishedAt);
+      const parsed = insertBlogPostSchema.safeParse(body);
       if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
       const data = parsed.data;
       if (data.published && !data.publishedAt) data.publishedAt = new Date();
