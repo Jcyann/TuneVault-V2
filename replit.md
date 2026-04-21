@@ -16,9 +16,9 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 | Field | Count | Notes |
 |---|---|---|
 | Total tunes | 1,032 | |
-| With audio | 948 | Slippery Hill, Canote Brothers, LOC proxy, Old Time Fiddle Tunes |
-| With video (embeddable) | 154 | Checked via YouTube API v3; 120 blocked/deleted |
-| With YouTube ID (total) | 274 | `is_embeddable` column tracks which actually play |
+| With audio | 952 | OldTimeFiddleTunes, Canote Brothers, LOC proxy, Internet Archive |
+| With video (embeddable) | 175 | Checked via YouTube API v3; `is_embeddable` column tracks which play |
+| With YouTube ID (total) | 274 | Several replaced with new embeddable alternatives |
 | With ABC notation | 16 | Rendered via abcjs |
 | With description | 179 | All popularity ≥ 6 tunes have descriptions; 853 default-priority tunes do not |
 | With source fiddler | ~129 | |
@@ -28,8 +28,10 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 - **1,032 tunes** — 892 from oldtimefiddletunes.net (Lamancusa), 140 hand-crafted entries
 - **Multiple recordings per tune** — unified "Recorded Versions" card; clicking switches mini-player source instantly
 - **Performer credits**: ~129 tunes credited — from Slippery Hill pages, filename patterns, hand-research
-- **Video badge accuracy**: Only shows for confirmed-embeddable videos (`is_embeddable = true` in DB)
+- **Video badge accuracy**: Only shows for confirmed-embeddable videos (`is_embeddable = true` in DB) — 175 embeddable
 - **Description placeholder**: Tunes without write-ups show honest "not yet documented" message with link to suggest
+- **Internet Archive audio**: 4 historical recordings sourced (1916 Don Richardson Mississippi Sawyer, 1924 Wm. B. Houchens Fisher's Hornpipe, John Baltzell Money Musk 78rpm, Watson/Seeger Cackling Hen)
+- **Slippery Hill cleanup**: All 28 broken Slippery Hill hotlink-blocked URLs removed; 5 replaced by LOC proxy, 4 replaced by IA audio, rest rely on YouTube or LOC
 - Filter by key, region, difficulty, tune type — state persisted in URL params
 - Alphabetical sort when filters active; popularity sort on default browse
 - Venmo tip jar (@Jason-Chinchen) in footer, with "Book a Lesson" link below it
