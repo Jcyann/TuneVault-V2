@@ -28,8 +28,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I suggest a tune?",
-    a: "Absolutely — use the suggestion box below. The goal is to cover the full canon of Old-Time repertoire.",
-    anchor: "#suggestion-box",
+    a: "Absolutely. The goal is to cover the full canon of Old-Time repertoire.",
   },
 ];
 
@@ -169,21 +168,10 @@ export default function AboutPage() {
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Frequently Asked Questions</h2>
           <div className="space-y-4">
-            {FAQ_ITEMS.map(({ q, a, anchor }) => (
+            {FAQ_ITEMS.map(({ q, a }) => (
               <div key={q} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <p className="font-semibold text-foreground text-sm mb-1">{q}</p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {a}
-                  {anchor && (
-                    <a
-                      href={anchor}
-                      className="ml-1 text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
-                      data-testid="link-suggestion-box"
-                    >
-                      Open the box ↓
-                    </a>
-                  )}
-                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
