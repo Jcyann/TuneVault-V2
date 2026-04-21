@@ -14,6 +14,8 @@ import TuneOfTheDayPage from "@/pages/TuneOfTheDayPage";
 import BookALessonPage from "@/pages/BookALessonPage";
 import AdminPage from "@/pages/AdminPage";
 import SubmitRecordingPage from "@/pages/SubmitRecordingPage";
+import BlogPage from "@/pages/BlogPage";
+import BlogPostPage from "@/pages/BlogPostPage";
 import NotFound from "@/pages/not-found";
 import MiniPlayer from "@/components/MiniPlayer";
 import NavBar from "@/components/NavBar";
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/book-a-lesson" component={BookALessonPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/submit-recording" component={SubmitRecordingPage} />
+      <Route path="/blog" component={BlogPage} />
+      <Route path="/blog/:slug" component={BlogPostPage} />
       <Route component={NotFound} />
     </Switch>
   );

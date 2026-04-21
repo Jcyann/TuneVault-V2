@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { db } from "./db";
-import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggestions, insertSuggestionSchema, recordingSubmissions, insertRecordingSubmissionSchema } from "@shared/schema";
+import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggestions, insertSuggestionSchema, recordingSubmissions, insertRecordingSubmissionSchema, blogPosts, insertBlogPostSchema } from "@shared/schema";
 import { storage } from "./storage";
 import { sendNotificationEmail, lessonInquiryEmail, suggestionEmail } from "./email";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
@@ -752,6 +752,73 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (err) {
       console.error("LOC audio proxy error:", err);
       res.status(500).json({ error: "Failed to fetch LOC audio" });
+    }
+  });
+
+  // ── Blog routes ──────────────────────────────────────────────────────────
+
+  app.get("/api/blog", async (_req, res) => {
+    try {
+      const posts = await db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.publishedAt));
+      res.json(posts);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.get("/api/blog/all", async (_req, res) => {
+    try {
+      const posts = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
+      res.json(posts);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.get("/api/blog/:slug", async (req, res) => {
+    try {
+      const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, req.params.slug));
+      if (!post) return res.status(404).json({ error: "Post not found" });
+      res.json(post);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch blog post" });
+    }
+  });
+
+  app.post("/api/admin/blog", async (req, res) => {
+    try {
+      const parsed = insertBlogPostSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+      const data = parsed.data;
+      if (data.published && !data.publishedAt) data.publishedAt = new Date();
+      const [post] = await db.insert(blogPosts).values(data).returning();
+      res.json(post);
+    } catch (err: any) {
+      if (err.code === "23505") return res.status(409).json({ error: "A post with that slug already exists" });
+      res.status(500).json({ error: "Failed to create blog post" });
+    }
+  });
+
+  app.put("/api/admin/blog/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = { ...req.body };
+      if (data.published && !data.publishedAt) data.publishedAt = new Date();
+      const [post] = await db.update(blogPosts).set(data).where(eq(blogPosts.id, id)).returning();
+      if (!post) return res.status(404).json({ error: "Post not found" });
+      res.json(post);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to update blog post" });
+    }
+  });
+
+  app.delete("/api/admin/blog/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await db.delete(blogPosts).where(eq(blogPosts.id, id));
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to delete blog post" });
     }
   });
 

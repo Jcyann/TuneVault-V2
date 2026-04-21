@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw } from "lucide-react";
-import type { LessonInquiry, Suggestion, RecordingSubmission } from "@shared/schema";
+import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw, BookOpen, Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import type { LessonInquiry, Suggestion, RecordingSubmission, BlogPost } from "@shared/schema";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -193,8 +193,61 @@ function SubmissionCard({ sub, onApprove, onReject, isPending }: {
 
 export default function AdminPage() {
   usePageMeta("Admin — TuneVault", "TuneVault admin dashboard");
-  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions" | "youtube">("inquiries");
+  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions" | "youtube" | "blog">("inquiries");
+
   const { toast } = useToast();
+
+  // ── Blog tab state ──
+  const [blogEditId, setBlogEditId] = useState<number | null>(null);
+  const [blogShowForm, setBlogShowForm] = useState(false);
+  const emptyPost = { title: "", slug: "", excerpt: "", content: "", coverImageUrl: "", author: "Jason Chinchen", published: false };
+  const [blogForm, setBlogForm] = useState(emptyPost);
+
+  const { data: blogPostList = [], isLoading: loadingBlog } = useQuery<BlogPost[]>({
+    queryKey: ["/api/blog/all"],
+    enabled: tab === "blog",
+  });
+
+  function slugify(s: string) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  async function saveBlogPost() {
+    const body = {
+      ...blogForm,
+      publishedAt: blogForm.published ? new Date().toISOString() : null,
+      coverImageUrl: blogForm.coverImageUrl || null,
+      excerpt: blogForm.excerpt || null,
+    };
+    try {
+      if (blogEditId) {
+        await apiRequest("PUT", `/api/admin/blog/${blogEditId}`, body);
+        toast({ title: "Post updated!" });
+      } else {
+        await apiRequest("POST", "/api/admin/blog", body);
+        toast({ title: "Post created!" });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/blog/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/blog"] });
+      setBlogShowForm(false);
+      setBlogEditId(null);
+      setBlogForm(emptyPost);
+    } catch (err: any) {
+      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    }
+  }
+
+  async function deleteBlogPost(id: number) {
+    if (!confirm("Delete this post? This cannot be undone.")) return;
+    try {
+      await apiRequest("DELETE", `/api/admin/blog/${id}`);
+      toast({ title: "Post deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/blog/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/blog"] });
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+  }
 
   // ── YouTube tab state ──
   const [syncLoading, setSyncLoading] = useState(false);
@@ -520,6 +573,18 @@ export default function AdminPage() {
             <Youtube className="w-4 h-4" />
             YouTube
           </button>
+          <button
+            onClick={() => setTab("blog")}
+            data-testid="tab-blog"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === "blog"
+                ? "bg-amber-500 text-white"
+                : "border border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Blog
+          </button>
         </div>
 
         {tab === "inquiries" && (
@@ -766,6 +831,200 @@ export default function AdminPage() {
               )}
             </div>
 
+          </div>
+        )}
+
+        {tab === "blog" && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {blogPostList.length} post{blogPostList.length !== 1 ? "s" : ""} total
+              </p>
+              <Button
+                data-testid="button-new-blog-post"
+                onClick={() => {
+                  setBlogEditId(null);
+                  setBlogForm(emptyPost);
+                  setBlogShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
+                size="sm"
+              >
+                <Plus className="w-4 h-4" /> New Post
+              </Button>
+            </div>
+
+            {blogShowForm && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-5 space-y-4">
+                <h3 className="font-semibold text-foreground">{blogEditId ? "Edit Post" : "New Post"}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Title *</label>
+                    <input
+                      data-testid="input-blog-title"
+                      value={blogForm.title}
+                      onChange={(e) => {
+                        const t = e.target.value;
+                        setBlogForm((f) => ({ ...f, title: t, slug: blogEditId ? f.slug : slugify(t) }));
+                      }}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="Post title"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Slug *</label>
+                    <input
+                      data-testid="input-blog-slug"
+                      value={blogForm.slug}
+                      onChange={(e) => setBlogForm((f) => ({ ...f, slug: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+                      placeholder="url-friendly-slug"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Excerpt</label>
+                  <input
+                    data-testid="input-blog-excerpt"
+                    value={blogForm.excerpt}
+                    onChange={(e) => setBlogForm((f) => ({ ...f, excerpt: e.target.value }))}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    placeholder="Brief summary shown on the blog listing page"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Content (Markdown)</label>
+                  <textarea
+                    data-testid="textarea-blog-content"
+                    value={blogForm.content}
+                    onChange={(e) => setBlogForm((f) => ({ ...f, content: e.target.value }))}
+                    rows={12}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono resize-y"
+                    placeholder="Write your post in Markdown format..."
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Cover Image URL</label>
+                    <input
+                      data-testid="input-blog-cover"
+                      value={blogForm.coverImageUrl}
+                      onChange={(e) => setBlogForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="https://…"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Author</label>
+                    <input
+                      data-testid="input-blog-author"
+                      value={blogForm.author}
+                      onChange={(e) => setBlogForm((f) => ({ ...f, author: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none" data-testid="toggle-blog-published">
+                  <input
+                    type="checkbox"
+                    checked={blogForm.published}
+                    onChange={(e) => setBlogForm((f) => ({ ...f, published: e.target.checked }))}
+                    className="accent-amber-500 w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-foreground">Published</span>
+                  <span className="text-xs text-muted-foreground">(sets published_at to now if publishing for the first time)</span>
+                </label>
+                <div className="flex gap-2">
+                  <Button
+                    data-testid="button-save-blog-post"
+                    onClick={saveBlogPost}
+                    disabled={!blogForm.title || !blogForm.slug}
+                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                    size="sm"
+                  >
+                    {blogEditId ? "Save Changes" : "Create Post"}
+                  </Button>
+                  <Button
+                    data-testid="button-cancel-blog-form"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setBlogShowForm(false); setBlogEditId(null); setBlogForm(emptyPost); }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {loadingBlog ? (
+              <p className="text-sm text-muted-foreground">Loading posts…</p>
+            ) : blogPostList.length === 0 ? (
+              <div className="text-center py-16">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-25" />
+                <p className="text-muted-foreground">No blog posts yet. Create your first post above.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {blogPostList.map((post) => (
+                  <div key={post.id} className="rounded-xl border border-border bg-card p-4 flex items-start gap-4" data-testid={`blog-admin-row-${post.id}`}>
+                    {post.coverImageUrl && (
+                      <img src={post.coverImageUrl} alt="" className="w-16 h-12 rounded-lg object-cover shrink-0 hidden sm:block" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-foreground truncate">{post.title}</p>
+                        {post.published ? (
+                          <span className="text-xs bg-green-100 text-green-700 border border-green-200 rounded-full px-2 py-0.5 flex items-center gap-1">
+                            <Eye className="w-3 h-3" /> Published
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-muted text-muted-foreground border border-border rounded-full px-2 py-0.5 flex items-center gap-1">
+                            <EyeOff className="w-3 h-3" /> Draft
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 font-mono">/blog/{post.slug}</p>
+                      {post.excerpt && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{post.excerpt}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid={`button-edit-blog-${post.id}`}
+                        onClick={() => {
+                          setBlogEditId(post.id);
+                          setBlogForm({
+                            title: post.title,
+                            slug: post.slug,
+                            excerpt: post.excerpt || "",
+                            content: post.content,
+                            coverImageUrl: post.coverImageUrl || "",
+                            author: post.author,
+                            published: post.published,
+                          });
+                          setBlogShowForm(true);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid={`button-delete-blog-${post.id}`}
+                        onClick={() => deleteBlogPost(post.id)}
+                        className="text-muted-foreground hover:text-red-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

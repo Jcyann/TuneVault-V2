@@ -37,7 +37,9 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 - Filter by key, region, difficulty, tune type — state persisted in URL params
 - Alphabetical sort when filters active; popularity sort on default browse
 - Venmo tip jar (@Jason-Chinchen) in footer, with "Book a Lesson" link below it
-- **4-tab NavBar**: Home, Tune of the Day, About, Lessons — active indicator on current tab
+- **5-tab NavBar**: Home, Tune of the Day, Blog, About, Lessons — active indicator on current tab
+- **Blog** (`/blog`, `/blog/:slug`) — list page + full Markdown post page; "coming soon" placeholder when empty; TipJar on each page
+- **Blog admin tab** — CRUD for blog posts: title, slug (auto-generated), excerpt, Markdown content, cover image, author, published/draft toggle
 - **Lessons page** (`/book-a-lesson`): 4 instrument cards; CTA with "Soon" badge on booking button
 - **About page** (`/about`): FAQ, usage guide, badge legend
 - **Tune of the Day** (`/tune-of-the-day`): Fully random on each load; shuffle button picks another

@@ -126,3 +126,20 @@ export const insertRecordingSubmissionSchema = createInsertSchema(recordingSubmi
 });
 export type InsertRecordingSubmission = z.infer<typeof insertRecordingSubmissionSchema>;
 export type RecordingSubmission = typeof recordingSubmissions.$inferSelect;
+
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull().default(""),
+  coverImageUrl: text("cover_image_url"),
+  author: text("author").notNull().default("Jason Chinchen"),
+  published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({ id: true, createdAt: true });
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+export type BlogPost = typeof blogPosts.$inferSelect;
