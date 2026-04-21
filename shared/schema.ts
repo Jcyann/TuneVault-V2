@@ -30,6 +30,7 @@ export const tunes = pgTable("tunes", {
   era: text("era"),
   youtubeUrl: text("youtube_url"),
   youtubeVideoId: text("youtube_video_id"),
+  isEmbeddable: boolean("is_embeddable"),
   audioUrl: text("audio_url"),
   abcNotation: text("abc_notation"),
   transcriptUrl: text("transcript_url"),

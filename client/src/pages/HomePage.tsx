@@ -565,7 +565,7 @@ export default function HomePage() {
                               <Headphones className="w-3 h-3" /> Audio
                             </Badge>
                           )}
-                          {tune.youtubeVideoId && (
+                          {tune.isEmbeddable === true && (
                             <Badge variant="secondary" className="text-xs gap-1 bg-red-50 text-red-600 border-red-200 py-0" data-testid={`badge-video-${tune.id}`}>
                               <Video className="w-3 h-3" /> Video
                             </Badge>

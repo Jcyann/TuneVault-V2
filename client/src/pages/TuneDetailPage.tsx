@@ -321,16 +321,21 @@ export default function TuneDetailPage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* About */}
-            {tune.description && (
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">About This Tune</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">About This Tune</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tune.description ? (
                   <p className="leading-relaxed text-muted-foreground text-sm">{tune.description}</p>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="leading-relaxed text-muted-foreground/50 text-sm italic">
+                    Historical notes have not yet been documented for this tune. If you know the history, consider{" "}
+                    <a href="/about#suggestion-box" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">suggesting a write-up</a>.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Performance Notes */}
             {tune.notes && (
