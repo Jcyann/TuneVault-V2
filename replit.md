@@ -16,7 +16,9 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 | Field | Count | Notes |
 |---|---|---|
 | Total tunes | 1,032 | |
-| With audio | 952 | OldTimeFiddleTunes, Canote Brothers, LOC proxy, Internet Archive |
+| With audio | 978 | OldTimeFiddleTunes, Canote Brothers, LOC proxy, Internet Archive |
+| No audio | 54 | Obscure tunes with no known recording source |
+| Internet Archive recordings | 54 | Historical 78rpm + field recordings; 49 added in last enrichment session |
 | With video (embeddable) | 175 | Checked via YouTube API v3; `is_embeddable` column tracks which play |
 | With YouTube ID (total) | 274 | Several replaced with new embeddable alternatives |
 | With ABC notation | 16 | Rendered via abcjs |
@@ -30,7 +32,7 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 - **Performer credits**: ~129 tunes credited — from Slippery Hill pages, filename patterns, hand-research
 - **Video badge accuracy**: Only shows for confirmed-embeddable videos (`is_embeddable = true` in DB) — 175 embeddable
 - **Description placeholder**: Tunes without write-ups show honest "not yet documented" message with link to suggest
-- **Internet Archive audio**: 4 historical recordings sourced (1916 Don Richardson Mississippi Sawyer, 1924 Wm. B. Houchens Fisher's Hornpipe, John Baltzell Money Musk 78rpm, Watson/Seeger Cackling Hen)
+- **Internet Archive audio**: 54 historical recordings sourced — 78rpm digitizations (Schroeder's Playboys, Blue Ridge Mountain Boys, Sleepy Marlin, Harold Goodfellow, Woodshed Four, etc.), Library of Congress AFC field recordings (1937–1938), and vintage studio recordings (Samantha Bumgarner 1924, Pickard Family 1929, Vernon Dalhart 1927, Eck Robinson/Richie Hass, Pete Seeger, Doc Watson, Mellie Dunham, Ralph Page, etc.)
 - **Slippery Hill cleanup**: All 28 broken Slippery Hill hotlink-blocked URLs removed; 5 replaced by LOC proxy, 4 replaced by IA audio, rest rely on YouTube or LOC
 - Filter by key, region, difficulty, tune type — state persisted in URL params
 - Alphabetical sort when filters active; popularity sort on default browse
