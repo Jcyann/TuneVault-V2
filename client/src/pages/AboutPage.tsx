@@ -164,10 +164,10 @@ export default function AboutPage() {
           </Link>
         </section>
 
-        {/* FAQ */}
+        {/* FAQ + Suggestion Box */}
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+          <div className="space-y-4 mb-8">
             {FAQ_ITEMS.map(({ q, a }) => (
               <div key={q} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <p className="font-semibold text-foreground text-sm mb-1">{q}</p>
@@ -175,35 +175,9 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-        </section>
 
-        {/* Submit a Recording */}
-        <section data-testid="submit-recording-section">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Mic className="w-6 h-6 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-serif font-bold text-lg text-foreground">Share Your Playing</h3>
-              <p className="text-muted-foreground text-sm mt-0.5 leading-relaxed">
-                Have a recording or video of an old-time tune? Submit it and — with your permission — it'll appear directly on the tune's page for everyone to hear.
-              </p>
-            </div>
-            <Link href="/submit-recording">
-              <Button
-                className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shrink-0"
-                data-testid="link-submit-recording"
-              >
-                Submit a Recording
-              </Button>
-            </Link>
-          </div>
-        </section>
-
-        {/* Suggestion box */}
-        <section id="suggestion-box" data-testid="suggestion-box-section">
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-1">Suggest a Tune</h2>
-          <p className="text-muted-foreground text-sm mb-6">
+          <h3 className="text-xl font-serif font-bold text-foreground mb-1">Suggest a Tune</h3>
+          <p className="text-muted-foreground text-sm mb-5">
             Know a tune that should be here? Or see an error? Drop the name, region, fiddler, or any detail that helps us find or fix it.
           </p>
 
@@ -256,6 +230,30 @@ export default function AboutPage() {
             </form>
           )}
         </section>
+
+        {/* Submit a Recording */}
+        <section data-testid="submit-recording-section">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <Mic className="w-6 h-6 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-serif font-bold text-lg text-foreground">Share Your Playing</h3>
+              <p className="text-muted-foreground text-sm mt-0.5 leading-relaxed">
+                Have a recording or video of an old-time tune? Submit it and — with your permission — it'll appear directly on the tune's page for everyone to hear.
+              </p>
+            </div>
+            <Link href="/submit-recording">
+              <Button
+                className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shrink-0"
+                data-testid="link-submit-recording"
+              >
+                Submit a Recording
+              </Button>
+            </Link>
+          </div>
+        </section>
+
 
         <TipJar />
       </div>
