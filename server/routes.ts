@@ -218,7 +218,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const [tuneStats] = await db.select({
         total: sql<number>`count(*)`,
-        withVideo: sql<number>`count(*) filter (where is_embeddable = true)`,
+        withVideo: sql<number>`count(*) filter (where youtube_video_id is not null)`,
         withAbc: sql<number>`count(*) filter (where abc_notation is not null)`,
         withAudio: sql<number>`count(*) filter (where audio_url is not null or loc_item_id is not null)`,
       }).from(tunes);
