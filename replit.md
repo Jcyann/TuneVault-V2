@@ -41,9 +41,12 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 - **Blog** (`/blog`, `/blog/:slug`) — list page + full Markdown post page; "coming soon" placeholder when empty; TipJar on each page
 - **Blog admin tab** — CRUD for blog posts: title, slug (auto-generated), excerpt, Markdown content, cover image, author, published/draft toggle
 - **Lessons page** (`/book-a-lesson`): 4 instrument cards; CTA with "Soon" badge on booking button
-- **About page** (`/about`): FAQ, usage guide, badge legend
-- **Tune of the Day** (`/tune-of-the-day`): Fully random on each load; shuffle button picks another
-- **Admin** (`/admin`): noindex — Lesson Inquiries, Suggestions, Recordings, YouTube sync tabs
+- **About page** (`/about`): FAQ, usage guide, badge legend, structured suggestion/correction form
+- **Tune of the Day** (`/tune-of-the-day`): Deterministic server-side date hash; "Explore another" shuffle; "Back to today's tune" button
+- **Admin** (`/admin`): noindex — Lesson Inquiries, Suggestions (with apply/reject), Recordings (with Apply to Tune + Bulk Apply), YouTube sync, Blog tabs
+- **Structured feedback**: `SuggestChangesForm` component on every tune page ("Suggest a correction" button → modal) and About page. Captures: tune (search), correction type (key/title/alt titles/source fiddler/description/audio URL/YouTube URL/general), suggested value, name, email, notes
+- **Admin suggestion workflow**: Each structured suggestion shows correction-type badge, linked tune, suggested value; "Apply to tune" writes value directly to the tunes table; "Dismiss" marks as rejected
+- **Admin recording submission workflow**: "Apply to tune" button writes YouTube ID or audioUrl to the tune record directly; "Apply all approved" bulk-applies all approved submissions at once
 
 ## SEO
 

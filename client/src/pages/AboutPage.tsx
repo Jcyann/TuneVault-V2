@@ -1,13 +1,9 @@
-import { useState } from "react";
 import { Link } from "wouter";
-import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Send, CheckCircle2, Loader2, Mic } from "lucide-react";
+import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { apiRequest } from "@/lib/queryClient";
+import SuggestChangesForm from "@/components/SuggestChangesForm";
 
 const FAQ_ITEMS = [
   {
@@ -45,26 +41,6 @@ export default function AboutPage() {
     "Learn how to use TuneVault — nearly 1,000 Old-Time fiddle tunes with audio, history, notation, and video. FAQ for serious learners and session players."
   );
 
-  const [sugName, setSugName] = useState("");
-  const [sugMessage, setSugMessage] = useState("");
-  const [sugError, setSugError] = useState("");
-  const [sugSubmitting, setSugSubmitting] = useState(false);
-  const [sugSubmitted, setSugSubmitted] = useState(false);
-
-  const handleSuggestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sugMessage.trim()) { setSugError("Please enter a message."); return; }
-    setSugError("");
-    setSugSubmitting(true);
-    try {
-      await apiRequest("POST", "/api/suggestion", { name: sugName.trim() || null, message: sugMessage.trim() });
-      setSugSubmitted(true);
-    } catch {
-      setSugError("Something went wrong. Please try again.");
-    } finally {
-      setSugSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
@@ -176,59 +152,12 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <h3 className="text-xl font-serif font-bold text-foreground mb-1">Suggest a Tune</h3>
+          <h3 className="text-xl font-serif font-bold text-foreground mb-1">Suggest a Tune or Correction</h3>
           <p className="text-muted-foreground text-sm mb-5">
-            Know a tune that should be here? Or see an error? Drop the name, region, fiddler, or any detail that helps us find or fix it.
+            Know a tune that should be here? Spot a wrong key, misspelled title, or missing fiddler credit? Use the form below — structured corrections go straight to our review queue.
           </p>
 
-          {sugSubmitted ? (
-            <div className="rounded-2xl border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-7 text-center space-y-2" data-testid="suggestion-success">
-              <CheckCircle2 className="w-9 h-9 text-green-500 mx-auto" />
-              <p className="font-semibold text-green-900 dark:text-green-300">Got it — thanks!</p>
-              <p className="text-green-700 dark:text-green-400 text-sm">We'll look into adding it to TuneVault.</p>
-            </div>
-          ) : (
-            <form
-              onSubmit={handleSuggestion}
-              className="rounded-2xl border border-border bg-card p-6 space-y-4"
-              data-testid="suggestion-form"
-            >
-              <div className="space-y-1.5">
-                <Label htmlFor="sug-name">Your name <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Input
-                  id="sug-name"
-                  data-testid="input-suggestion-name"
-                  placeholder="Jane Smith"
-                  value={sugName}
-                  onChange={(e) => setSugName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="sug-message">Tune suggestion *</Label>
-                <Textarea
-                  id="sug-message"
-                  data-testid="textarea-suggestion-message"
-                  placeholder="Tune title, region, fiddler, recording, or any context that helps us find it..."
-                  value={sugMessage}
-                  onChange={(e) => setSugMessage(e.target.value)}
-                  rows={4}
-                />
-                {sugError && <p className="text-xs text-destructive" data-testid="suggestion-error">{sugError}</p>}
-              </div>
-              <Button
-                type="submit"
-                disabled={sugSubmitting}
-                className="bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-                data-testid="button-submit-suggestion"
-              >
-                {sugSubmitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
-                ) : (
-                  <><Send className="w-4 h-4 mr-2" />Send Suggestion</>
-                )}
-              </Button>
-            </form>
-          )}
+          <SuggestChangesForm className="rounded-2xl border border-border bg-card p-6" />
         </section>
 
         {/* Submit a Recording */}

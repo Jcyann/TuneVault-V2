@@ -54,11 +54,17 @@ export type Tune = typeof tunes.$inferSelect;
 export const suggestions = pgTable("suggestions", {
   id: serial("id").primaryKey(),
   name: text("name"),
+  email: text("email"),
   message: text("message").notNull(),
+  tuneId: integer("tune_id"),
+  tuneTitle: text("tune_title"),
+  correctionType: text("correction_type").default("general"),
+  suggestedValue: text("suggested_value"),
+  status: text("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ id: true, createdAt: true });
+export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ id: true, createdAt: true, status: true });
 export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 export type Suggestion = typeof suggestions.$inferSelect;
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw, BookOpen, Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw, BookOpen, Plus, Pencil, Trash2, Eye, EyeOff, Zap } from "lucide-react";
 import type { LessonInquiry, Suggestion, RecordingSubmission, BlogPost } from "@shared/schema";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Button } from "@/components/ui/button";
@@ -85,26 +85,110 @@ function InquiryCard({ inq }: { inq: LessonInquiry }) {
   );
 }
 
-function SuggestionCard({ sug }: { sug: Suggestion }) {
+const CORRECTION_LABELS: Record<string, { label: string; color: string }> = {
+  general: { label: "General / New tune", color: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600" },
+  key: { label: "Key correction", color: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700" },
+  title: { label: "Title correction", color: "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700" },
+  alternative_titles: { label: "Alt titles", color: "bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700" },
+  source_fiddler: { label: "Source fiddler", color: "bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/40 dark:text-teal-300 dark:border-teal-700" },
+  description: { label: "Historical info", color: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700" },
+  audio: { label: "Audio URL", color: "bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/40 dark:text-sky-300 dark:border-sky-700" },
+  video: { label: "YouTube video", color: "bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700" },
+};
+
+function SuggestionCard({ sug, onApply, onReject, isPending }: {
+  sug: Suggestion;
+  onApply: (id: number) => void;
+  onReject: (id: number) => void;
+  isPending: boolean;
+}) {
+  const typeInfo = CORRECTION_LABELS[sug.correctionType ?? "general"] ?? CORRECTION_LABELS.general;
+  const statusColor = sug.status === "applied"
+    ? "text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800"
+    : sug.status === "rejected"
+    ? "text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/30 dark:border-red-800"
+    : "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800";
+  const canApply = sug.status === "pending" && !!sug.tuneId && !!sug.suggestedValue && sug.correctionType !== "general";
+
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-2" data-testid={`suggestion-card-${sug.id}`}>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="font-semibold text-foreground">{sug.name || <span className="italic text-muted-foreground">Anonymous</span>}</p>
-        <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <Clock className="w-3 h-3" />{fmt(sug.createdAt)}
-        </p>
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3" data-testid={`suggestion-card-${sug.id}`}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-foreground">{sug.name || <span className="italic text-muted-foreground">Anonymous</span>}</p>
+            {sug.email && (
+              <a href={`mailto:${sug.email}`} className="text-xs text-amber-600 hover:underline flex items-center gap-1">
+                <Mail className="w-3 h-3" />{sug.email}
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-xs font-medium border px-2 py-0.5 rounded-full ${typeInfo.color}`}>{typeInfo.label}</span>
+            {sug.tuneTitle && (
+              <a href={`/tunes/${sug.tuneId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-600 hover:underline flex items-center gap-1">
+                <ExternalLink className="w-3 h-3" />{sug.tuneTitle}
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="text-right shrink-0 space-y-1">
+          <span className={`text-xs font-medium border px-2 py-0.5 rounded-full capitalize ${statusColor}`}>{sug.status ?? "pending"}</span>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+            <Clock className="w-3 h-3" />{fmt(sug.createdAt)}
+          </p>
+        </div>
       </div>
-      <p className="text-sm text-foreground leading-relaxed bg-muted/40 rounded-lg p-3">{sug.message}</p>
+
+      {sug.suggestedValue && (
+        <div className="bg-muted/40 rounded-lg px-3 py-2.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Suggested value</p>
+          <p className="text-sm text-foreground font-medium break-all">{sug.suggestedValue}</p>
+        </div>
+      )}
+
+      {sug.message && sug.message !== "—" && (
+        <p className="text-sm text-foreground leading-relaxed bg-muted/40 rounded-lg p-3">{sug.message}</p>
+      )}
+
+      {sug.status === "pending" && (
+        <div className="flex gap-3 pt-1 flex-wrap">
+          {canApply && (
+            <Button
+              size="sm"
+              onClick={() => onApply(sug.id)}
+              disabled={isPending}
+              data-testid={`button-apply-suggestion-${sug.id}`}
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Apply to tune
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onReject(sug.id)}
+            disabled={isPending}
+            data-testid={`button-reject-suggestion-${sug.id}`}
+            className="border-red-300 text-red-600 hover:bg-red-50"
+          >
+            <XCircle className="w-4 h-4 mr-1" /> Dismiss
+          </Button>
+          {!canApply && sug.correctionType !== "general" && sug.tuneId && !sug.suggestedValue && (
+            <p className="text-xs text-muted-foreground self-center">No suggested value — review manually via tune link above.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 type EnrichedSubmission = RecordingSubmission & { tuneTitle?: string };
 
-function SubmissionCard({ sub, onApprove, onReject, isPending }: {
+function SubmissionCard({ sub, onApprove, onReject, onApplyToTune, isPending }: {
   sub: EnrichedSubmission;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onApplyToTune: (id: number) => void;
   isPending: boolean;
 }) {
   const statusColor = sub.status === "approved"
@@ -165,7 +249,7 @@ function SubmissionCard({ sub, onApprove, onReject, isPending }: {
       </div>
 
       {sub.status === "pending" && (
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 flex-wrap">
           <Button
             size="sm"
             onClick={() => onApprove(sub.id)}
@@ -185,6 +269,22 @@ function SubmissionCard({ sub, onApprove, onReject, isPending }: {
           >
             <XCircle className="w-4 h-4 mr-1" /> Reject
           </Button>
+        </div>
+      )}
+      {(sub.status === "approved" || sub.status === "pending") && (sub.youtubeUrl || sub.audioUrl) && (
+        <div className="pt-1 border-t border-border">
+          <Button
+            size="sm"
+            onClick={() => onApplyToTune(sub.id)}
+            disabled={isPending}
+            data-testid={`button-apply-to-tune-${sub.id}`}
+            className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5"
+          >
+            <Zap className="w-4 h-4" /> Apply to tune
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1">
+            Writes {sub.youtubeUrl ? "YouTube ID" : "audio URL"} directly to the tune record.
+          </p>
         </div>
       )}
     </div>
@@ -499,6 +599,52 @@ export default function AdminPage() {
     onError: () => toast({ title: "Rejection failed", variant: "destructive" }),
   });
 
+  const applyToTuneMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/admin/recording-submissions/${id}/apply-to-tune`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/recording-submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tunes"] });
+      toast({ title: "Applied to tune!", description: "The URL has been written to the tune record." });
+    },
+    onError: () => toast({ title: "Apply failed", variant: "destructive" }),
+  });
+
+  const [bulkApplying, setBulkApplying] = useState(false);
+  async function bulkApplyApproved() {
+    setBulkApplying(true);
+    try {
+      const res = await apiRequest("PATCH", "/api/admin/recording-submissions/bulk-apply-approved");
+      const data = res as any;
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/recording-submissions"] });
+      toast({ title: `Bulk apply done — ${data.applied} tunes updated, ${data.errors} errors.` });
+    } catch {
+      toast({ title: "Bulk apply failed", variant: "destructive" });
+    } finally {
+      setBulkApplying(false);
+    }
+  }
+
+  const applySuggestionMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/admin/suggestions/${id}/apply`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/suggestions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tunes"] });
+      toast({ title: "Correction applied!", description: "The tune has been updated." });
+    },
+    onError: () => toast({ title: "Apply failed", variant: "destructive" }),
+  });
+
+  const rejectSuggestionMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/admin/suggestions/${id}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/suggestions"] });
+      toast({ title: "Suggestion dismissed." });
+    },
+    onError: () => toast({ title: "Dismiss failed", variant: "destructive" }),
+  });
+
+  const pendingSuggestionCount = subs.filter((s) => (s.status ?? "pending") === "pending").length;
+
   return (
     <div className="min-h-screen bg-background pb-12">
       <div
@@ -542,7 +688,12 @@ export default function AdminPage() {
           >
             <MessageSquare className="w-4 h-4" />
             Suggestions
-            <span className="ml-1 text-xs opacity-75">({subs.length})</span>
+            {pendingSuggestionCount > 0 && (
+              <span className="ml-1 text-xs bg-red-500 text-white rounded-full px-1.5 py-0.5 font-bold leading-none">
+                {pendingSuggestionCount}
+              </span>
+            )}
+            {pendingSuggestionCount === 0 && <span className="ml-1 text-xs opacity-75">({subs.length})</span>}
           </button>
           <button
             onClick={() => setTab("submissions")}
@@ -612,7 +763,22 @@ export default function AdminPage() {
                 <p className="text-muted-foreground">No suggestions yet.</p>
               </div>
             ) : (
-              subs.map((sug) => <SuggestionCard key={sug.id} sug={sug} />)
+              <>
+                {pendingSuggestionCount > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {pendingSuggestionCount} pending — structured corrections with a tune + suggested value can be one-click applied below.
+                  </p>
+                )}
+                {subs.map((sug) => (
+                  <SuggestionCard
+                    key={sug.id}
+                    sug={sug}
+                    onApply={(id) => applySuggestionMutation.mutate(id)}
+                    onReject={(id) => rejectSuggestionMutation.mutate(id)}
+                    isPending={applySuggestionMutation.isPending || rejectSuggestionMutation.isPending}
+                  />
+                ))}
+              </>
             )}
           </div>
         )}
@@ -627,15 +793,38 @@ export default function AdminPage() {
                 <p className="text-muted-foreground">No recording submissions yet.</p>
               </div>
             ) : (
-              recordingSubs.map((sub) => (
-                <SubmissionCard
-                  key={sub.id}
-                  sub={sub}
-                  onApprove={(id) => approveMutation.mutate(id)}
-                  onReject={(id) => rejectMutation.mutate(id)}
-                  isPending={approveMutation.isPending || rejectMutation.isPending}
-                />
-              ))
+              <>
+                {recordingSubs.some((s) => s.status === "approved") && (
+                  <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 px-5 py-4">
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">
+                        {recordingSubs.filter((s) => s.status === "approved").length} approved submission{recordingSubs.filter((s) => s.status === "approved").length !== 1 ? "s" : ""} ready
+                      </p>
+                      <p className="text-xs text-muted-foreground">Apply all to their tune records in one batch.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={bulkApplyApproved}
+                      disabled={bulkApplying}
+                      data-testid="button-bulk-apply-approved"
+                      className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5 shrink-0"
+                    >
+                      {bulkApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                      Apply all approved
+                    </Button>
+                  </div>
+                )}
+                {recordingSubs.map((sub) => (
+                  <SubmissionCard
+                    key={sub.id}
+                    sub={sub}
+                    onApprove={(id) => approveMutation.mutate(id)}
+                    onReject={(id) => rejectMutation.mutate(id)}
+                    onApplyToTune={(id) => applyToTuneMutation.mutate(id)}
+                    isPending={approveMutation.isPending || rejectMutation.isPending || applyToTuneMutation.isPending}
+                  />
+                ))}
+              </>
             )}
           </div>
         )}

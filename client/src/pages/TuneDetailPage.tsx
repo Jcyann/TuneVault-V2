@@ -4,12 +4,14 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star, MessageSquarePlus } from "lucide-react";
 import type { Tune, Recording } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
 import YoutubePlayer from "@/components/YoutubePlayer";
 import TipJar from "@/components/TipJar";
+import SuggestChangesForm from "@/components/SuggestChangesForm";
 import { useFavorites } from "@/hooks/useFavorites";
 import { trackEvent } from "@/lib/analytics";
 import { usePlaylist } from "@/context/PlaylistContext";
@@ -25,6 +27,7 @@ export default function TuneDetailPage() {
   const [showRawAbc, setShowRawAbc] = useState(false);
   const [recordingIndex, setRecordingIndex] = useState(0);
   const [videoAvailable, setVideoAvailable] = useState(true);
+  const [showSuggest, setShowSuggest] = useState(false);
 
   const { isFavorite, toggleFavorite } = useFavorites();
   const { startPlaylist } = usePlaylist();
@@ -595,8 +598,36 @@ export default function TuneDetailPage() {
           </div>
         </div>
 
+        {/* Suggest a correction */}
+        <div className="text-center py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground gap-2"
+            data-testid="button-suggest-changes"
+            onClick={() => setShowSuggest(true)}
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+            Suggest a correction
+          </Button>
+        </div>
+
         <TipJar />
       </div>
+
+      <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Suggest a Correction</DialogTitle>
+          </DialogHeader>
+          <SuggestChangesForm
+            tuneId={tune?.id}
+            tuneName={tune?.title}
+            onSuccess={() => setTimeout(() => setShowSuggest(false), 2000)}
+            onCancel={() => setShowSuggest(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

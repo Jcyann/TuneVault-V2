@@ -50,12 +50,23 @@ export function lessonInquiryEmail(data: {
   `;
 }
 
-export function suggestionEmail(data: { name?: string | null; message: string }): string {
+export function suggestionEmail(data: {
+  name?: string | null; email?: string | null; message: string;
+  tuneTitle?: string | null; correctionType?: string | null; suggestedValue?: string | null;
+}): string {
+  const typeLabel: Record<string, string> = {
+    general: "General / New tune", key: "Key correction", title: "Title correction",
+    alternative_titles: "Alt titles", source_fiddler: "Source fiddler",
+    description: "Historical info", audio: "Audio URL", video: "YouTube video",
+  };
   return `
     <h2 style="font-family:serif;color:#92400e;">New Suggestion — TuneVault</h2>
     <table style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">
-      <tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;width:160px;">From</td><td style="padding:6px 12px;">${data.name || "Anonymous"}</td></tr>
-      <tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;">Message</td><td style="padding:6px 12px;">${data.message}</td></tr>
+      <tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;width:160px;">From</td><td style="padding:6px 12px;">${data.name || "Anonymous"}${data.email ? ` &lt;<a href="mailto:${data.email}">${data.email}</a>&gt;` : ""}</td></tr>
+      ${data.tuneTitle ? `<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;">Tune</td><td style="padding:6px 12px;">${data.tuneTitle}</td></tr>` : ""}
+      ${data.correctionType ? `<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;">Type</td><td style="padding:6px 12px;">${typeLabel[data.correctionType] ?? data.correctionType}</td></tr>` : ""}
+      ${data.suggestedValue ? `<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;">Suggested value</td><td style="padding:6px 12px;font-weight:600;color:#92400e;">${data.suggestedValue}</td></tr>` : ""}
+      ${data.message && data.message !== "—" ? `<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:bold;">Notes</td><td style="padding:6px 12px;">${data.message}</td></tr>` : ""}
     </table>
     <p style="font-family:sans-serif;font-size:12px;color:#9ca3af;margin-top:24px;">Sent from TuneVault — <a href="https://tunevault.org/admin">View all suggestions</a></p>
   `;

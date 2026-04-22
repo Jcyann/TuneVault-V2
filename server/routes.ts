@@ -369,6 +369,109 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Apply a recording submission directly to the tune's primary URL fields
+  app.patch("/api/admin/recording-submissions/bulk-apply-approved", async (req, res) => {
+    try {
+      const approved = await db.select().from(recordingSubmissions).where(eq(recordingSubmissions.status, "approved"));
+      let applied = 0, errors = 0;
+      for (const sub of approved) {
+        try {
+          if (sub.youtubeUrl) {
+            const vid = extractYoutubeVideoId(sub.youtubeUrl);
+            if (vid) await db.update(tunes).set({ youtubeVideoId: vid, youtubeUrl: sub.youtubeUrl }).where(eq(tunes.id, sub.tuneId));
+          } else if (sub.audioUrl) {
+            await db.update(tunes).set({ audioUrl: sub.audioUrl }).where(eq(tunes.id, sub.tuneId));
+          }
+          await db.update(recordingSubmissions).set({ status: "applied" }).where(eq(recordingSubmissions.id, sub.id));
+          applied++;
+        } catch { errors++; }
+      }
+      res.json({ applied, errors, total: approved.length });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to bulk apply" });
+    }
+  });
+
+  app.patch("/api/admin/recording-submissions/:id/apply-to-tune", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [sub] = await db.select().from(recordingSubmissions).where(eq(recordingSubmissions.id, id)).limit(1);
+      if (!sub) return res.status(404).json({ error: "Submission not found" });
+      if (sub.youtubeUrl) {
+        const vid = extractYoutubeVideoId(sub.youtubeUrl);
+        if (vid) await db.update(tunes).set({ youtubeVideoId: vid, youtubeUrl: sub.youtubeUrl }).where(eq(tunes.id, sub.tuneId));
+      } else if (sub.audioUrl) {
+        await db.update(tunes).set({ audioUrl: sub.audioUrl }).where(eq(tunes.id, sub.tuneId));
+      }
+      const [updated] = await db.update(recordingSubmissions).set({ status: "applied" }).where(eq(recordingSubmissions.id, id)).returning();
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to apply submission to tune" });
+    }
+  });
+
+  // ── Suggestion apply / reject ────────────────────────────────────
+  app.patch("/api/admin/suggestions/:id/apply", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [sug] = await db.select().from(suggestions).where(eq(suggestions.id, id)).limit(1);
+      if (!sug) return res.status(404).json({ error: "Suggestion not found" });
+      if (sug.tuneId && sug.correctionType && sug.suggestedValue) {
+        const fieldMap: Record<string, keyof typeof tunes.$inferSelect> = {
+          key: "key",
+          title: "title",
+          alternative_titles: "alternativeTitles",
+          audio: "audioUrl",
+          description: "description",
+          source_fiddler: "sourceFiddler",
+        } as any;
+        const drizzleMap: Record<string, any> = {
+          key: tunes.key,
+          title: tunes.title,
+          alternative_titles: tunes.alternativeTitles,
+          audio: tunes.audioUrl,
+          description: tunes.description,
+          source_fiddler: tunes.sourceFiddler,
+          video: tunes.youtubeVideoId,
+        };
+        let value: string = sug.suggestedValue;
+        if (sug.correctionType === "video") {
+          value = extractYoutubeVideoId(sug.suggestedValue) ?? sug.suggestedValue;
+          await db.update(tunes).set({ youtubeVideoId: value, youtubeUrl: sug.suggestedValue }).where(eq(tunes.id, sug.tuneId));
+        } else {
+          const col = drizzleMap[sug.correctionType];
+          if (col !== undefined) {
+            const updateData: Partial<typeof tunes.$inferSelect> = {};
+            (updateData as any)[Object.keys(fieldMap).find(k => fieldMap[k] === col.name) ?? sug.correctionType] = value;
+            // Use raw update via type-safe set
+            const sets: Record<string, string> = {};
+            sets[sug.correctionType === "alternative_titles" ? "alternativeTitles"
+              : sug.correctionType === "source_fiddler" ? "sourceFiddler"
+              : sug.correctionType === "audio" ? "audioUrl"
+              : sug.correctionType] = value;
+            await db.update(tunes).set(sets as any).where(eq(tunes.id, sug.tuneId!));
+          }
+        }
+      }
+      const [updated] = await db.update(suggestions).set({ status: "applied" } as any).where(eq(suggestions.id, id)).returning();
+      res.json(updated);
+    } catch (err) {
+      console.error("Apply suggestion error:", err);
+      res.status(500).json({ error: "Failed to apply suggestion" });
+    }
+  });
+
+  app.patch("/api/admin/suggestions/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [updated] = await db.update(suggestions).set({ status: "rejected" } as any).where(eq(suggestions.id, id)).returning();
+      if (!updated) return res.status(404).json({ error: "Suggestion not found" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to reject suggestion" });
+    }
+  });
+
   // ── YouTube Sync ──────────────────────────────────────────────
   function normalizeTitle(t: string): string {
     return t
