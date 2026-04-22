@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight, ChevronRight } from "lucide-react";
+import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,11 @@ interface TunesResponse {
   limit: number;
 }
 
+interface TuneOfTheDayResponse {
+  tune: Tune;
+  date: string;
+}
+
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-300",
   intermediate: "bg-amber-100 text-amber-800 border-amber-300",
@@ -34,30 +39,48 @@ export default function TuneOfTheDayPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { playTune } = usePlaylist();
   const [videoAvailable, setVideoAvailable] = useState(true);
+  const [shufflePage, setShufflePage] = useState<number | null>(null);
+  const isShuffled = shufflePage !== null;
 
   const { data: statsData } = useQuery<{ total: string }>({
     queryKey: ["/api/stats"],
   });
-  const total = parseInt(statsData?.total ?? "997", 10);
-
-  const [page, setPage] = useState<number>(() => randomPage(997));
+  const total = parseInt(statsData?.total ?? "1032", 10);
 
   const shuffle = useCallback(() => {
     setVideoAvailable(true);
-    setPage(randomPage(total > 0 ? total : 997));
+    setShufflePage(randomPage(total > 0 ? total : 1032));
   }, [total]);
 
-  const { data, isLoading } = useQuery<TunesResponse>({
-    queryKey: ["/api/tunes", { limit: 1, page }],
-    queryFn: () => fetch(`/api/tunes?limit=1&page=${page}`).then((r) => r.json()),
+  const resetToToday = useCallback(() => {
+    setVideoAvailable(true);
+    setShufflePage(null);
+  }, []);
+
+  // Daily tune — server picks deterministically from date
+  const { data: todayData, isLoading: loadingToday } = useQuery<TuneOfTheDayResponse>({
+    queryKey: ["/api/tune-of-the-day"],
+    enabled: !isShuffled,
   });
 
-  const tune = data?.tunes?.[0] ?? null;
+  // Shuffled tune — random page pick
+  const { data: shuffleData, isLoading: loadingShuffled } = useQuery<TunesResponse>({
+    queryKey: ["/api/tunes", { limit: 1, page: shufflePage }],
+    queryFn: () => fetch(`/api/tunes?limit=1&page=${shufflePage}`).then((r) => r.json()),
+    enabled: isShuffled,
+  });
+
+  const tune: Tune | null = isShuffled
+    ? (shuffleData?.tunes?.[0] ?? null)
+    : (todayData?.tune ?? null);
+
+  const isLoading = isShuffled ? loadingShuffled : loadingToday;
 
   useEffect(() => {
     if (tune) document.title = `Tune of the Day: ${tune.title} | TuneVault`;
     return () => { document.title = "TuneVault — Old-Time Fiddle Treasury"; };
   }, [tune]);
+
   const faved = tune ? isFavorite(tune.id) : false;
 
   const todayLabel = new Date().toLocaleDateString("en-US", {
@@ -86,19 +109,35 @@ export default function TuneOfTheDayPage() {
                 <p className="text-primary-foreground/70 text-sm mt-0.5">{todayLabel}</p>
               </div>
             </div>
-            <Button
-              onClick={shuffle}
-              data-testid="button-shuffle-totd"
-              variant="outline"
-              size="sm"
-              className="border-white/30 text-white hover:bg-white/15 hover:text-white bg-white/10 self-start mt-1"
-            >
-              <Shuffle className="w-3.5 h-3.5 mr-1.5" />
-              Show me another
-            </Button>
+            <div className="flex gap-2 flex-wrap self-start mt-1">
+              {isShuffled && (
+                <Button
+                  onClick={resetToToday}
+                  data-testid="button-back-to-today"
+                  variant="outline"
+                  size="sm"
+                  className="border-white/30 text-white hover:bg-white/15 hover:text-white bg-white/10"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  Today's tune
+                </Button>
+              )}
+              <Button
+                onClick={shuffle}
+                data-testid="button-shuffle-totd"
+                variant="outline"
+                size="sm"
+                className="border-white/30 text-white hover:bg-white/15 hover:text-white bg-white/10"
+              >
+                <Shuffle className="w-3.5 h-3.5 mr-1.5" />
+                Explore another
+              </Button>
+            </div>
           </div>
           <p className="text-primary-foreground/60 text-sm max-w-lg mt-4">
-            A randomly selected tune from the vault — press shuffle any time to discover a new one.
+            {isShuffled
+              ? "Exploring a random tune — press \"Today's tune\" to return."
+              : "One tune, picked for today. Changes at midnight. Everyone sees the same one."}
           </p>
         </div>
       </div>
@@ -113,6 +152,21 @@ export default function TuneOfTheDayPage() {
           </div>
         ) : (
           <>
+            {/* Shuffled notice */}
+            {isShuffled && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 border border-border rounded-xl px-4 py-3">
+                <Shuffle className="w-4 h-4 shrink-0 text-amber-500" />
+                <span>You're exploring a random tune.</span>
+                <button
+                  onClick={resetToToday}
+                  className="ml-auto text-amber-600 hover:underline font-medium whitespace-nowrap"
+                  data-testid="button-return-to-today-inline"
+                >
+                  Back to today's tune →
+                </button>
+              </div>
+            )}
+
             {/* Tune header */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -151,15 +205,6 @@ export default function TuneOfTheDayPage() {
                     <Play className="w-4 h-4 mr-1.5" /> Play
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  data-testid="button-shuffle-totd-inline"
-                  onClick={shuffle}
-                  className="text-muted-foreground"
-                >
-                  <Shuffle className="w-4 h-4 mr-1.5" /> Another tune
-                </Button>
               </div>
             </div>
 
@@ -254,19 +299,33 @@ export default function TuneOfTheDayPage() {
               </div>
             </Link>
 
-            {/* Shuffle again CTA */}
-            <div className="text-center py-4">
+            {/* Bottom CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Button
                 onClick={shuffle}
                 data-testid="button-shuffle-totd-bottom"
+                variant="outline"
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+                className="px-8"
               >
                 <Shuffle className="w-4 h-4 mr-2" />
-                Show me another tune
+                Explore a random tune
               </Button>
-              <p className="text-muted-foreground text-xs mt-2">997 tunes in the vault</p>
+              {isShuffled && (
+                <Button
+                  onClick={resetToToday}
+                  data-testid="button-today-bottom"
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Back to today's tune
+                </Button>
+              )}
             </div>
+            <p className="text-center text-muted-foreground text-xs">
+              {isShuffled ? `${total.toLocaleString()} tunes in the vault` : "A new tune every day at midnight UTC"}
+            </p>
           </>
         )}
 

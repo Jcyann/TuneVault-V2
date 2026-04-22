@@ -755,6 +755,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Tune of the Day ──────────────────────────────────────────────────────
+
+  app.get("/api/tune-of-the-day", async (_req, res) => {
+    try {
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(tunes);
+      const total = Number(count);
+      if (total === 0) return res.status(404).json({ error: "No tunes" });
+
+      // Deterministic index based on UTC date — same tune for all visitors each day
+      const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      let hash = 0;
+      for (const ch of dateStr) hash = (hash * 31 + ch.charCodeAt(0)) & 0x7fffffff;
+      const offset = hash % total;
+
+      const [tune] = await db.select().from(tunes).orderBy(tunes.id).limit(1).offset(offset);
+      res.json({ tune, date: dateStr });
+    } catch (err) {
+      console.error("Tune of the day error:", err);
+      res.status(500).json({ error: "Failed to fetch tune of the day" });
+    }
+  });
+
   // ── Blog routes ──────────────────────────────────────────────────────────
 
   app.get("/api/blog", async (_req, res) => {
