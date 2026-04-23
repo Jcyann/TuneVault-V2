@@ -866,8 +866,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const total = Number(count);
       if (total === 0) return res.status(404).json({ error: "No tunes" });
 
-      // Deterministic index based on UTC date — same tune for all visitors each day
-      const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      // Deterministic index — use UTC-5 offset so the tune rolls over at midnight Eastern,
+      // which is a reasonable boundary for US users (winter EST; summer is 11pm EDT, acceptable).
+      const d = new Date(Date.now() - 5 * 60 * 60 * 1000);
+      const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
       let hash = 0;
       for (const ch of dateStr) hash = (hash * 31 + ch.charCodeAt(0)) & 0x7fffffff;
       const offset = hash % total;
