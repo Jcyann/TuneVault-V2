@@ -52,7 +52,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I take lessons?",
-    a: "Yes. Jason Chinchen offers private fiddle lessons. Visit the 'Book a Lesson' page to learn more and reach out.",
+    a: "Yes. Visit the 'Book a Lesson' page to learn more and connect with one of our amazing instructors.",
   },
 ];
 
@@ -124,7 +124,7 @@ export default function AboutPage() {
               { title: "Tune of the Day", body: "A featured tune with full history, audio, and notation — refreshes every day at midnight Eastern. Shuffle any time for a different discovery." },
               { title: "Suggest a Correction", body: "Spot a wrong key, misspelled title, or missing fiddler credit? Every tune page has a 'Suggest a correction' button. Pick the issue type, enter the fix, and submit — it goes straight to the review queue." },
               { title: "Submit a Recording", body: "Recorded yourself playing a tune? Submit a link on the 'Submit a Recording' page and — with your permission — it may be added to that tune's page for the community." },
-              { title: "Blog & Lessons", body: "The Blog explores fiddle history, regional styles, and player profiles. If you'd like personalized instruction, visit the 'Book a Lesson' page to study with Jason Chinchen." },
+              { title: "Blog & Lessons", body: "The Blog explores fiddle history, regional styles, and player profiles. If you'd like personalized instruction, visit the 'Book a Lesson' page to connect with one of our amazing instructors." },
             ].map(({ title, body }) => (
               <div key={title} className="flex gap-3">
                 <ChevronRight className="w-4 h-4 mt-1 shrink-0 text-amber-500" />
