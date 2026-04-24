@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic } from "lucide-react";
+import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic, ListMusic, Gauge, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -8,7 +8,7 @@ import SuggestChangesForm from "@/components/SuggestChangesForm";
 const FAQ_ITEMS = [
   {
     q: "How many tunes are in TuneVault?",
-    a: "Over 1,000 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 940 of them.",
+    a: "1,032 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 940 of them, and more than 270 have embedded YouTube performances.",
   },
   {
     q: "Where does the audio come from?",
@@ -23,8 +23,36 @@ const FAQ_ITEMS = [
     a: "Yes — fully mobile-responsive. Swipe left/right on the home page to page through tunes. In the mini player, swipe left for next and right for previous.",
   },
   {
-    q: "Can I suggest a tune?",
-    a: "Absolutely. The goal is to cover the full canon of Old-Time repertoire.",
+    q: "How do I use TuneVault to actually learn tunes?",
+    a: "The mini player is built for learning, not just listening. Drop the speed to 75% or 50% to hear bow patterns and ornaments clearly at a pace you can follow. Use transpose to practice a tune in a different key — great for matching a jam group's pitch or cross-tuning practice. On the home page, filter by key (e.g. key of A) and difficulty (Easy or Intermediate) to build a focused practice set, then star your targets to drill them in favorites-only mode.",
+  },
+  {
+    q: "When does the Tune of the Day change?",
+    a: "Every day at midnight Eastern Time. The same tune is shown to all visitors on a given calendar day — it's deterministic, not random per visit.",
+  },
+  {
+    q: "Can I suggest a correction to a tune's details?",
+    a: "Yes — every tune page has a 'Suggest a correction' button. You can flag issues with the title, key, source fiddler, description, audio, video link, or anything else. Pick the correction type, enter the suggested value, and optionally leave your name and email. Submissions go into a review queue.",
+  },
+  {
+    q: "Can I submit my own recording?",
+    a: "Yes. Use the 'Submit a Recording' page to share a URL (SoundCloud, YouTube, Dropbox, etc.) for any old-time tune in the vault. With your permission, approved submissions are added directly to that tune's page for everyone to hear.",
+  },
+  {
+    q: "What is the Playlist feature?",
+    a: "The mini player at the bottom doubles as a playlist manager. Queue any tune to play it next, or add multiple tunes to a session playlist. Swipe or use the skip controls to move between tracks.",
+  },
+  {
+    q: "Can I suggest a new tune that isn't in TuneVault yet?",
+    a: "Absolutely. Use the 'Suggest a correction' form on any tune page (choose 'General / other') or use the form on this page and describe the tune you'd like added. The goal is to cover the full canon of Old-Time repertoire.",
+  },
+  {
+    q: "Is there a blog?",
+    a: "Yes — the Blog covers fiddle history, regional styles, tune deep-dives, and the tradition's living players. Find it in the navigation menu.",
+  },
+  {
+    q: "Can I take lessons?",
+    a: "Yes. Jason Chinchen offers private fiddle lessons. Visit the 'Book a Lesson' page to learn more and reach out.",
   },
 ];
 
@@ -38,7 +66,7 @@ const BADGE_EXPLANATIONS = [
 export default function AboutPage() {
   usePageMeta(
     "About & FAQ",
-    "Learn how to use TuneVault — nearly 1,000 Old-Time fiddle tunes with audio, history, notation, and video. FAQ for serious learners and session players."
+    "Learn how to use TuneVault — 1,032 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, community recordings, Tune of the Day, blog, and lessons. FAQ for serious learners and session players."
   );
 
 
@@ -90,10 +118,13 @@ export default function AboutPage() {
           <h2 className="text-2xl font-serif font-bold text-foreground mb-4">Quick Start</h2>
           <div className="space-y-3">
             {[
-              { title: "Search & Filter", body: "Use the search bar to find tunes by name. Filter by key, difficulty, region, and tune type — all filters combine. When filters are active, the filter bar glows amber and shows a count — tap the red Clear button to reset." },
-              { title: "Play & Follow Along", body: "Click a tune card to open it. Tap the play button to queue audio in the mini player. The player remembers your position and lets you shuffle or go in order." },
+              { title: "Search & Filter", body: "Use the search bar to find tunes by name. Filter by key, difficulty, region, and tune type — all filters combine and narrow instantly. Working on tunes in A? Filter to key of A. Building your beginner repertoire? Filter to Easy. Use favorites-only mode to drill your personal set list." },
+              { title: "Play & Slow It Down", body: "Click any tune to open it, then hit play to load it into the mini player. The player has a speed control — drop it to 75% or 50% to hear every ornament and bow change at a learnable pace. Use transpose to hear the tune in a different key without retuning. Add tunes to a session playlist and swipe or skip through them." },
               { title: "Favorites", body: "Star any tune to save it locally. Filter to favorites-only with the star button in the toolbar." },
-              { title: "Tune of the Day", body: "A random featured tune with full history, audio, and notation. Shuffle for a new one any time." },
+              { title: "Tune of the Day", body: "A featured tune with full history, audio, and notation — refreshes every day at midnight Eastern. Shuffle any time for a different discovery." },
+              { title: "Suggest a Correction", body: "Spot a wrong key, misspelled title, or missing fiddler credit? Every tune page has a 'Suggest a correction' button. Pick the issue type, enter the fix, and submit — it goes straight to the review queue." },
+              { title: "Submit a Recording", body: "Recorded yourself playing a tune? Submit a link on the 'Submit a Recording' page and — with your permission — it may be added to that tune's page for the community." },
+              { title: "Blog & Lessons", body: "The Blog explores fiddle history, regional styles, and player profiles. If you'd like personalized instruction, visit the 'Book a Lesson' page to study with Jason Chinchen." },
             ].map(({ title, body }) => (
               <div key={title} className="flex gap-3">
                 <ChevronRight className="w-4 h-4 mt-1 shrink-0 text-amber-500" />
@@ -119,6 +150,46 @@ export default function AboutPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Practice Tools callout */}
+        <section className="rounded-xl border border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-800 p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-sky-600" />
+            <h2 className="text-xl font-serif font-bold text-sky-900 dark:text-sky-100">Built for Learning, Not Just Listening</h2>
+          </div>
+          <p className="text-sky-800 dark:text-sky-200 text-sm leading-relaxed">
+            TuneVault is a practice room as much as a reference library. Three tools make it especially useful when you're actively working on your playing:
+          </p>
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <Gauge className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Speed Control</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  The mini player lets you slow any recording to 75% or 50% of full speed with no pitch change. Hear every grace note, bow lift, and rhythmic nuance at a pace you can actually follow — then ramp back up as the tune gets under your fingers.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Transpose</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  Shift a recording up or down by semitone without re-tuning your instrument. Ideal when a jam session is playing a tune in a different key, when you're exploring cross-tunings, or when you want to hear how a melody sits in D versus A.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Filters as a Practice Planner</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  Filter the full vault by key, difficulty, region, and tune type simultaneously. Drill everything in the key of G before moving on, focus on waltzes one week, or work through Easy tunes region by region. Star what you're working on and switch to favorites-only mode to keep your practice list front and center.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
