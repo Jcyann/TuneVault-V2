@@ -8,7 +8,7 @@ import SuggestChangesForm from "@/components/SuggestChangesForm";
 const FAQ_ITEMS = [
   {
     q: "How many tunes are in TuneVault?",
-    a: "1,032 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 940 of them, and more than 270 have embedded YouTube performances.",
+    a: "Over 1,050 — spanning reels, breakdowns, waltzes, jigs, polkas, marches, hornpipes, modal tunes, and more. Audio is available for over 940 of them, and more than 270 have embedded YouTube performances.",
   },
   {
     q: "Where does the audio come from?",
@@ -66,7 +66,7 @@ const BADGE_EXPLANATIONS = [
 export default function AboutPage() {
   usePageMeta(
     "About & FAQ",
-    "Learn how to use TuneVault — 1,032 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, community recordings, Tune of the Day, blog, and lessons. FAQ for serious learners and session players."
+    "Learn how to use TuneVault — over 1,050 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, community recordings, Tune of the Day, blog, and lessons. FAQ for serious learners and session players."
   );
 
 
