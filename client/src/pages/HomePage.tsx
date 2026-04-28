@@ -214,6 +214,8 @@ export default function HomePage() {
 
   const hasFilters = selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "";
   const activeFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all", search !== "", showFavorites].filter(Boolean).length;
+  // Count only dropdown-controlled filters (excludes favorites) for the mobile filter sheet badge
+  const dropdownFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all"].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchInput(""); setSearch("");
@@ -371,13 +373,13 @@ export default function HomePage() {
             <button
               data-testid="button-open-filter-sheet"
               onClick={() => setFilterSheetOpen(true)}
-              className={`flex-1 flex items-center justify-center gap-2 h-9 px-4 rounded-full border text-sm font-medium transition-colors ${activeFilterCount > 0 ? "bg-amber-500 border-amber-500 text-white" : "border-border text-foreground hover:bg-muted"}`}
+              className={`flex-1 flex items-center justify-center gap-2 h-9 px-4 rounded-full border text-sm font-medium transition-colors ${dropdownFilterCount > 0 ? "bg-amber-500 border-amber-500 text-white" : "border-border text-foreground hover:bg-muted"}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filters
-              {activeFilterCount > 0 && (
+              {dropdownFilterCount > 0 && (
                 <span className="bg-white text-amber-600 rounded-full w-5 h-5 text-xs font-bold flex items-center justify-center leading-none">
-                  {activeFilterCount}
+                  {dropdownFilterCount}
                 </span>
               )}
             </button>
