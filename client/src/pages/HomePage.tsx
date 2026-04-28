@@ -5,14 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, SlidersHorizontal } from "lucide-react";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
 import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
+
+const QUICK_CHIPS = [
+  { label: "Reels", filterType: "tuneType", value: "reel" },
+  { label: "Breakdowns", filterType: "tuneType", value: "breakdown" },
+  { label: "Waltzes", filterType: "tuneType", value: "waltz" },
+  { label: "Jigs", filterType: "tuneType", value: "jig" },
+  { label: "Beginner", filterType: "difficulty", value: "beginner" },
+  { label: "Key of A", filterType: "key", value: "A" },
+  { label: "Key of D", filterType: "key", value: "D" },
+  { label: "Key of G", filterType: "key", value: "G" },
+  { label: "Appalachian", filterType: "region", value: "Appalachian" },
+] as const;
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-200",
@@ -112,6 +125,7 @@ export default function HomePage() {
   const [page, setPage] = useState(init.page);
   const [showFavorites, setShowFavorites] = useState(false);
   const [shuffleLoading, setShuffleLoading] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMounted = useRef(false);
 
@@ -273,23 +287,55 @@ export default function HomePage() {
 
           {/* Hero search */}
           <div className="relative max-w-2xl mt-7">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-foreground/50 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             <input
               data-testid="input-search"
-              className="w-full rounded-full bg-white/15 border border-white/25 text-primary-foreground placeholder:text-primary-foreground/55 pl-12 pr-10 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-white/35 transition-all"
+              className="w-full rounded-full bg-white border border-white/90 text-gray-800 placeholder:text-gray-400 pl-12 pr-10 py-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-lg transition-all"
               placeholder={`Search ${stats?.total?.toLocaleString() ?? "1,000+"} old-time tunes…`}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); setShowFavorites(false); }}
             />
             {searchInput && (
               <button
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={() => { setSearchInput(""); setSearch(""); }}
                 data-testid="button-clear-search"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
+          </div>
+
+          {/* Quick-filter chips */}
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none max-w-2xl">
+            {QUICK_CHIPS.map((chip) => {
+              const isActive =
+                (chip.filterType === "tuneType" && selectedType === chip.value) ||
+                (chip.filterType === "difficulty" && selectedDifficulty === chip.value) ||
+                (chip.filterType === "key" && selectedKey === chip.value) ||
+                (chip.filterType === "region" && selectedRegion === chip.value);
+              return (
+                <button
+                  key={chip.label}
+                  data-testid={`chip-quick-${chip.value}`}
+                  onClick={() => {
+                    setShowFavorites(false);
+                    setPage(1);
+                    if (chip.filterType === "tuneType") setSelectedType(isActive ? "all" : chip.value);
+                    else if (chip.filterType === "difficulty") setSelectedDifficulty(isActive ? "all" : chip.value);
+                    else if (chip.filterType === "key") setSelectedKey(isActive ? "all" : chip.value);
+                    else if (chip.filterType === "region") setSelectedRegion(isActive ? "all" : chip.value);
+                  }}
+                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                    isActive
+                      ? "bg-amber-500 border-amber-500 text-white shadow-sm"
+                      : "bg-white/20 border-white/40 text-white hover:bg-white/30"
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Stats */}
@@ -318,14 +364,116 @@ export default function HomePage() {
 
       {/* ── Sticky filter strip ───────────────────────────────────────── */}
       <div className={`sticky top-0 z-20 backdrop-blur-sm border-b shadow-sm transition-colors duration-300 ${activeFilterCount > 0 ? "bg-amber-50/95 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800" : "bg-background/95 border-border"}`}>
-        {activeFilterCount > 0 && (
-          <div className="bg-amber-500 text-white text-xs text-center py-0.5 font-medium tracking-wide">
-            {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active — results are narrowed
-          </div>
-        )}
-        <div className="container mx-auto max-w-5xl px-4 py-2 flex flex-wrap items-center gap-2">
+
+        {/* Mobile filter row */}
+        <div className="sm:hidden container mx-auto max-w-5xl px-4 py-2 flex items-center gap-2">
+          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+            <button
+              data-testid="button-open-filter-sheet"
+              onClick={() => setFilterSheetOpen(true)}
+              className={`flex-1 flex items-center justify-center gap-2 h-9 px-4 rounded-full border text-sm font-medium transition-colors ${activeFilterCount > 0 ? "bg-amber-500 border-amber-500 text-white" : "border-border text-foreground hover:bg-muted"}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="bg-white text-amber-600 rounded-full w-5 h-5 text-xs font-bold flex items-center justify-center leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto pb-8">
+              <SheetHeader className="mb-5">
+                <SheetTitle>Filter Tunes</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Key</label>
+                  <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
+                    <SelectTrigger data-testid="select-key-sheet" className="w-full h-11">
+                      <SelectValue placeholder="All Keys" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Keys</SelectItem>
+                      {sortedKeys.map((k) => (
+                        <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Type</label>
+                  <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
+                    <SelectTrigger data-testid="select-type-sheet" className="w-full h-11">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {tuneTypes.map((t) => (
+                        <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
+                          {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Region</label>
+                  <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
+                    <SelectTrigger data-testid="select-region-sheet" className="w-full h-11">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Regions</SelectItem>
+                      {regions.map((r) => (
+                        <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Difficulty</label>
+                  <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
+                    <SelectTrigger data-testid="select-difficulty-sheet" className="w-full h-11">
+                      <SelectValue placeholder="All Levels" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                {hasFilters && (
+                  <Button variant="outline" className="flex-1 rounded-full" onClick={() => { clearFilters(); setFilterSheetOpen(false); }} data-testid="button-clear-filters-sheet">
+                    Clear All
+                  </Button>
+                )}
+                <Button className="flex-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setFilterSheetOpen(false)} data-testid="button-apply-filters">
+                  Apply
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Button
+            variant={showFavorites ? "default" : "outline"}
+            size="sm"
+            className={`h-9 px-3 rounded-full gap-1 ${showFavorites ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
+            onClick={() => setShowFavorites((v) => !v)}
+            data-testid="button-toggle-favorites"
+          >
+            <Star className={`w-4 h-4 ${showFavorites ? "fill-white" : "fill-amber-400"}`} />
+            {favoritesCount > 0 ? `(${favoritesCount})` : "Saved"}
+          </Button>
+        </div>
+
+        {/* Desktop filter row */}
+        <div className="hidden sm:flex container mx-auto max-w-5xl px-4 py-2 items-center gap-2 flex-wrap">
           <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-key" className="h-8 w-36 text-xs rounded-full border-border">
+            <SelectTrigger data-testid="select-key" className={`h-8 w-36 text-xs rounded-full ${selectedKey !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
               <SelectValue placeholder="All Keys" />
             </SelectTrigger>
             <SelectContent>
@@ -337,7 +485,7 @@ export default function HomePage() {
           </Select>
 
           <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-type" className="h-8 w-36 text-xs rounded-full border-border">
+            <SelectTrigger data-testid="select-type" className={`h-8 w-36 text-xs rounded-full ${selectedType !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -351,7 +499,7 @@ export default function HomePage() {
           </Select>
 
           <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-region" className="h-8 w-40 text-xs rounded-full border-border">
+            <SelectTrigger data-testid="select-region" className={`h-8 w-40 text-xs rounded-full ${selectedRegion !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
               <SelectValue placeholder="All Regions" />
             </SelectTrigger>
             <SelectContent>
@@ -363,7 +511,7 @@ export default function HomePage() {
           </Select>
 
           <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-difficulty" className="h-8 w-36 text-xs rounded-full border-border">
+            <SelectTrigger data-testid="select-difficulty" className={`h-8 w-36 text-xs rounded-full ${selectedDifficulty !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent>
@@ -395,17 +543,83 @@ export default function HomePage() {
               <X className="w-3 h-3" /> Clear
             </Button>
           )}
-
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums hidden sm:block" data-testid="text-results-count">
-            {isLoadingAny ? "…" : `${total.toLocaleString()} tunes`}
-          </span>
         </div>
+
+        {/* Active filter tags — shown on both mobile and desktop */}
+        {(selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "") && (
+          <div className="container mx-auto max-w-5xl px-4 pb-2 flex flex-wrap gap-1.5">
+            {search && (
+              <button
+                data-testid="tag-filter-search"
+                onClick={() => { setSearchInput(""); setSearch(""); }}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+              >
+                Search: "{search}" <X className="w-3 h-3" />
+              </button>
+            )}
+            {selectedKey !== "all" && (
+              <button
+                data-testid="tag-filter-key"
+                onClick={() => setSelectedKey("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+              >
+                Key of {selectedKey} <X className="w-3 h-3" />
+              </button>
+            )}
+            {selectedType !== "all" && (
+              <button
+                data-testid="tag-filter-type"
+                onClick={() => setSelectedType("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+              >
+                {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}s <X className="w-3 h-3" />
+              </button>
+            )}
+            {selectedRegion !== "all" && (
+              <button
+                data-testid="tag-filter-region"
+                onClick={() => setSelectedRegion("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+              >
+                {selectedRegion} <X className="w-3 h-3" />
+              </button>
+            )}
+            {selectedDifficulty !== "all" && (
+              <button
+                data-testid="tag-filter-difficulty"
+                onClick={() => setSelectedDifficulty("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+              >
+                {selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="container mx-auto max-w-5xl px-4 py-6">
 
-        {/* Play controls + page position row */}
+        {/* Results count — prominent standalone row above grid */}
+        <div className="flex items-center justify-between mb-3">
+          {!isLoadingAny && total > 0 ? (
+            <p className="text-sm font-medium text-foreground" data-testid="text-page-position">
+              {showFavorites ? (
+                <span><strong>{total}</strong> saved tune{total !== 1 ? "s" : ""}</span>
+              ) : (
+                <span>
+                  Showing <strong>{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</strong>{" "}
+                  of <strong>{total.toLocaleString()}</strong> tunes
+                  {totalPages > 1 && <span className="text-muted-foreground font-normal"> · Page {page} of {totalPages}</span>}
+                </span>
+              )}
+            </p>
+          ) : isLoadingAny ? (
+            <p className="text-sm text-muted-foreground" data-testid="text-page-position">Loading…</p>
+          ) : null}
+        </div>
+
+        {/* Play controls row */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           {!isLoadingAny && !showFavorites && tunesWithAudio.length > 0 && (
             <>
@@ -458,19 +672,6 @@ export default function HomePage() {
               <Shuffle className="w-3.5 h-3.5" />
               Shuffle Favorites
             </Button>
-          )}
-          {!isLoadingAny && total > 0 && (
-            <p className="text-xs text-muted-foreground" data-testid="text-page-position">
-              {showFavorites ? (
-                <span>Showing <strong className="text-foreground">{total}</strong> saved tune{total !== 1 ? "s" : ""}</span>
-              ) : (
-                <span>
-                  Showing <strong className="text-foreground">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</strong>{" "}
-                  of <strong className="text-foreground">{total.toLocaleString()}</strong>
-                  {totalPages > 1 && ` · Page ${page} of ${totalPages}`}
-                </span>
-              )}
-            </p>
           )}
         </div>
 
