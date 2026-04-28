@@ -5,9 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, SlidersHorizontal } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered } from "lucide-react";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
@@ -125,7 +124,6 @@ export default function HomePage() {
   const [page, setPage] = useState(init.page);
   const [showFavorites, setShowFavorites] = useState(false);
   const [shuffleLoading, setShuffleLoading] = useState(false);
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMounted = useRef(false);
 
@@ -214,8 +212,6 @@ export default function HomePage() {
 
   const hasFilters = selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "";
   const activeFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all", search !== "", showFavorites].filter(Boolean).length;
-  // Count only dropdown-controlled filters (excludes favorites) for the mobile filter sheet badge
-  const dropdownFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all"].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchInput(""); setSearch("");
@@ -367,184 +363,81 @@ export default function HomePage() {
       {/* ── Sticky filter strip ───────────────────────────────────────── */}
       <div className={`sticky top-0 z-20 backdrop-blur-sm border-b shadow-sm transition-colors duration-300 ${activeFilterCount > 0 ? "bg-amber-50/95 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800" : "bg-background/95 border-border"}`}>
 
-        {/* Mobile filter row */}
-        <div className="sm:hidden container mx-auto max-w-5xl px-4 py-2 flex items-center gap-2">
-          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-            <button
-              data-testid="button-open-filter-sheet"
-              onClick={() => setFilterSheetOpen(true)}
-              className={`flex-1 flex items-center justify-center gap-2 h-9 px-4 rounded-full border text-sm font-medium transition-colors ${dropdownFilterCount > 0 ? "bg-amber-500 border-amber-500 text-white" : "border-border text-foreground hover:bg-muted"}`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
-              {dropdownFilterCount > 0 && (
-                <span className="bg-white text-amber-600 rounded-full w-5 h-5 text-xs font-bold flex items-center justify-center leading-none">
-                  {dropdownFilterCount}
-                </span>
-              )}
-            </button>
-            <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto pb-8">
-              <SheetHeader className="mb-5">
-                <SheetTitle>Filter Tunes</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Key</label>
-                  <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
-                    <SelectTrigger data-testid="select-key-sheet" className="w-full h-11">
-                      <SelectValue placeholder="All Keys" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Keys</SelectItem>
-                      {sortedKeys.map((k) => (
-                        <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Type</label>
-                  <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
-                    <SelectTrigger data-testid="select-type-sheet" className="w-full h-11">
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      {tuneTypes.map((t) => (
-                        <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
-                          {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Region</label>
-                  <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
-                    <SelectTrigger data-testid="select-region-sheet" className="w-full h-11">
-                      <SelectValue placeholder="All Regions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Regions</SelectItem>
-                      {regions.map((r) => (
-                        <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Difficulty</label>
-                  <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
-                    <SelectTrigger data-testid="select-difficulty-sheet" className="w-full h-11">
-                      <SelectValue placeholder="All Levels" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                {hasFilters && (
-                  <Button variant="outline" className="flex-1 rounded-full" onClick={() => { clearFilters(); setFilterSheetOpen(false); }} data-testid="button-clear-filters-sheet">
-                    Clear All
-                  </Button>
-                )}
-                <Button className="flex-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setFilterSheetOpen(false)} data-testid="button-apply-filters">
-                  Apply
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+        {/* Unified filter row — horizontally scrollable on mobile, wraps on desktop */}
+        <div className="container mx-auto max-w-5xl px-4 py-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
+            <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
+              <SelectTrigger data-testid="select-key" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedKey !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
+                <SelectValue placeholder="All Keys" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Keys</SelectItem>
+                {sortedKeys.map((k) => (
+                  <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Button
-            variant={showFavorites ? "default" : "outline"}
-            size="sm"
-            className={`h-9 px-3 rounded-full gap-1 ${showFavorites ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
-            onClick={() => setShowFavorites((v) => !v)}
-            data-testid="button-toggle-favorites"
-          >
-            <Star className={`w-4 h-4 ${showFavorites ? "fill-white" : "fill-amber-400"}`} />
-            {favoritesCount > 0 ? `(${favoritesCount})` : "Saved"}
-          </Button>
-        </div>
+            <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
+              <SelectTrigger data-testid="select-type" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedType !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {tuneTypes.map((t) => (
+                  <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
+                    {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        {/* Desktop filter row */}
-        <div className="hidden sm:flex container mx-auto max-w-5xl px-4 py-2 items-center gap-2 flex-wrap">
-          <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-key" className={`h-8 w-36 text-xs rounded-full ${selectedKey !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-              <SelectValue placeholder="All Keys" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Keys</SelectItem>
-              {sortedKeys.map((k) => (
-                <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
+              <SelectTrigger data-testid="select-region" className={`h-8 shrink-0 w-36 text-xs rounded-full ${selectedRegion !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {regions.map((r) => (
+                  <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-type" className={`h-8 w-36 text-xs rounded-full ${selectedType !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {tuneTypes.map((t) => (
-                <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
-                  {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
+              <SelectTrigger data-testid="select-difficulty" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedDifficulty !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
+                <SelectValue placeholder="All Levels" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-region" className={`h-8 w-40 text-xs rounded-full ${selectedRegion !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-              <SelectValue placeholder="All Regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
-              {regions.map((r) => (
-                <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
-            <SelectTrigger data-testid="select-difficulty" className={`h-8 w-36 text-xs rounded-full ${selectedDifficulty !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-              <SelectValue placeholder="All Levels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant={showFavorites ? "default" : "outline"}
-            size="sm"
-            className={`h-8 px-3 text-xs rounded-full gap-1 ${showFavorites ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
-            onClick={() => setShowFavorites((v) => !v)}
-            data-testid="button-toggle-favorites"
-          >
-            <Star className={`w-3 h-3 ${showFavorites ? "fill-white" : "fill-amber-400"}`} />
-            Favorites {favoritesCount > 0 && `(${favoritesCount})`}
-          </Button>
-
-          {(hasFilters || showFavorites) && (
             <Button
+              variant={showFavorites ? "default" : "outline"}
               size="sm"
-              className="h-8 px-3 text-xs rounded-full gap-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-sm font-semibold"
-              onClick={clearFilters}
-              data-testid="button-clear-filters"
+              className={`h-8 shrink-0 px-3 text-xs rounded-full gap-1 ${showFavorites ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
+              onClick={() => setShowFavorites((v) => !v)}
+              data-testid="button-toggle-favorites"
             >
-              <X className="w-3 h-3" /> Clear
+              <Star className={`w-3 h-3 ${showFavorites ? "fill-white" : "fill-amber-400"}`} />
+              Favorites {favoritesCount > 0 && `(${favoritesCount})`}
             </Button>
-          )}
+
+            {(hasFilters || showFavorites) && (
+              <Button
+                size="sm"
+                className="h-8 shrink-0 px-3 text-xs rounded-full gap-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-sm font-semibold"
+                onClick={clearFilters}
+                data-testid="button-clear-filters"
+              >
+                <X className="w-3 h-3" /> Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Active filter tags — shown on both mobile and desktop */}
