@@ -16,14 +16,14 @@ import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
 
 const QUICK_CHIPS = [
+  { label: "Key of A", filterType: "key", value: "A" },
+  { label: "Key of D", filterType: "key", value: "D" },
+  { label: "Key of G", filterType: "key", value: "G" },
   { label: "Reels", filterType: "tuneType", value: "reel" },
   { label: "Breakdowns", filterType: "tuneType", value: "breakdown" },
   { label: "Waltzes", filterType: "tuneType", value: "waltz" },
   { label: "Jigs", filterType: "tuneType", value: "jig" },
   { label: "Beginner", filterType: "difficulty", value: "beginner" },
-  { label: "Key of A", filterType: "key", value: "A" },
-  { label: "Key of D", filterType: "key", value: "D" },
-  { label: "Key of G", filterType: "key", value: "G" },
   { label: "Appalachian", filterType: "region", value: "Appalachian" },
 ] as const;
 
