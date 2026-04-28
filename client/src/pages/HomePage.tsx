@@ -14,18 +14,6 @@ import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
 
-const QUICK_CHIPS = [
-  { label: "Key of A", filterType: "key", value: "A" },
-  { label: "Key of D", filterType: "key", value: "D" },
-  { label: "Key of G", filterType: "key", value: "G" },
-  { label: "Reels", filterType: "tuneType", value: "reel" },
-  { label: "Breakdowns", filterType: "tuneType", value: "breakdown" },
-  { label: "Waltzes", filterType: "tuneType", value: "waltz" },
-  { label: "Jigs", filterType: "tuneType", value: "jig" },
-  { label: "Beginner", filterType: "difficulty", value: "beginner" },
-  { label: "Appalachian", filterType: "region", value: "Appalachian" },
-] as const;
-
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-green-100 text-green-800 border-green-200",
   intermediate: "bg-amber-100 text-amber-800 border-amber-200",
@@ -211,7 +199,6 @@ export default function HomePage() {
   });
 
   const hasFilters = selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "";
-  const activeFilterCount = [selectedKey !== "all", selectedDifficulty !== "all", selectedRegion !== "all", selectedType !== "all", search !== "", showFavorites].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchInput(""); setSearch("");
@@ -304,36 +291,111 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Quick-filter chips */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none max-w-2xl">
-            {QUICK_CHIPS.map((chip) => {
-              const isActive =
-                (chip.filterType === "tuneType" && selectedType === chip.value) ||
-                (chip.filterType === "difficulty" && selectedDifficulty === chip.value) ||
-                (chip.filterType === "key" && selectedKey === chip.value) ||
-                (chip.filterType === "region" && selectedRegion === chip.value);
-              return (
-                <button
-                  key={chip.label}
-                  data-testid={`chip-quick-${chip.value}`}
-                  onClick={() => {
-                    setShowFavorites(false);
-                    setPage(1);
-                    if (chip.filterType === "tuneType") setSelectedType(isActive ? "all" : chip.value);
-                    else if (chip.filterType === "difficulty") setSelectedDifficulty(isActive ? "all" : chip.value);
-                    else if (chip.filterType === "key") setSelectedKey(isActive ? "all" : chip.value);
-                    else if (chip.filterType === "region") setSelectedRegion(isActive ? "all" : chip.value);
-                  }}
-                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                    isActive
-                      ? "bg-amber-500 border-amber-500 text-white shadow-sm"
-                      : "bg-white/20 border-white/40 text-white hover:bg-white/30"
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              );
-            })}
+          {/* Hero filter row */}
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none">
+            <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
+              <SelectTrigger
+                data-testid="select-key"
+                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
+                  selectedKey !== "all"
+                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
+                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
+                }`}
+              >
+                <SelectValue placeholder="All Keys" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Keys</SelectItem>
+                {sortedKeys.map((k) => (
+                  <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
+              <SelectTrigger
+                data-testid="select-type"
+                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
+                  selectedType !== "all"
+                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
+                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
+                }`}
+              >
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {tuneTypes.map((t) => (
+                  <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
+                    {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
+              <SelectTrigger
+                data-testid="select-region"
+                className={`h-9 shrink-0 w-36 text-sm rounded-full border transition-all focus:ring-amber-400 ${
+                  selectedRegion !== "all"
+                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
+                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
+                }`}
+              >
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {regions.map((r) => (
+                  <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
+              <SelectTrigger
+                data-testid="select-difficulty"
+                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
+                  selectedDifficulty !== "all"
+                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
+                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
+                }`}
+              >
+                <SelectValue placeholder="All Levels" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="button-toggle-favorites"
+              onClick={() => setShowFavorites((v) => !v)}
+              className={`h-9 shrink-0 px-4 rounded-full border text-sm font-medium transition-all gap-1.5 ${
+                showFavorites
+                  ? "bg-amber-500 border-amber-400 text-white hover:bg-amber-600"
+                  : "bg-white/15 border-white/30 text-white hover:bg-white/25"
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${showFavorites ? "fill-white" : "fill-amber-300"}`} />
+              Favorites {favoritesCount > 0 && `(${favoritesCount})`}
+            </Button>
+
+            {(hasFilters || showFavorites) && (
+              <Button
+                size="sm"
+                data-testid="button-clear-filters"
+                onClick={clearFilters}
+                className="h-9 shrink-0 px-4 rounded-full border border-white/30 bg-white/15 text-white hover:bg-white/25 text-sm font-medium gap-1.5"
+              >
+                <X className="w-3.5 h-3.5" /> Clear
+              </Button>
+            )}
           </div>
 
           {/* Stats */}
@@ -360,140 +422,45 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Sticky filter strip ───────────────────────────────────────── */}
-      <div className={`sticky top-0 z-20 backdrop-blur-sm border-b shadow-sm transition-colors duration-300 ${activeFilterCount > 0 ? "bg-amber-50/95 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800" : "bg-background/95 border-border"}`}>
 
-        {/* Unified filter row — horizontally scrollable on mobile, wraps on desktop */}
-        <div className="container mx-auto max-w-5xl px-4 py-2">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
-            <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
-              <SelectTrigger data-testid="select-key" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedKey !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-                <SelectValue placeholder="All Keys" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Keys</SelectItem>
-                {sortedKeys.map((k) => (
-                  <SelectItem key={k.key} value={k.key}>Key of {k.key} ({k.count})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* ── Main content ─────────────────────────────────────────────── */}
+      <div className="container mx-auto max-w-5xl px-4 py-6">
 
-            <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
-              <SelectTrigger data-testid="select-type" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedType !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {tuneTypes.map((t) => (
-                  <SelectItem key={t.tuneType} value={t.tuneType ?? ""}>
-                    {t.tuneType ? t.tuneType.charAt(0).toUpperCase() + t.tuneType.slice(1) : "Unknown"} ({t.count})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
-              <SelectTrigger data-testid="select-region" className={`h-8 shrink-0 w-36 text-xs rounded-full ${selectedRegion !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-                <SelectValue placeholder="All Regions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Regions</SelectItem>
-                {regions.map((r) => (
-                  <SelectItem key={r.region} value={r.region}>{r.region} ({r.count})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
-              <SelectTrigger data-testid="select-difficulty" className={`h-8 shrink-0 w-32 text-xs rounded-full ${selectedDifficulty !== "all" ? "border-amber-400 bg-amber-50 text-amber-800 font-semibold" : "border-border"}`}>
-                <SelectValue placeholder="All Levels" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant={showFavorites ? "default" : "outline"}
-              size="sm"
-              className={`h-8 shrink-0 px-3 text-xs rounded-full gap-1 ${showFavorites ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
-              onClick={() => setShowFavorites((v) => !v)}
-              data-testid="button-toggle-favorites"
-            >
-              <Star className={`w-3 h-3 ${showFavorites ? "fill-white" : "fill-amber-400"}`} />
-              Favorites {favoritesCount > 0 && `(${favoritesCount})`}
-            </Button>
-
-            {(hasFilters || showFavorites) && (
-              <Button
-                size="sm"
-                className="h-8 shrink-0 px-3 text-xs rounded-full gap-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-sm font-semibold"
-                onClick={clearFilters}
-                data-testid="button-clear-filters"
-              >
-                <X className="w-3 h-3" /> Clear
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Active filter tags — shown on both mobile and desktop */}
+        {/* Active filter tags */}
         {(selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "") && (
-          <div className="container mx-auto max-w-5xl px-4 pb-2 flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {search && (
-              <button
-                data-testid="tag-filter-search"
-                onClick={() => { setSearchInput(""); setSearch(""); }}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
-              >
+              <button data-testid="tag-filter-search" onClick={() => { setSearchInput(""); setSearch(""); }}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
                 Search: "{search}" <X className="w-3 h-3" />
               </button>
             )}
             {selectedKey !== "all" && (
-              <button
-                data-testid="tag-filter-key"
-                onClick={() => setSelectedKey("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
-              >
+              <button data-testid="tag-filter-key" onClick={() => setSelectedKey("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
                 Key of {selectedKey} <X className="w-3 h-3" />
               </button>
             )}
             {selectedType !== "all" && (
-              <button
-                data-testid="tag-filter-type"
-                onClick={() => setSelectedType("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
-              >
+              <button data-testid="tag-filter-type" onClick={() => setSelectedType("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
                 {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}s <X className="w-3 h-3" />
               </button>
             )}
             {selectedRegion !== "all" && (
-              <button
-                data-testid="tag-filter-region"
-                onClick={() => setSelectedRegion("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
-              >
+              <button data-testid="tag-filter-region" onClick={() => setSelectedRegion("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
                 {selectedRegion} <X className="w-3 h-3" />
               </button>
             )}
             {selectedDifficulty !== "all" && (
-              <button
-                data-testid="tag-filter-difficulty"
-                onClick={() => setSelectedDifficulty("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
-              >
+              <button data-testid="tag-filter-difficulty" onClick={() => setSelectedDifficulty("all")}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
                 {selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} <X className="w-3 h-3" />
               </button>
             )}
           </div>
         )}
-      </div>
-
-      {/* ── Main content ─────────────────────────────────────────────── */}
-      <div className="container mx-auto max-w-5xl px-4 py-6">
 
         {/* Results count — prominent standalone row above grid */}
         <div className="flex items-center justify-between mb-3">
