@@ -768,7 +768,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const tuneUrls = rows.map((t) => {
         const pop = t.popularity ?? 5;
         const priority = pop >= 9 ? "0.9" : pop >= 7 ? "0.7" : pop >= 5 ? "0.5" : "0.3";
-        const lastmod = t.createdAt ? new Date(t.createdAt).toISOString().slice(0, 10) : today;
+        const lastmod = today;
         return { loc: `${base}/tune/${t.id}`, priority, changefreq: "monthly", lastmod };
       });
       const urlElements = [...staticUrls, ...tuneUrls]
