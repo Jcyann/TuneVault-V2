@@ -108,6 +108,7 @@ server/
   storage.ts           — IStorage interface + PostgreSQL implementation
   scripts/
     checkYoutubeEmbeddability.ts — Batch-checks all YouTube IDs via API; updates is_embeddable
+    enrichFromTTA.ts             — Fetches historical descriptions from Traditional Tune Archive; writes to DB
 
 shared/
   schema.ts            — Drizzle schema: tunes (+ is_embeddable), recordings, etc.
@@ -139,6 +140,9 @@ data/
 The "Start application" workflow runs `fuser -k 5000/tcp 2>/dev/null; npm run dev`.
 
 To re-check YouTube embeddability: `npx tsx server/scripts/checkYoutubeEmbeddability.ts`
+To enrich descriptions from TTA (dry run first): `npx tsx server/scripts/enrichFromTTA.ts --dry-run --limit=20`
+To run for real: `npx tsx server/scripts/enrichFromTTA.ts`
+Options: `--dry-run`, `--limit=N`, `--overwrite`, `--title="Tune Name"`
 Schema changes: do NOT run `npm run db:push` — it tries to drop `seed_meta`. Use `ALTER TABLE` directly.
 
 ## Back Burner
