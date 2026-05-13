@@ -22,7 +22,7 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 | With video (embeddable) | 175 | Checked via YouTube API v3; `is_embeddable` column tracks which play |
 | With YouTube ID (total) | 274 | Several replaced with new embeddable alternatives |
 | With ABC notation | 16 | Rendered via abcjs |
-| With description | 179 | All popularity ≥ 6 tunes have descriptions; 853 default-priority tunes do not |
+| With description | 1,013+ | All 1,032 tunes attempted; ~19 ultra-obscure tunes had no web results |
 | With source fiddler | ~129 | |
 
 ## Features
