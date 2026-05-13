@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check } from "lucide-react";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
@@ -112,6 +112,7 @@ export default function HomePage() {
   const [page, setPage] = useState(init.page);
   const [showFavorites, setShowFavorites] = useState(false);
   const [shuffleLoading, setShuffleLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMounted = useRef(false);
 
@@ -206,6 +207,33 @@ export default function HomePage() {
     setSelectedRegion("all"); setSelectedType("all");
     setPage(1); setShowFavorites(false);
   };
+
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const copyFilterLink = useCallback(() => {
+    if (copied) return;
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopied(true);
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      } catch {}
+      document.body.removeChild(textArea);
+    });
+  }, [copied]);
 
   const changePage = (n: number) => {
     setPage(n);
@@ -394,6 +422,22 @@ export default function HomePage() {
                 className="h-9 shrink-0 px-4 rounded-full border border-white/30 bg-white/15 text-white hover:bg-white/25 text-sm font-medium gap-1.5"
               >
                 <X className="w-3.5 h-3.5" /> Clear
+              </Button>
+            )}
+
+            {hasFilters && (
+              <Button
+                size="sm"
+                data-testid="button-copy-link"
+                onClick={copyFilterLink}
+                className={`h-9 shrink-0 px-4 rounded-full border text-sm font-medium gap-1.5 transition-all ${
+                  copied
+                    ? "bg-green-500 border-green-400 text-white"
+                    : "bg-white/15 border-white/30 text-white hover:bg-white/25"
+                }`}
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                {copied ? "Copied!" : "Copy link"}
               </Button>
             )}
           </div>
