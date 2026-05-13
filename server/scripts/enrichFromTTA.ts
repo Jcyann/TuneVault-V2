@@ -132,14 +132,29 @@ function parseTTAAnnotation(markdown: string, tuneTitle: string): string | null 
   return result + "\n\nSource: Traditional Tune Archive (tunearch.org), adapted from The Fiddler's Companion by Andrew Kuntz. Used under Creative Commons license.";
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 async function fetchURL(url: string, title: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "TuneVault/1.0 (tunevault.org; tune enrichment bot)" },
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!res.ok) return null;
-    const html = await res.text();
+    const res = await withTimeout(
+      fetch(url, {
+        headers: { "User-Agent": "TuneVault/1.0 (tunevault.org; tune enrichment bot)" },
+        signal: controller.signal,
+      }),
+      10000
+    );
+    if (!res.ok) { clearTimeout(timer); return null; }
+    const html = await withTimeout(res.text(), 8000);
+    clearTimeout(timer);
 
     // Convert HTML to plain text
     const plain = html
@@ -161,8 +176,10 @@ async function fetchURL(url: string, title: string): Promise<string | null> {
 
     return parseTTAAnnotation(plain, title);
   } catch (err: any) {
-    if (err.name === "TimeoutError") {
-      console.warn(`  ⏱  Timeout fetching: ${url}`);
+    clearTimeout(timer);
+    controller.abort();
+    if (err.message?.includes("Timeout") || err.name === "AbortError" || err.name === "TimeoutError") {
+      console.warn(`  ⏱  Timeout: ${url}`);
     } else {
       console.warn(`  ⚠  Error fetching ${url}: ${err.message}`);
     }
@@ -178,25 +195,17 @@ async function fetchTTAAnnotation(title: string): Promise<string | null> {
   // 2. Numbered (1) variant e.g. Annotation:Soldier%27s_Joy_(1)
   // 3. "The" prefix         e.g. Annotation:The_Arkansas_Traveler
   // 4. Strip "The " prefix  e.g. Annotation:Arkansas_Traveler
+  // Try 2 candidates: exact title, then numbered (1) variant
+  // "The" prefix variants skipped to keep each miss fast
   const candidates: string[] = [
     `${TTA_BASE}${slug}`,
     `${TTA_BASE}${slug}_(1)`,
   ];
-  if (title.toLowerCase().startsWith("the ")) {
-    // already has "The" — also try without it
-    candidates.push(`${TTA_BASE}${titleToTTASlug(title.replace(/^the\s+/i, ""))}`);
-    candidates.push(`${TTA_BASE}${titleToTTASlug(title.replace(/^the\s+/i, ""))}_(1)`);
-  } else {
-    // try with "The" prefix
-    candidates.push(`${TTA_BASE}${titleToTTASlug("The " + title)}`);
-    candidates.push(`${TTA_BASE}${titleToTTASlug("The " + title)}_(1)`);
-  }
 
   for (const url of candidates) {
     const result = await fetchURL(url, title);
     if (result) return result;
-    // Small pause between candidate attempts to stay polite
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 80));
   }
   return null;
 }
@@ -255,9 +264,10 @@ async function main() {
         }
       }
 
-      // Rate-limit to be respectful
+      // Rate-limit to be respectful (shorter when it was a miss)
+      const delay = description ? DELAY_MS : 300;
       if (i < tunes.length - 1) {
-        await new Promise((r) => setTimeout(r, DELAY_MS));
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
 
