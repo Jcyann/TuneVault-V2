@@ -147,7 +147,8 @@ Schema changes: do NOT run `npm run db:push` — it tries to drop `seed_meta`. U
 
 ## Back Burner
 
-- **AI description enrichment**: 853 tunes (all popularity=5) have no historical write-up. All popularity ≥ 6 tunes are covered. Needs OpenAI (or similar) API key + a batch script to generate and write descriptions to DB + tunes.json overnight.
+- **Google Search Console setup**: Site is not yet indexed by Google. Steps: (1) Verify ownership at search.google.com/search-console using HTML meta tag — paste tag to agent to add to `<head>`. (2) Submit sitemap: `https://tunevault.org/sitemap.xml`. (3) Use URL Inspection tool to request indexing of homepage. Without this, all SEO work has no effect.
+- **AI description enrichment**: ~19 ultra-obscure tunes (popularity=5) still have no description after web search enrichment — no findable web content exists for them. May need manual write-ups or OpenAI generation.
 - **Slug-based URLs**: `/tune/soldiers-joy` instead of `/tune/9` — significant Google SEO win; requires DB slug column, redirect strategy for existing links, and sitemap update.
 - **Related Tunes**: Same-key, same-type, or commonly-played-together suggestions on each tune page — improves both UX and Google's internal link graph.
 - **Setlist / practice list builder**: Save a named list of tunes, reorder, print for a jam.
