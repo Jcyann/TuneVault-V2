@@ -94,7 +94,6 @@ export default function AboutPage() {
             {[
               { title: "Search & Filter", body: "Find tunes by name, key, difficulty, region, and type — all filters combine instantly. Star tunes to save them and switch to favorites-only mode." },
               { title: "Play & Slow It Down", body: "Click a tune, hit play, and use the mini player's speed control (75%/50%) to hear every ornament at a learnable pace. Use transpose to match a different key." },
-              { title: "Tune of the Day", body: "A featured tune with full history, audio, and notation — refreshes at midnight Eastern. Shuffle any time for a random discovery." },
               { title: "Suggest & Submit", body: "Every tune page has a 'Suggest a correction' button for wrong keys, missing credits, or anything else. Have a recording? Submit it on the Submit a Recording page." },
             ].map(({ title, body }) => (
               <div key={title} className="flex gap-3">
