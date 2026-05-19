@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic, ListMusic, Gauge, SlidersHorizontal } from "lucide-react";
+import { Music2, Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic, ListMusic, Gauge, SlidersHorizontal, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -140,6 +140,15 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* What is Old-Time link */}
+        <section>
+          <Link href="/blog/what-is-old-time-music" className="group inline-flex items-center gap-2 text-2xl font-serif font-bold text-foreground hover:text-amber-700 transition-colors">
+            What is Old-Time Music?
+            <ExternalLink className="w-5 h-5 text-amber-500 group-hover:text-amber-700 transition-colors" />
+          </Link>
+          <p className="text-muted-foreground text-sm mt-1">Read the full essay on the Blog →</p>
         </section>
 
         {/* Quick Start */}
