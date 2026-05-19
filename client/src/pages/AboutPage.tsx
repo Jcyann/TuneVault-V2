@@ -18,22 +18,6 @@ const FAQ_ITEMS = [
     q: "Does TuneVault work on mobile?",
     a: "Yes — fully mobile-responsive. Swipe left/right on the home page to page through tunes. In the mini player, swipe left for next and right for previous.",
   },
-  {
-    q: "When does the Tune of the Day change?",
-    a: "Every day at midnight Eastern. The same tune is shown to all visitors on a given calendar day.",
-  },
-  {
-    q: "Can I suggest a correction?",
-    a: "Yes — every tune page has a 'Suggest a correction' button. Flag issues with the title, key, source fiddler, description, audio, or video. Submissions go into a review queue.",
-  },
-  {
-    q: "Can I submit my own recording?",
-    a: "Yes. Use the 'Submit a Recording' page to share a URL (SoundCloud, YouTube, Dropbox, etc.). With your permission, approved submissions are added directly to that tune's page.",
-  },
-  {
-    q: "Can I suggest a new tune that isn't in TuneVault yet?",
-    a: "Absolutely. Use the 'Suggest a correction' form (choose 'General / other') and describe the tune. The goal is to cover the full canon of Old-Time repertoire.",
-  },
 ];
 
 const BADGE_EXPLANATIONS = [
@@ -170,9 +154,9 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <h3 className="text-xl font-serif font-bold text-foreground mb-1">Suggest a Tune or Correction</h3>
+          <h3 className="text-xl font-serif font-bold text-foreground mb-2">Suggest a Correction or New Tune</h3>
           <p className="text-muted-foreground text-sm mb-5">
-            Know a tune that should be here? Spot a wrong key or missing fiddler credit? Structured corrections go straight to our review queue.
+            Spot a wrong key, missing fiddler credit, or a tune that should be here? Every tune page has a "Suggest a correction" button — or use the form below. Have a recording to share? Head to the <Link href="/submit-recording" className="underline hover:text-foreground transition-colors">Submit a Recording</Link> page.
           </p>
           <SuggestChangesForm className="rounded-2xl border border-border bg-card p-6" />
         </section>
