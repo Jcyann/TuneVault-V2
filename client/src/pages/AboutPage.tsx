@@ -102,6 +102,46 @@ export default function AboutPage() {
           </p>
         </section>
 
+        {/* Practice Tools callout */}
+        <section className="rounded-xl border border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-800 p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-sky-600" />
+            <h2 className="text-xl font-serif font-bold text-sky-900 dark:text-sky-100">Built for Learning, Not Just Listening</h2>
+          </div>
+          <p className="text-sky-800 dark:text-sky-200 text-sm leading-relaxed">
+            TuneVault is a practice room as much as a reference library. Three tools make it especially useful when you're actively working on your playing:
+          </p>
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <Gauge className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Speed Control</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  The mini player lets you slow any recording to 75% or 50% of full speed with no pitch change. Hear every grace note, bow lift, and rhythmic nuance at a pace you can actually follow — then ramp back up as the tune gets under your fingers.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Transpose</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  Shift a recording up or down by semitone without re-tuning your instrument. Ideal when a jam session is playing a tune in a different key, when you're exploring cross-tunings, or when you want to hear how a melody sits in D versus A.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
+              <div>
+                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Filters as a Practice Planner</p>
+                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
+                  Filter the full vault by key, difficulty, region, and tune type simultaneously. Drill everything in the key of G before moving on, focus on waltzes one week, or work through Easy tunes region by region. Star what you're working on and switch to favorites-only mode to keep your practice list front and center.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* What is Old-Time */}
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-3">What is Old-Time Music?</h2>
@@ -150,46 +190,6 @@ export default function AboutPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Practice Tools callout */}
-        <section className="rounded-xl border border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-800 p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-sky-600" />
-            <h2 className="text-xl font-serif font-bold text-sky-900 dark:text-sky-100">Built for Learning, Not Just Listening</h2>
-          </div>
-          <p className="text-sky-800 dark:text-sky-200 text-sm leading-relaxed">
-            TuneVault is a practice room as much as a reference library. Three tools make it especially useful when you're actively working on your playing:
-          </p>
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <Gauge className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
-              <div>
-                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Speed Control</p>
-                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
-                  The mini player lets you slow any recording to 75% or 50% of full speed with no pitch change. Hear every grace note, bow lift, and rhythmic nuance at a pace you can actually follow — then ramp back up as the tune gets under your fingers.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
-              <div>
-                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Transpose</p>
-                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
-                  Shift a recording up or down by semitone without re-tuning your instrument. Ideal when a jam session is playing a tune in a different key, when you're exploring cross-tunings, or when you want to hear how a melody sits in D versus A.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <SlidersHorizontal className="w-4 h-4 mt-0.5 shrink-0 text-sky-600" />
-              <div>
-                <p className="font-semibold text-sky-900 dark:text-sky-100 text-sm">Filters as a Practice Planner</p>
-                <p className="text-sky-800 dark:text-sky-300 text-sm leading-relaxed">
-                  Filter the full vault by key, difficulty, region, and tune type simultaneously. Drill everything in the key of G before moving on, focus on waltzes one week, or work through Easy tunes region by region. Star what you're working on and switch to favorites-only mode to keep your practice list front and center.
-                </p>
-              </div>
-            </div>
           </div>
         </section>
 
