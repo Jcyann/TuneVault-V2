@@ -142,17 +142,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* What is Old-Time */}
-        <section>
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-3">What is Old-Time Music?</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Old-Time music is fiddle-driven dance music rooted in the British Isles and the African American South, which merged in the mountains of Appalachia and spread across the continent over four centuries. It's fundamentally social music — played for dancing, for community, for memory. The fiddle carries the melody while clawhammer banjo, guitar, and bass hold the groove. The emphasis is on drive, feel, and flow over showmanship.
-          </p>
-          <p className="text-muted-foreground leading-relaxed mt-3">
-            The tradition thrives today in jam sessions, contradance halls, and music camps from Asheville to Portland. Its repertoire stretches from 18th-century Scottish reels to tunes composed last decade that already feel traditional.
-          </p>
-        </section>
-
         {/* Quick Start */}
         <section>
           <h2 className="text-2xl font-serif font-bold text-foreground mb-4">Quick Start</h2>
