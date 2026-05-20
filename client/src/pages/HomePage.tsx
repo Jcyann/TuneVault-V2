@@ -366,6 +366,41 @@ export default function HomePage() {
               </button>
             )}
 
+            {/* Play actions — sit right next to the search filters */}
+            <div className="ml-auto flex items-center gap-2">
+              {!showFavorites && tunesWithAudio.length > 0 && (
+                <>
+                  <button
+                    onClick={handleShufflePlay}
+                    disabled={shuffleLoading}
+                    data-testid="button-shuffle-play"
+                    className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    {shuffleLoading ? "Loading" : "Shuffle play"}
+                  </button>
+                  <button
+                    onClick={handleChronoPlay}
+                    disabled={shuffleLoading}
+                    data-testid="button-chrono-play"
+                    className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <ListOrdered className="w-3.5 h-3.5" />
+                    Play in order
+                  </button>
+                </>
+              )}
+              {showFavorites && (favData?.tunes?.filter(t => t.audioUrl || t.locItemId).length ?? 0) > 0 && (
+                <button
+                  onClick={handleFavoritesShufflePlay}
+                  data-testid="button-shuffle-favorites"
+                  className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Shuffle className="w-3.5 h-3.5" /> Shuffle favorites
+                </button>
+              )}
+            </div>
+
             {hasFilters && (
               <button
                 data-testid="button-copy-link"
@@ -426,39 +461,6 @@ export default function HomePage() {
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
-            {!isLoadingAny && !showFavorites && tunesWithAudio.length > 0 && (
-              <>
-                <button
-                  onClick={handleShufflePlay}
-                  disabled={shuffleLoading}
-                  data-testid="button-shuffle-play"
-                  className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <Shuffle className="w-3.5 h-3.5" />
-                  {shuffleLoading ? "Loading" : "Shuffle play"}
-                </button>
-                <button
-                  onClick={handleChronoPlay}
-                  disabled={shuffleLoading}
-                  data-testid="button-chrono-play"
-                  className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors inline-flex items-center gap-1.5"
-                >
-                  <ListOrdered className="w-3.5 h-3.5" />
-                  Play in order
-                </button>
-              </>
-            )}
-            {showFavorites && (favData?.tunes?.filter(t => t.audioUrl || t.locItemId).length ?? 0) > 0 && (
-              <button
-                onClick={handleFavoritesShufflePlay}
-                data-testid="button-shuffle-favorites"
-                className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5"
-              >
-                <Shuffle className="w-3.5 h-3.5" /> Shuffle favorites
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Grid */}
