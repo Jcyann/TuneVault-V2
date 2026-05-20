@@ -57,6 +57,43 @@ interface RecordingRow {
   created_at: string;
 }
 
+interface BlogPostRow {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  author: string;
+  cover_image_url: string | null;
+  published: boolean;
+  published_at: string | null;
+}
+
+export async function seedBlogPosts(): Promise<void> {
+  const blogPath = join(SEED_DIR, "blog-posts.json");
+  if (!existsSync(blogPath)) return;
+
+  const client = await pool.connect();
+  try {
+    const posts: BlogPostRow[] = JSON.parse(readFileSync(blogPath, "utf8"));
+    let inserted = 0;
+    for (const p of posts) {
+      const result = await client.query(
+        `INSERT INTO blog_posts (slug, title, excerpt, content, author, cover_image_url, published, published_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (slug) DO NOTHING
+         RETURNING id`,
+        [p.slug, p.title, p.excerpt, p.content, p.author, p.cover_image_url, p.published, p.published_at]
+      );
+      if (result.rowCount && result.rowCount > 0) inserted++;
+    }
+    if (inserted > 0) log(`Seeded ${inserted} blog post(s)`, "autoSeed");
+  } catch (err) {
+    log(`Blog seed failed: ${err}`, "autoSeed");
+  } finally {
+    client.release();
+  }
+}
+
 export async function autoSeed(): Promise<void> {
   const client = await pool.connect();
   try {

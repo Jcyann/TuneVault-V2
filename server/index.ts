@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { autoSeed } from "./autoSeed";
+import { autoSeed, seedBlogPosts } from "./autoSeed";
 
 const app = express();
 const httpServer = createServer(app);
@@ -102,6 +102,9 @@ app.use((req, res, next) => {
       // Run autoSeed after the port is open so deployment health checks pass immediately
       autoSeed().catch((err) => {
         console.error("autoSeed failed:", err);
+      });
+      seedBlogPosts().catch((err) => {
+        console.error("seedBlogPosts failed:", err);
       });
     },
   );
