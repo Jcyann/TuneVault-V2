@@ -4,7 +4,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlaylist } from "@/context/PlaylistContext";
@@ -82,7 +83,8 @@ export default function HomePage() {
   const hasMounted = useRef(false);
 
   const { favorites, toggleFavorite, isFavorite, favoritesCount } = useFavorites();
-  const { startPlaylist } = usePlaylist();
+  const { startPlaylist, enqueue } = usePlaylist();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (showFavorites) return;
@@ -499,16 +501,48 @@ export default function HomePage() {
                   data-testid={`card-tune-${tune.id}`}
                   className="group relative block py-5 border-b border-border hover:bg-muted/40 transition-colors px-2 -mx-2"
                 >
-                  <button
-                    data-testid={`button-favorite-${tune.id}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(tune.id); }}
-                    className="absolute top-5 right-2 p-1 text-muted-foreground hover:text-primary transition-colors"
-                    aria-label={faved ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Star className={`w-4 h-4 transition-colors ${faved ? "fill-primary text-primary" : ""}`} />
-                  </button>
+                  <div className="absolute top-4 right-1.5 flex items-center gap-0.5">
+                    {(tune.audioUrl || tune.locItemId) && (
+                      <>
+                        <button
+                          data-testid={`button-play-${tune.id}`}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); startPlaylist([tune], "chronological"); }}
+                          className="p-1.5 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          aria-label="Play tune"
+                          title="Play now"
+                        >
+                          <Play className="w-3.5 h-3.5" fill="currentColor" />
+                        </button>
+                        <button
+                          data-testid={`button-queue-${tune.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const added = enqueue([tune]);
+                            toast({
+                              description: added > 0 ? `Added "${tune.title}" to queue` : `"${tune.title}" is already in your queue`,
+                              duration: 2000,
+                            });
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          aria-label="Add to queue"
+                          title="Add to queue"
+                        >
+                          <ListPlus className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      data-testid={`button-favorite-${tune.id}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(tune.id); }}
+                      className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label={faved ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Star className={`w-4 h-4 transition-colors ${faved ? "fill-primary text-primary" : ""}`} />
+                    </button>
+                  </div>
 
-                  <div className="flex items-start gap-2.5 pr-7">
+                  <div className="flex items-start gap-2.5 pr-28">
                     <span
                       className="w-1.5 h-1.5 rounded-full mt-[0.55rem] shrink-0"
                       style={{ background: typeColor }}

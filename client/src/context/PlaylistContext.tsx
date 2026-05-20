@@ -10,6 +10,7 @@ interface PlaylistContextValue {
   isActive: boolean;
   playMode: PlayMode;
   startPlaylist: (tunes: Tune[], mode?: PlayMode) => void;
+  enqueue: (tunes: Tune[]) => number;
   next: () => void;
   prev: () => void;
   setIndex: (i: number) => void;
@@ -42,6 +43,28 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     setPlayModeState(mode);
     setPlaylist(mode === "shuffle" ? shuffle(withAudio) : [...withAudio]);
     setCurrentIndex(0);
+  }, []);
+
+  const enqueue = useCallback((tunes: Tune[]) => {
+    const withAudio = tunes.filter((t) => t.audioUrl || t.locItemId);
+    if (withAudio.length === 0) return 0;
+    let added = 0;
+    setPlaylist((p) => {
+      if (p.length === 0) {
+        setOriginalOrder(withAudio);
+        setPlayModeState("chronological");
+        setCurrentIndex(0);
+        added = withAudio.length;
+        return [...withAudio];
+      }
+      const existing = new Set(p.map((t) => t.id));
+      const fresh = withAudio.filter((t) => !existing.has(t.id));
+      added = fresh.length;
+      if (fresh.length === 0) return p;
+      setOriginalOrder((o) => [...o, ...fresh]);
+      return [...p, ...fresh];
+    });
+    return added;
   }, []);
 
   const next = useCallback(() => {
@@ -78,6 +101,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         isActive: playlist.length > 0,
         playMode,
         startPlaylist,
+        enqueue,
         next,
         prev,
         setIndex: setCurrentIndex,
