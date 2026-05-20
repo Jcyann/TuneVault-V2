@@ -232,37 +232,27 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-32" {...swipeHandlers}>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="border-b border-border pt-20 sm:pt-24">
-        <div className="container mx-auto max-w-6xl px-5 pb-8 sm:pb-10">
+      <section className="border-b border-foreground pt-20 sm:pt-24 pb-10 sm:pb-14">
+        <div className="container mx-auto max-w-6xl px-5">
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-5 sm:mb-6 flex items-center gap-3">
             <span className="h-px w-8 bg-foreground/40" />
             An Old-Time Fiddle Treasury
           </p>
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
               <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
-                <span className="block">TuneVault</span>
+                TuneVault
               </h1>
               <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
                 Where the Old-Time tradition lives on.
               </p>
             </div>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xs leading-relaxed shrink-0 pb-1">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-sm leading-relaxed lg:pb-2 lg:text-right">
               Source recordings, sheet music, and history for{" "}
               <strong className="text-foreground font-semibold tabular-nums">{Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"}</strong>{" "}
-              tunes.
+              tunes from the living American old-time tradition.
             </p>
           </div>
-        </div>
-
-        {/* Full-width banner image */}
-        <div className="w-full h-52 sm:h-64 lg:h-72 overflow-hidden border-t border-border">
-          <img
-            src={fiddleHero}
-            alt="A row of fiddles on weathered wood"
-            className="w-full h-full object-cover"
-            style={{ objectPosition: "center 35%", filter: "sepia(35%) saturate(85%) brightness(0.92)" }}
-          />
         </div>
       </section>
 
