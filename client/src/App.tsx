@@ -16,6 +16,7 @@ import AdminPage from "@/pages/AdminPage";
 import SubmitRecordingPage from "@/pages/SubmitRecordingPage";
 import BlogPage from "@/pages/BlogPage";
 import BlogPostPage from "@/pages/BlogPostPage";
+import GearPage from "@/pages/GearPage";
 import NotFound from "@/pages/not-found";
 import MiniPlayer from "@/components/MiniPlayer";
 import NavBar from "@/components/NavBar";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/submit-recording" component={SubmitRecordingPage} />
       <Route path="/blog" component={BlogPage} />
       <Route path="/blog/:slug" component={BlogPostPage} />
+      <Route path="/gear" component={GearPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -28,6 +28,13 @@ export default function TipJar() {
       >
         Book a lesson in Old-Time fiddle, clawhammer banjo, guitar, or upright bass
       </Link>
+      <Link
+        href="/gear"
+        data-testid="link-gear-footer"
+        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+      >
+        Books, recordings & gear recommendations
+      </Link>
       <p className="text-xs text-muted-foreground opacity-50">TuneVault — Built for serious learners and history buffs</p>
     </div>
   );
