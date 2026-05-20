@@ -232,22 +232,37 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-32" {...swipeHandlers}>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="border-b border-foreground pt-20 sm:pt-24 pb-10 sm:pb-14">
-        <div className="container mx-auto max-w-6xl px-5">
+      <section className="border-b border-foreground pt-20 sm:pt-24 pb-10 sm:pb-14 relative overflow-hidden">
+        {/* Fiddle image — fades in from right */}
+        <div
+          className="absolute inset-y-0 right-0 w-[55%] sm:w-[50%] pointer-events-none"
+          style={{
+            maskImage: "linear-gradient(to right, transparent 0%, black 45%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 45%)",
+          }}
+        >
+          <img
+            src={fiddleHero}
+            alt=""
+            aria-hidden
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 35%" }}
+          />
+        </div>
+
+        <div className="container mx-auto max-w-6xl px-5 relative z-10">
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-5 sm:mb-6 flex items-center gap-3">
             <span className="h-px w-8 bg-foreground/40" />
             An Old-Time Fiddle Treasury
           </p>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
-                TuneVault
-              </h1>
-              <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
-                Where the Old-Time tradition lives on.
-              </p>
-            </div>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-sm leading-relaxed lg:pb-2 lg:text-right">
+          <div className="max-w-xl">
+            <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+              TuneVault
+            </h1>
+            <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
+              Where the Old-Time tradition lives on.
+            </p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-5 max-w-sm leading-relaxed">
               Source recordings, sheet music, and history for{" "}
               <strong className="text-foreground font-semibold tabular-nums">{Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"}</strong>{" "}
               tunes from the living American old-time tradition.
