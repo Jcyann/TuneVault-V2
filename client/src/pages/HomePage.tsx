@@ -260,8 +260,8 @@ export default function HomePage() {
           <img
             src={fiddleHero}
             alt="A row of fiddles on weathered wood"
-            className="w-full h-full object-cover opacity-60"
-            style={{ objectPosition: "center 35%" }}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 35%", filter: "sepia(35%) saturate(85%) brightness(0.92)" }}
           />
         </div>
       </section>
