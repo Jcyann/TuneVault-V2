@@ -243,8 +243,10 @@ export default function HomePage() {
               </p>
               <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
                 <span className="block">TuneVault</span>
-                <span className="block italic font-medium text-primary mt-1.5">The Old-Time fiddle<br />tradition's homepage.</span>
               </h1>
+              <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
+                Where the Old-Time tradition lives on.
+              </p>
               <p className="text-base sm:text-lg text-muted-foreground mt-6 max-w-xl leading-relaxed">
                 Source recordings, sheet music, and history for{" "}
                 <strong className="text-foreground font-semibold tabular-nums">{Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"}</strong>{" "}
