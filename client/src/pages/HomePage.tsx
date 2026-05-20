@@ -241,7 +241,7 @@ export default function HomePage() {
               </p>
               <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
                 <span className="block">TuneVault</span>
-                <span className="block italic font-medium text-primary mt-1.5">the old-time tradition,<br />all in one place.</span>
+                <span className="block italic font-medium text-primary mt-1.5">The Old-Time fiddle<br />tradition's homepage.</span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground mt-6 max-w-xl leading-relaxed">
                 Source recordings, sheet music, and history for{" "}
