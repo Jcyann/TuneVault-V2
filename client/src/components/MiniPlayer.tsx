@@ -159,7 +159,144 @@ export default function MiniPlayer() {
 
       <audio ref={audioRef} preload="auto" />
 
-      <div className="container mx-auto max-w-5xl px-3 pt-2 pb-2.5 space-y-1.5">
+      {/* ============ DESKTOP LAYOUT (lg+) ============ */}
+      <div className="hidden lg:block">
+        <div className="container mx-auto max-w-7xl px-8 py-3">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-8">
+
+            {/* LEFT — Title + meta */}
+            <Link href={`/tune/${current.id}`} className="flex items-center gap-3 min-w-0 group">
+              <div
+                className="w-11 h-11 rounded flex items-center justify-center shrink-0"
+                style={{ background: typeColor + "20", border: `1px solid ${typeColor}55` }}
+              >
+                <Music2 className="w-4 h-4" style={{ color: typeColor }} />
+              </div>
+              <div className="min-w-0">
+                <p className="font-display text-[15px] font-semibold leading-tight truncate group-hover:text-primary transition-colors" data-testid="mini-player-title">
+                  {current.title}
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground truncate mt-1" data-testid="mini-player-subtitle">
+                  {metaLine}
+                </p>
+              </div>
+            </Link>
+
+            {/* CENTER — Transport + seek (the focal point) */}
+            <div className="flex flex-col items-center gap-1.5 min-w-[420px]">
+              <div className="flex items-center gap-2">
+                <button onClick={toggleMode} title={playMode === "shuffle" ? "Shuffle on" : "In order"} className={`p-1.5 rounded-full transition-colors ${playMode === "shuffle" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} data-testid="mini-player-mode-toggle" aria-label={`Mode: ${playMode}`}>
+                  {playMode === "shuffle" ? <Shuffle className="w-4 h-4" /> : <ListOrdered className="w-4 h-4" />}
+                </button>
+                <button onClick={prev} className="p-2 rounded-full hover:bg-muted transition-colors text-foreground" data-testid="mini-player-prev" aria-label="Previous">
+                  <SkipBack className="w-5 h-5" fill="currentColor" />
+                </button>
+                <button
+                  onClick={togglePlay}
+                  disabled={!resolvedUrl && !skipping}
+                  className="mx-1 w-11 h-11 rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 shadow-sm flex items-center justify-center"
+                  style={{ background: typeColor }}
+                  data-testid="mini-player-play-pause"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause className="w-5 h-5" fill="currentColor" /> : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
+                </button>
+                <button onClick={next} className="p-2 rounded-full hover:bg-muted transition-colors text-foreground" data-testid="mini-player-next" aria-label="Next">
+                  <SkipForward className="w-5 h-5" fill="currentColor" />
+                </button>
+                {playMode === "shuffle" ? (
+                  <button onClick={reshuffle} title="Reshuffle" className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-reshuffle" aria-label="Reshuffle">
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                ) : <span className="w-7" />}
+              </div>
+
+              {/* Seek */}
+              <div className="flex items-center gap-3 w-full">
+                <span className="text-[11px] text-muted-foreground tabular-nums w-9 text-right shrink-0">{fmt(progress)}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 1}
+                  step={0.5}
+                  value={progress}
+                  onChange={handleSeek}
+                  className="flex-1 h-1 accent-amber-500 cursor-pointer"
+                  data-testid="mini-player-progress"
+                />
+                <span className="text-[11px] text-muted-foreground tabular-nums w-9 shrink-0">{fmt(duration)}</span>
+              </div>
+            </div>
+
+            {/* RIGHT — Speed · Pitch · Close */}
+            <div className="flex items-center justify-end gap-5">
+              {/* Speed */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Speed</span>
+                <div className="flex items-center gap-1">
+                  {SPEED_OPTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSpeed(s)}
+                      data-testid={`speed-btn-${s}`}
+                      aria-label={`Speed ${SPEED_LABELS[s]}`}
+                      className={`px-2 py-1 rounded text-xs font-semibold tabular-nums transition-colors ${speed === s ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                      style={speed === s ? { background: typeColor } : {}}
+                    >
+                      {SPEED_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-7 bg-border" aria-hidden />
+
+              {/* Pitch */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Pitch</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSemitones((n) => Math.max(-6, n - 1))}
+                    data-testid="pitch-down"
+                    disabled={semitones <= -6}
+                    className="w-6 h-6 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
+                    aria-label="Pitch down"
+                  >−</button>
+                  <span
+                    className={`text-xs font-semibold tabular-nums min-w-[3rem] text-center px-2 py-1 rounded transition-colors ${semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"}`}
+                    style={semitones !== 0 ? { background: typeColor } : {}}
+                    data-testid="pitch-display"
+                  >
+                    {keyDisplay}
+                  </span>
+                  <button
+                    onClick={() => setSemitones((n) => Math.min(6, n + 1))}
+                    data-testid="pitch-up"
+                    disabled={semitones >= 6}
+                    className="w-6 h-6 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
+                    aria-label="Pitch up"
+                  >+</button>
+                  {semitones !== 0 && (
+                    <button onClick={() => setSemitones(0)} data-testid="pitch-reset" className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1">reset</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-7 bg-border" aria-hidden />
+
+              <button onClick={dismiss} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-dismiss" aria-label="Close player">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ============ MOBILE / TABLET LAYOUT (<lg) ============ */}
+      <div className="lg:hidden container mx-auto max-w-5xl px-3 pt-2 pb-2.5 space-y-1.5">
 
         {/* Row 1 — Seek bar */}
         <div className="flex items-center gap-2">
@@ -172,60 +309,31 @@ export default function MiniPlayer() {
             value={progress}
             onChange={handleSeek}
             className="flex-1 h-1 accent-amber-500 cursor-pointer"
-            data-testid="mini-player-progress"
+            data-testid="mini-player-progress-mobile"
           />
           <span className="text-xs text-muted-foreground tabular-nums w-8 shrink-0">{fmt(duration)}</span>
         </div>
 
         {/* Row 2 — Title · Transport · Speed */}
         <div className="flex items-center gap-2">
-
-          {/* Tune info */}
           <Link href={`/tune/${current.id}`} className="flex items-center gap-2 min-w-0 flex-1 group">
-            <div
-              className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-              style={{ background: typeColor + "22", border: `1px solid ${typeColor}55` }}
-            >
+            <div className="w-6 h-6 rounded flex items-center justify-center shrink-0" style={{ background: typeColor + "22", border: `1px solid ${typeColor}55` }}>
               <Music2 className="w-3 h-3" style={{ color: typeColor }} />
             </div>
-            <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors leading-tight" data-testid="mini-player-title">
-              {current.title}
-            </p>
+            <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors leading-tight">{current.title}</p>
           </Link>
 
-          {/* Transport */}
           <div className="flex items-center gap-0.5 shrink-0">
-            <button onClick={prev} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-prev" aria-label="Previous">
-              <SkipBack className="w-4 h-4" />
-            </button>
-            <button
-              onClick={togglePlay}
-              disabled={!resolvedUrl && !skipping}
-              className="mx-1 p-2 rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 shadow-sm"
-              style={{ background: typeColor }}
-              data-testid="mini-player-play-pause"
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
+            <button onClick={prev} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" aria-label="Previous"><SkipBack className="w-4 h-4" /></button>
+            <button onClick={togglePlay} disabled={!resolvedUrl && !skipping} className="mx-1 p-2 rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 shadow-sm" style={{ background: typeColor }} aria-label={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
             </button>
-            <button onClick={next} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-next" aria-label="Next">
-              <SkipForward className="w-4 h-4" />
-            </button>
+            <button onClick={next} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" aria-label="Next"><SkipForward className="w-4 h-4" /></button>
           </div>
 
-          {/* Speed pills — always visible */}
           <div className="flex items-center gap-1 shrink-0">
             {SPEED_OPTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSpeed(s)}
-                data-testid={`speed-btn-${s}`}
-                aria-label={`Speed ${SPEED_LABELS[s]}`}
-                className={`px-2 py-0.5 rounded text-xs font-semibold tabular-nums transition-colors ${
-                  speed === s ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-                style={speed === s ? { background: typeColor } : {}}
-              >
+              <button key={s} onClick={() => setSpeed(s)} aria-label={`Speed ${SPEED_LABELS[s]}`} className={`px-2 py-0.5 rounded text-xs font-semibold tabular-nums transition-colors ${speed === s ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`} style={speed === s ? { background: typeColor } : {}}>
                 {SPEED_LABELS[s]}
               </button>
             ))}
@@ -234,68 +342,27 @@ export default function MiniPlayer() {
 
         {/* Row 3 — Meta · Pitch · Actions */}
         <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground truncate flex-1 leading-tight">{metaLine}</p>
 
-          {/* Meta */}
-          <p className="text-xs text-muted-foreground truncate flex-1 leading-tight" data-testid="mini-player-subtitle">
-            {metaLine}
-          </p>
-
-          {/* Pitch transposer — always visible */}
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setSemitones((n) => Math.max(-6, n - 1))}
-              data-testid="pitch-down"
-              disabled={semitones <= -6}
-              className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
-              aria-label="Pitch down"
-            >−</button>
-            <span
-              className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${
-                semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"
-              }`}
-              style={semitones !== 0 ? { background: typeColor } : {}}
-              data-testid="pitch-display"
-            >
-              {keyDisplay}
-            </span>
-            <button
-              onClick={() => setSemitones((n) => Math.min(6, n + 1))}
-              data-testid="pitch-up"
-              disabled={semitones >= 6}
-              className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
-              aria-label="Pitch up"
-            >+</button>
+            <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch down">−</button>
+            <span className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"}`} style={semitones !== 0 ? { background: typeColor } : {}}>{keyDisplay}</span>
+            <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch up">+</button>
             {semitones !== 0 && (
-              <button
-                onClick={() => setSemitones(0)}
-                data-testid="pitch-reset"
-                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
-              >reset</button>
+              <button onClick={() => setSemitones(0)} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">reset</button>
             )}
           </div>
 
-          {/* Shuffle / reshuffle / close */}
           <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              onClick={toggleMode}
-              title={playMode === "shuffle" ? "Shuffle on" : "In order"}
-              className={`p-1 rounded-full transition-colors ${playMode === "shuffle" ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}
-              data-testid="mini-player-mode-toggle"
-              aria-label={`Mode: ${playMode}`}
-            >
+            <button onClick={toggleMode} title={playMode === "shuffle" ? "Shuffle on" : "In order"} className={`p-1 rounded-full transition-colors ${playMode === "shuffle" ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`} aria-label={`Mode: ${playMode}`}>
               {playMode === "shuffle" ? <Shuffle className="w-3.5 h-3.5" /> : <ListOrdered className="w-3.5 h-3.5" />}
             </button>
             {playMode === "shuffle" && (
-              <button onClick={reshuffle} title="Reshuffle" className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-reshuffle" aria-label="Reshuffle">
-                <RotateCcw className="w-3 h-3" />
-              </button>
+              <button onClick={reshuffle} title="Reshuffle" className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" aria-label="Reshuffle"><RotateCcw className="w-3 h-3" /></button>
             )}
-            <button onClick={dismiss} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-0.5" data-testid="mini-player-dismiss" aria-label="Close player">
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <button onClick={dismiss} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-0.5" aria-label="Close player"><X className="w-3.5 h-3.5" /></button>
           </div>
         </div>
-
       </div>
     </div>
   );
