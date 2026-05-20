@@ -13,42 +13,47 @@ export default function NavBar() {
   const [location] = useLocation();
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 backdrop-blur-md"
-      style={{
-        backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-      }}
-    >
-      <div className="container mx-auto max-w-5xl px-4 h-12 flex items-center gap-1">
-        {navLinks.map(({ href, label }) => {
-          const active = location === href || (href === "/" && location === "");
-          return (
-            <Link
-              key={href}
-              href={href}
-              data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
-              className={`hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                active
-                  ? "bg-white/20 text-white"
-                  : "text-white/75 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {label}
-            </Link>
-          );
-        })}
+    <nav className="fixed top-0 left-0 right-0 z-30 bg-background/90 backdrop-blur border-b border-border">
+      <div className="container mx-auto max-w-6xl px-5 h-14 flex items-center justify-between">
+        <Link
+          href="/"
+          data-testid="nav-wordmark"
+          className="font-display text-xl font-bold tracking-tight text-foreground hover:text-primary transition-colors"
+        >
+          TuneVault
+        </Link>
+        <div className="hidden sm:flex items-center gap-1">
+          {navLinks.map(({ href, label }) => {
+            const active = location === href || (href === "/" && location === "");
+            return (
+              <Link
+                key={href}
+                href={href}
+                data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                className={`relative inline-flex items-center px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] font-medium transition-colors ${
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+                {active && (
+                  <span className="absolute left-3 right-3 -bottom-0.5 h-px bg-primary" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Mobile bottom tab strip */}
-      <div className="sm:hidden flex border-t border-white/10">
+      <div className="sm:hidden flex border-t border-border bg-background">
         {navLinks.map(({ href, label, icon: Icon }) => {
           const active = location === href || (href === "/" && location === "");
           return (
             <Link
               key={href}
               href={href}
-              className={`flex-1 flex flex-col items-center py-1.5 text-[9px] font-medium transition-colors ${
-                active ? "text-amber-400" : "text-white/60 hover:text-white"
+              className={`flex-1 flex flex-col items-center py-1.5 text-[9px] font-medium tracking-wider uppercase transition-colors ${
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Icon className="w-4 h-4 mb-0.5" />

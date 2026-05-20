@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Music2, ExternalLink, FileText, Video, BookOpen, Star, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Music2, ExternalLink, Video, BookOpen, Star, MessageSquarePlus, Play } from "lucide-react";
 import type { Tune, Recording } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
@@ -16,11 +14,26 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { trackEvent } from "@/lib/analytics";
 import { usePlaylist } from "@/context/PlaylistContext";
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "bg-green-100 text-green-800 border-green-300",
-  intermediate: "bg-amber-100 text-amber-800 border-amber-300",
-  advanced: "bg-red-100 text-red-800 border-red-300",
+const DIFFICULTY_DOT: Record<string, string> = {
+  beginner: "bg-emerald-700",
+  intermediate: "bg-amber-700",
+  advanced: "bg-rose-800",
 };
+
+function SectionHeader({ eyebrow, title }: { eyebrow?: string; title: string }) {
+  return (
+    <div className="mb-4">
+      {eyebrow && (
+        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-medium mb-1.5">
+          {eyebrow}
+        </div>
+      )}
+      <h2 className="font-display text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground leading-tight">
+        {title}
+      </h2>
+    </div>
+  );
+}
 
 export default function TuneDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,7 +55,6 @@ export default function TuneDetailPage() {
     enabled: !!id,
   });
 
-  // Reset recording selection when navigating to a different tune
   useEffect(() => {
     setRecordingIndex(0);
   }, [id]);
@@ -132,18 +144,12 @@ export default function TuneDetailPage() {
     };
   }, [tune]);
 
-  // Merge tune-level audio with recordings table into one unified list.
-  // Must be called before early returns to obey React's rules of hooks.
-  // The recordings table is the source of truth; tune-level fields are included
-  // only when they aren't already represented by a recordings-table row.
   const allRecordings: Recording[] = useMemo(() => {
     if (!tune) return [...recordings];
     const items: Recording[] = [...recordings];
-
     const alreadyCoveredByUrl = tune.audioUrl && recordings.some(r => r.audioUrl === tune.audioUrl);
     const alreadyCoveredByLoc = tune.locItemId && recordings.some(r => r.locItemId === tune.locItemId);
 
-    // Add tune-level audio URL as first entry if not already present
     if (tune.audioUrl && !alreadyCoveredByUrl) {
       items.unshift({
         id: 0,
@@ -164,7 +170,6 @@ export default function TuneDetailPage() {
       });
     }
 
-    // Add tune-level LOC entry if not already present
     if (tune.locItemId && !alreadyCoveredByLoc) {
       const locEntry: Recording = {
         id: -1,
@@ -183,7 +188,6 @@ export default function TuneDetailPage() {
         slipperyHillSlug: null,
         createdAt: new Date(),
       };
-      // Insert after the audioUrl entry if we added one, else prepend
       if (tune.audioUrl && !alreadyCoveredByUrl) {
         items.splice(1, 0, locEntry);
       } else {
@@ -196,7 +200,6 @@ export default function TuneDetailPage() {
 
   const currentRecording = allRecordings[recordingIndex] ?? null;
 
-  // Build a Tune-shaped object for a given recording so startPlaylist can play it
   function patchedTuneForRecording(rec: typeof allRecordings[0]): Tune {
     if (!tune) throw new Error("no tune");
     return {
@@ -209,7 +212,6 @@ export default function TuneDetailPage() {
     };
   }
 
-  // Select a recording and immediately start it playing
   function handleSelectRecording(i: number) {
     setRecordingIndex(i);
     const rec = allRecordings[i];
@@ -221,10 +223,10 @@ export default function TuneDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16">
         <div className="text-center">
-          <Music2 className="w-16 h-16 mx-auto mb-4 animate-pulse" style={{ color: "#F59E0B" }} />
-          <p className="text-lg text-muted-foreground">Loading tune...</p>
+          <Music2 className="w-10 h-10 mx-auto mb-3 animate-pulse text-primary" />
+          <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Loading tune…</p>
         </div>
       </div>
     );
@@ -232,11 +234,12 @@ export default function TuneDetailPage() {
 
   if (isError || !tune) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-muted-foreground mb-4">Tune not found</p>
-          <Button onClick={() => history.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />Back
+      <div className="min-h-screen bg-background flex items-center justify-center pt-16">
+        <div className="text-center max-w-md">
+          <p className="font-display text-3xl text-foreground mb-3">Tune not found.</p>
+          <p className="text-sm text-muted-foreground mb-6">It may have been moved or never existed.</p>
+          <Button onClick={() => history.back()} variant="outline" className="rounded-none">
+            <ArrowLeft className="w-4 h-4 mr-2" />Back to TuneVault
           </Button>
         </div>
       </div>
@@ -244,220 +247,203 @@ export default function TuneDetailPage() {
   }
 
   const faved = isFavorite(tune.id);
+  const difficultyDot = tune.difficulty ? DIFFICULTY_DOT[tune.difficulty] : "";
 
   return (
-    <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
-      {/* Header */}
-      <div
-        className="relative text-primary-foreground py-10 px-4 shadow-lg border-b border-white/12 overflow-hidden"
-        style={{
-          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.14),transparent_60%)] pointer-events-none" />
-        <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="ghost"
-              className="text-primary-foreground hover:bg-primary-foreground/10 -ml-2"
-              onClick={() => history.back()}
-              data-testid="button-back"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to TuneVault
-            </Button>
-            <button
-              onClick={() => toggleFavorite(tune.id)}
-              className="flex items-center gap-1.5 text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors px-3 py-1.5 rounded-full hover:bg-primary-foreground/10"
-              data-testid="button-favorite-detail"
-            >
-              <Star className={`w-4 h-4 ${faved ? "fill-amber-300 text-amber-300" : ""}`} />
-              {faved ? "Saved" : "Save"}
-            </button>
-          </div>
+    <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
+      <div className="container mx-auto max-w-6xl px-6">
 
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <Badge className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/25 font-semibold">
-              Key of {tune.key}
-            </Badge>
-            {tune.tuneType && (
-              <Badge className="capitalize bg-primary-foreground/20 text-primary-foreground border-primary-foreground/25">
-                {tune.tuneType}
-              </Badge>
-            )}
+        {/* Top utility bar — back + save */}
+        <div className="flex items-center justify-between py-4 -mx-2">
+          <button
+            onClick={() => history.back()}
+            className="flex items-center gap-1.5 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </button>
+          <button
+            onClick={() => toggleFavorite(tune.id)}
+            className="flex items-center gap-1.5 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-favorite-detail"
+          >
+            <Star className={`w-3.5 h-3.5 ${faved ? "fill-primary text-primary" : ""}`} />
+            {faved ? "Saved" : "Save"}
+          </button>
+        </div>
+
+        {/* Editorial title block */}
+        <header className="border-t border-foreground pt-6 pb-8">
+          {/* Eyebrow meta strip */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-4">
+            <span className="text-foreground">Key of {tune.key}</span>
+            {tune.tuneType && <span className="capitalize">{tune.tuneType}</span>}
+            {tune.region && <span>{tune.region}</span>}
             {tune.difficulty && (
-              <Badge className={`${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
+              <span className="inline-flex items-center gap-1.5 capitalize">
+                <span className={`w-1.5 h-1.5 rounded-full ${difficultyDot}`} />
                 {tune.difficulty}
-              </Badge>
+              </span>
             )}
-            {tune.era && (
-              <Badge className="bg-primary-foreground/10 text-primary-foreground/70 border-primary-foreground/15 text-xs">
-                {tune.era}
-              </Badge>
-            )}
+            {tune.era && <span>{tune.era}</span>}
           </div>
 
-          <h1 className="text-4xl font-bold font-serif leading-tight">{tune.title}</h1>
+          <h1 className="font-display text-[44px] sm:text-[64px] lg:text-[84px] font-semibold tracking-tight leading-[0.95] text-foreground" data-testid="text-tune-title">
+            {tune.title}
+          </h1>
+
           {tune.alternativeTitles && (
-            <p className="text-primary-foreground/65 mt-1.5 text-sm italic">
-              Also known as: {tune.alternativeTitles}
+            <p className="font-display italic text-xl sm:text-2xl text-muted-foreground mt-3 leading-snug">
+              <span className="text-[11px] uppercase tracking-[0.18em] not-italic font-sans mr-2">a.k.a.</span>
+              {tune.alternativeTitles}
             </p>
           )}
 
-          {/* When only 1 recording, keep player in header. When 2+, it lives inside the recordings card. */}
-          {allRecordings.length === 1 && currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
-            <AudioPlayer tune={{
-              ...tune,
-              audioUrl: currentRecording.audioUrl ?? null,
-              locItemId: currentRecording.locItemId ?? null,
-              audioSource: currentRecording.audioSource ?? null,
-              sourceFiddler: currentRecording.sourceFiddler ?? null,
-              audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
-            }} />
+          {tune.sourceFiddler && (
+            <p className="text-sm text-muted-foreground mt-4">
+              <span className="text-[11px] uppercase tracking-[0.18em] mr-1.5">From</span>
+              <span className="font-medium text-foreground">{tune.sourceFiddler}</span>
+            </p>
           )}
-        </div>
-      </div>
 
-      <div className="container mx-auto max-w-5xl px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Inline player when only one recording */}
+          {allRecordings.length === 1 && currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
+            <div className="mt-7 border-t border-border pt-5">
+              <AudioPlayer tune={{
+                ...tune,
+                audioUrl: currentRecording.audioUrl ?? null,
+                locItemId: currentRecording.locItemId ?? null,
+                audioSource: currentRecording.audioSource ?? null,
+                sourceFiddler: currentRecording.sourceFiddler ?? null,
+                audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
+              }} />
+            </div>
+          )}
+        </header>
+
+        {/* Body — two column editorial */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-x-16 gap-y-12 mt-4">
+
           {/* Main column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-14 min-w-0">
 
             {/* About */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">About This Tune</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {tune.description ? (
-                  <p className="leading-relaxed text-muted-foreground text-sm">{tune.description}</p>
-                ) : (
-                  <p className="leading-relaxed text-muted-foreground/50 text-sm italic">
-                    Historical notes have not yet been documented for this tune. If you know the history, consider{" "}
-                    <a href="/about#suggestion-box" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">suggesting a write-up</a>.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <section data-testid="section-about">
+              <SectionHeader eyebrow="History & Notes" title="About this tune" />
+              {tune.description ? (
+                <p className="font-serif text-[17px] leading-[1.7] text-foreground/85 max-w-prose">
+                  {tune.description}
+                </p>
+              ) : (
+                <p className="font-serif italic text-[16px] leading-[1.7] text-muted-foreground max-w-prose">
+                  Historical notes have not yet been documented for this tune. If you know its story,{" "}
+                  <a href="/about#suggestion-box" className="text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors">suggest a write-up</a>.
+                </p>
+              )}
+            </section>
 
             {/* Performance Notes */}
             {tune.notes && (
-              <Card className="shadow-sm border-amber-200 bg-amber-50/40 dark:bg-amber-950/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-amber-800 dark:text-amber-400">Performance Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="leading-relaxed text-amber-900/80 dark:text-amber-300/80 text-sm">{tune.notes}</p>
-                </CardContent>
-              </Card>
+              <section data-testid="section-performance-notes">
+                <SectionHeader eyebrow="On the bow" title="Performance notes" />
+                <p className="font-serif text-[16px] leading-[1.7] text-foreground/85 max-w-prose border-l-2 border-primary pl-5 italic">
+                  {tune.notes}
+                </p>
+              </section>
             )}
 
-            {/* Recordings — unified list of all audio sources */}
+            {/* Recordings */}
             {allRecordings.length > 1 && (
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Music2 className="w-4 h-4 text-amber-600" />
-                    Recorded Versions ({allRecordings.length})
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Select a recording to listen — click to switch
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
+              <section data-testid="section-recordings">
+                <SectionHeader eyebrow={`${allRecordings.length} sources`} title="Recorded versions" />
+                <p className="text-sm text-muted-foreground mb-5">Select a recording to listen — click to switch.</p>
+                <ul className="border-t border-border">
                   {allRecordings.map((rec, i) => {
                     const hasAudio = !!(rec.audioUrl || rec.locItemId);
                     const isSelected = i === recordingIndex;
                     return (
-                      <button
-                        key={`${rec.id}-${i}`}
-                        className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
-                          isSelected
-                            ? "border-amber-400/60 bg-amber-50/60 dark:bg-amber-950/30 shadow-sm"
-                            : "border-border hover:border-amber-300/50 hover:bg-muted/50"
-                        }`}
-                        onClick={() => handleSelectRecording(i)}
-                        data-testid={`recording-item-${rec.id}`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
+                      <li key={`${rec.id}-${i}`} className="border-b border-border">
+                        <button
+                          className={`w-full text-left flex items-center gap-4 py-4 transition-colors group ${
+                            isSelected ? "" : "hover:bg-foreground/[0.02]"
+                          }`}
+                          onClick={() => handleSelectRecording(i)}
+                          data-testid={`recording-item-${rec.id}`}
+                        >
+                          <span className={`shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "border-foreground/30 text-foreground/70 group-hover:border-foreground group-hover:text-foreground"
+                          }`}>
+                            {isSelected && hasAudio ? (
+                              <Music2 className="w-3.5 h-3.5 animate-pulse" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
+                            )}
+                          </span>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              {isSelected && hasAudio && (
-                                <Music2 className="w-3.5 h-3.5 text-amber-600 animate-pulse shrink-0" />
-                              )}
-                              <span className="font-medium">{rec.sourceFiddler ?? "Unknown performer"}</span>
+                            <div className="font-display text-lg text-foreground leading-tight">
+                              {rec.sourceFiddler ?? "Unknown performer"}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1">
                               {rec.audioSource && <span>{rec.audioSource}</span>}
-                              {rec.collection && <span>· {rec.collection}</span>}
-                              {rec.era && <span>· {rec.era}</span>}
-                              {rec.key && rec.key !== tune.key && <span>· Key of {rec.key}</span>}
+                              {rec.collection && <span>{rec.collection}</span>}
+                              {rec.era && <span>{rec.era}</span>}
+                              {rec.key && rec.key !== tune.key && <span>Key of {rec.key}</span>}
                             </div>
                           </div>
-                          {isSelected ? (
-                            <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300">
-                              ▶ Playing
-                            </Badge>
-                          ) : hasAudio ? (
-                            <Badge variant="outline" className="shrink-0 text-xs text-muted-foreground">
-                              ▶ Play
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </button>
+                          <span className={`shrink-0 text-[11px] uppercase tracking-[0.16em] font-medium ${
+                            isSelected ? "text-primary" : "text-muted-foreground"
+                          }`}>
+                            {isSelected ? "Playing" : "Play"}
+                          </span>
+                        </button>
+                      </li>
                     );
                   })}
-                </CardContent>
-              </Card>
+                </ul>
+              </section>
             )}
 
             {/* Video */}
             {tune.youtubeVideoId && videoAvailable && (
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Video className="w-4 h-4 text-red-500" />
-                    Video Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <YoutubePlayer
-                    videoId={tune.youtubeVideoId}
-                    title={tune.title}
-                    onUnavailable={() => setVideoAvailable(false)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ⚙ Gear icon inside the player → Speed → 0.5× to slow it down for learning
-                  </p>
-                </CardContent>
-              </Card>
+              <section data-testid="section-video">
+                <SectionHeader eyebrow="Watch" title="Video performance" />
+                <YoutubePlayer
+                  videoId={tune.youtubeVideoId}
+                  title={tune.title}
+                  onUnavailable={() => setVideoAvailable(false)}
+                />
+                <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+                  <Video className="w-3 h-3" />
+                  Use the gear icon in the player to slow to 0.5× for learning.
+                </p>
+              </section>
             )}
 
             {/* Sheet Music */}
             {(tune.abcNotation || tune.transcriptUrl) && (
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <BookOpen className="w-4 h-4" />
-                    Sheet Music{tune.abcNotation ? " & ABC Notation" : ""}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <section data-testid="section-notation">
+                <SectionHeader eyebrow="Notation" title={tune.abcNotation ? "Sheet music & ABC" : "Sheet music"} />
+                <div className="space-y-5">
                   {tune.abcNotation && (
                     <>
-                      <AbcStaffRenderer notation={tune.abcNotation} />
+                      <div className="border border-border p-5 bg-card">
+                        <AbcStaffRenderer notation={tune.abcNotation} />
+                      </div>
                       <div>
                         <button
                           onClick={() => setShowRawAbc((v) => !v)}
-                          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
                           data-testid="button-toggle-raw-abc"
                         >
-                          {showRawAbc ? "Hide ABC text" : "Show ABC text"}
+                          {showRawAbc ? "— Hide ABC text" : "+ Show ABC text"}
                         </button>
                         {showRawAbc && (
                           <pre
                             data-testid="text-abc-notation"
-                            className="mt-2 bg-muted p-4 rounded-lg overflow-x-auto text-xs font-mono border border-border whitespace-pre-wrap"
+                            className="mt-3 bg-muted p-4 overflow-x-auto text-xs font-mono border border-border whitespace-pre-wrap"
                           >
                             {tune.abcNotation}
                           </pre>
@@ -471,16 +457,16 @@ export default function TuneDetailPage() {
                         <img
                           src={tune.transcriptUrl}
                           alt={`Sheet music for ${tune.title}`}
-                          className="w-full rounded border border-border shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in"
+                          className="w-full border border-border hover:opacity-90 transition-opacity cursor-zoom-in"
                           loading="lazy"
                         />
                       </a>
-                      <p className="text-xs text-muted-foreground mt-1.5">
+                      <p className="text-xs text-muted-foreground mt-2">
                         Transcription via{" "}
-                        <a href="https://fiddletunes.net" target="_blank" rel="noopener noreferrer" className="underline">
+                        <a href="https://fiddletunes.net" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                           FiddleTunes.net
                         </a>
-                        {" "}· Click to enlarge
+                        {" "}— click to enlarge.
                       </p>
                     </div>
                   )}
@@ -489,136 +475,152 @@ export default function TuneDetailPage() {
                       href={`https://thesession.org/tunes/${tune.theSessionId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline underline-offset-4"
                       data-testid="link-thesession"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                       All versions on TheSession.org
                     </a>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </section>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-5">
+          {/* Sidebar — flat, hairline-divided */}
+          <aside className="space-y-10 lg:pt-1">
+
             {/* Historical Details */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Historical Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+            <div data-testid="sidebar-historical">
+              <h3 className="text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold mb-4 pb-2 border-b border-foreground">
+                Historical details
+              </h3>
+              <dl className="space-y-4 text-sm">
                 {tune.sourceFiddler && (
                   <div>
-                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Source Fiddler</p>
-                    <p className="text-muted-foreground">{tune.sourceFiddler}</p>
+                    <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-0.5">Source fiddler</dt>
+                    <dd className="text-foreground font-medium">{tune.sourceFiddler}</dd>
                   </div>
                 )}
                 {tune.era && (
                   <div>
-                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Era</p>
-                    <p className="text-muted-foreground">{tune.era}</p>
+                    <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-0.5">Era</dt>
+                    <dd className="text-foreground">{tune.era}</dd>
                   </div>
                 )}
                 {tune.region && (
                   <div>
-                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-0.5">Region</p>
-                    <p className="text-muted-foreground">{tune.region}</p>
+                    <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-0.5">Region</dt>
+                    <dd className="text-foreground">{tune.region}</dd>
                   </div>
                 )}
                 {tune.tags && (
                   <div>
-                    <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1">Tags</p>
-                    <div className="flex flex-wrap gap-1">
+                    <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Tags</dt>
+                    <dd className="flex flex-wrap gap-1.5">
                       {tune.tags.split(",").map((tag, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">{tag.trim()}</Badge>
+                        <span key={i} className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground border border-border px-2 py-0.5">
+                          {tag.trim()}
+                        </span>
                       ))}
-                    </div>
+                    </dd>
                   </div>
                 )}
                 {!tune.sourceFiddler && !tune.era && !tune.region && !tune.tags && (
-                  <p className="text-xs text-muted-foreground italic">No historical details on record</p>
+                  <p className="text-xs text-muted-foreground italic">No historical details on record.</p>
                 )}
-              </CardContent>
-            </Card>
+              </dl>
+            </div>
 
             {/* Source Archives */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  <FileText className="w-3.5 h-3.5" />
-                  Source Archives
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+            <div data-testid="sidebar-archives">
+              <h3 className="text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold mb-4 pb-2 border-b border-foreground flex items-center gap-2">
+                <BookOpen className="w-3 h-3" />
+                Source archives
+              </h3>
+              <ul className="space-y-3 text-sm">
                 {tune.locUrl && (
-                  <a href={tune.locUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-loc">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Library of Congress
-                  </a>
+                  <li>
+                    <a href={tune.locUrl} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors" data-testid="link-loc">
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> Library of Congress
+                    </a>
+                  </li>
                 )}
                 {tune.theSessionId && (
-                  <a href={`https://thesession.org/tunes/${tune.theSessionId}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-thesession-sidebar">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> TheSession.org
-                  </a>
+                  <li>
+                    <a href={`https://thesession.org/tunes/${tune.theSessionId}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors" data-testid="link-thesession-sidebar">
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> TheSession.org
+                    </a>
+                  </li>
                 )}
                 {tune.taterJoeUrl && (
-                  <a href={tune.taterJoeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-taterjoe">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Tater Joe's Transcriptions
-                  </a>
+                  <li>
+                    <a href={tune.taterJoeUrl} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors" data-testid="link-taterjoe">
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> Tater Joe's Transcriptions
+                    </a>
+                  </li>
                 )}
                 {tune.folkwaysUrl && (
-                  <a href={tune.folkwaysUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline" data-testid="link-folkways">
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Smithsonian Folkways
-                  </a>
+                  <li>
+                    <a href={tune.folkwaysUrl} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors" data-testid="link-folkways">
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> Smithsonian Folkways
+                    </a>
+                  </li>
                 )}
-                <div className="pt-2 mt-1 border-t border-border space-y-2">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">More Recordings</p>
-                  <a
-                    href={`https://www.slippery-hill.com/tune-search?title=${encodeURIComponent(tune.title)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-primary hover:underline"
-                    data-testid="link-slippery-hill"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Slippery Hill (15,000+ recordings)
-                  </a>
-                  <a
-                    href={`https://tunearch.org/wiki/${encodeURIComponent(tune.title.replace(/ /g, "_"))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-primary hover:underline"
-                    data-testid="link-tunearch"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Traditional Tune Archive
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </ul>
+
+              <div className="mt-5 pt-4 border-t border-border">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-3">More recordings</p>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <a
+                      href={`https://www.slippery-hill.com/tune-search?title=${encodeURIComponent(tune.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+                      data-testid="link-slippery-hill"
+                    >
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> Slippery Hill (15,000+)
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href={`https://tunearch.org/wiki/${encodeURIComponent(tune.title.replace(/ /g, "_"))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+                      data-testid="link-tunearch"
+                    >
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" /> Traditional Tune Archive
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Suggest a correction */}
+            <div>
+              <button
+                onClick={() => setShowSuggest(true)}
+                className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="button-suggest-changes"
+              >
+                <MessageSquarePlus className="w-3.5 h-3.5" />
+                Suggest a correction
+              </button>
+            </div>
+          </aside>
         </div>
 
-        {/* Suggest a correction */}
-        <div className="text-center py-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground gap-2"
-            data-testid="button-suggest-changes"
-            onClick={() => setShowSuggest(true)}
-          >
-            <MessageSquarePlus className="w-4 h-4" />
-            Suggest a correction
-          </Button>
+        <div className="mt-16 pt-10 border-t border-border">
+          <TipJar />
         </div>
-
-        <TipJar />
       </div>
 
       <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Suggest a Correction</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-semibold">Suggest a correction</DialogTitle>
           </DialogHeader>
           <SuggestChangesForm
             tuneId={tune?.id}

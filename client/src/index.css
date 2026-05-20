@@ -12,12 +12,12 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 40 30% 96%;       /* warm parchment */
-  --foreground: 25 40% 15%;       /* dark walnut */
-  --border: 35 25% 82%;           /* warm tan border */
-  --card: 38 35% 98%;             /* near-white cream */
-  --card-foreground: 25 40% 15%;
-  --card-border: 35 25% 85%;
+  --background: 38 32% 96%;       /* warm cream paper */
+  --foreground: 22 28% 12%;       /* deep walnut ink */
+  --border: 30 16% 84%;           /* warm tan hairline */
+  --card: 38 38% 98%;             /* near-white cream */
+  --card-foreground: 22 28% 12%;
+  --card-border: 30 16% 86%;
 
   --sidebar: 30 35% 92%;
   --sidebar-foreground: 25 40% 18%;
@@ -32,17 +32,17 @@
   --popover-foreground: 25 40% 15%;
   --popover-border: 35 25% 82%;
 
-  --primary: 25 65% 35%;          /* rich amber-brown */
-  --primary-foreground: 38 60% 96%;
+  --primary: 16 72% 36%;          /* deep rust */
+  --primary-foreground: 38 38% 97%;
 
-  --secondary: 35 40% 88%;        /* warm tan */
-  --secondary-foreground: 25 45% 20%;
+  --secondary: 35 30% 90%;        /* soft tan */
+  --secondary-foreground: 22 28% 18%;
 
-  --muted: 38 25% 92%;
-  --muted-foreground: 30 25% 45%;
+  --muted: 38 22% 92%;
+  --muted-foreground: 28 12% 38%;
 
-  --accent: 30 55% 50%;           /* warm orange-amber */
-  --accent-foreground: 38 60% 96%;
+  --accent: 32 78% 48%;           /* warm amber accent */
+  --accent-foreground: 38 38% 97%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
@@ -56,9 +56,10 @@
   --chart-4: 15 55% 40%;
   --chart-5: 50 45% 40%;
 
-  --font-sans: 'Lora', 'Georgia', serif;
-  --font-serif: 'Lora', Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(25 40% 15% / 0.08);
   --shadow-xs: 0px 1px 3px 0px hsl(25 40% 15% / 0.10);

@@ -110,31 +110,20 @@ export default function BookALessonPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
-      {/* Hero */}
-      <div
-        className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
-        style={{
-          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
-        <div className="container mx-auto max-w-3xl relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <GraduationCap className="w-10 h-10 opacity-90" />
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight font-serif drop-shadow-sm">
-                Book a Lesson
-              </h1>
-              <p className="text-primary-foreground/70 text-sm mt-0.5">
-                Fiddle · Clawhammer Banjo · Guitar · Upright Bass
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
+      <div className="container mx-auto max-w-3xl px-6">
+        <header className="border-t border-foreground pt-6 pb-10">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">Private Instruction</div>
+          <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">
+            Book a lesson
+          </h1>
+          <p className="font-display italic text-xl text-muted-foreground mt-3">
+            Fiddle · Clawhammer Banjo · Guitar · Upright Bass.
+          </p>
+        </header>
       </div>
 
-      <div className="container mx-auto max-w-3xl px-4 py-10 space-y-12">
+      <div className="container mx-auto max-w-3xl px-6 pb-10 space-y-12">
         {/* Intro */}
         <div className="space-y-4 text-muted-foreground leading-relaxed">
           <p>
@@ -153,19 +142,13 @@ export default function BookALessonPage() {
 
         {/* Instruments */}
         <div>
-          <h2 className="text-xl font-serif font-bold text-foreground mb-4">
-            What We Teach
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Instruments</div>
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-6">What we teach</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7 border-t border-border pt-7">
             {INSTRUMENTS.map(({ name, desc }) => (
-              <div
-                key={name}
-                className="p-5 rounded-xl border border-border bg-card flex flex-col gap-2"
-              >
-                <p className="font-semibold text-foreground">{name}</p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {desc}
-                </p>
+              <div key={name} className="flex flex-col gap-2">
+                <p className="font-display text-xl font-semibold text-foreground tracking-tight">{name}</p>
+                <p className="font-serif text-[15px] text-muted-foreground leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>

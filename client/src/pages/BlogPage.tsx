@@ -20,84 +20,65 @@ export default function BlogPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
-      {/* Hero */}
-      <div
-        className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
-        style={{
-          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
-        <div className="container mx-auto max-w-3xl relative z-10">
-          <div className="flex items-center gap-3 mb-3">
-            <BookOpen className="w-10 h-10 opacity-90" />
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight font-serif drop-shadow-sm">TuneVault Blog</h1>
-              <p className="text-primary-foreground/70 text-sm mt-0.5">Stories, history, and deep dives into Old-Time music</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
+      <div className="container mx-auto max-w-3xl px-6">
+        <header className="border-t border-foreground pt-6 pb-10">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">Dispatches</div>
+          <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">The Journal</h1>
+          <p className="font-display italic text-xl text-muted-foreground mt-3">Stories, history, and deep dives into the Old-Time tradition.</p>
+        </header>
       </div>
 
-      <div className="container mx-auto max-w-3xl px-4 py-10">
+      <div className="container mx-auto max-w-3xl px-6 pb-10">
         {isLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-10">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-2xl border border-border bg-card p-6 animate-pulse">
-                <div className="h-5 bg-muted rounded w-3/4 mb-3" />
-                <div className="h-4 bg-muted rounded w-full mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3" />
+              <div key={i} className="animate-pulse">
+                <div className="h-7 bg-muted w-3/4 mb-3" />
+                <div className="h-4 bg-muted w-full mb-2" />
+                <div className="h-4 bg-muted w-2/3" />
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-24">
-            <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-25" />
-            <h2 className="text-xl font-serif font-bold text-foreground mb-2">Coming soon</h2>
-            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+          <div className="text-center py-20 border-t border-border">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-4">No issues — yet</div>
+            <h2 className="font-display text-4xl sm:text-5xl font-semibold text-foreground tracking-tight mb-3">Coming soon.</h2>
+            <p className="font-serif text-base text-muted-foreground max-w-md mx-auto">
               Posts about Old-Time music history, featured tunes, and session culture are on their way.
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-14 divide-y divide-border [&>*:not(:first-child)]:pt-14">
             {posts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} data-testid={`blog-card-${post.id}`}>
-                <article className="group rounded-2xl border border-border bg-card hover:border-amber-300 hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer">
+                <article className="group cursor-pointer">
                   {post.coverImageUrl && (
-                    <img
-                      src={post.coverImageUrl}
-                      alt={post.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6">
-                    <h2 className="text-xl font-serif font-bold text-foreground mb-2 group-hover:text-amber-700 transition-colors">
-                      {post.title}
-                    </h2>
-                    {post.excerpt && (
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5" />
-                          {post.author}
-                        </span>
-                        {post.publishedAt && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {formatDate(post.publishedAt)}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-amber-600 text-xs font-medium flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-                        Read more <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
+                    <div className="overflow-hidden mb-5">
+                      <img
+                        src={post.coverImageUrl}
+                        alt={post.title}
+                        className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
                     </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-2">
+                    <span className="flex items-center gap-1.5"><User className="w-3 h-3" />{post.author}</span>
+                    {post.publishedAt && (
+                      <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3" />{formatDate(post.publishedAt)}</span>
+                    )}
                   </div>
+                  <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground leading-[1.05] tracking-tight mb-3 group-hover:text-primary transition-colors">
+                    {post.title}
+                  </h2>
+                  {post.excerpt && (
+                    <p className="font-serif text-[16px] leading-relaxed text-muted-foreground mb-4 line-clamp-3 max-w-prose">
+                      {post.excerpt}
+                    </p>
+                  )}
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-primary font-medium flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
+                    Read the dispatch <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
                 </article>
               </Link>
             ))}

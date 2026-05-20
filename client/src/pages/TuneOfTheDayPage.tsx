@@ -1,9 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Tune } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -25,19 +23,14 @@ interface TuneOfTheDayResponse {
   date: string;
 }
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "bg-green-100 text-green-800 border-green-300",
-  intermediate: "bg-amber-100 text-amber-800 border-amber-300",
-  advanced: "bg-red-100 text-red-800 border-red-300",
-};
-
 function randomPage(total: number) {
   return Math.floor(Math.random() * total) + 1;
 }
 
 export default function TuneOfTheDayPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { playTune } = usePlaylist();
+  const { startPlaylist } = usePlaylist();
+  const playTune = (t: Tune) => startPlaylist([t], "chronological");
   const [videoAvailable, setVideoAvailable] = useState(true);
   const [shufflePage, setShufflePage] = useState<number | null>(null);
   const isShuffled = shufflePage !== null;
@@ -91,58 +84,44 @@ export default function TuneOfTheDayPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-8 pt-12 sm:pt-12">
-      {/* Hero */}
-      <div
-        className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
-        style={{
-          backgroundImage: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
-        <div className="container mx-auto max-w-3xl relative z-10">
+    <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
+      <div className="container mx-auto max-w-3xl px-6">
+        <header className="border-t border-foreground pt-6 pb-10">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-10 h-10 opacity-90" />
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight font-serif drop-shadow-sm">Tune of the Day</h1>
-                <p className="text-primary-foreground/70 text-sm mt-0.5">{todayLabel}</p>
-              </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">{todayLabel}</div>
+              <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">
+                Tune of the Day
+              </h1>
+              <p className="font-display italic text-xl text-muted-foreground mt-3 max-w-lg">
+                {isShuffled
+                  ? "Exploring a random tune — return to today's any time."
+                  : "One tune, picked for today. Changes at midnight."}
+              </p>
             </div>
-            <div className="flex gap-2 flex-wrap self-start mt-1">
+            <div className="flex gap-3 flex-wrap self-start mt-2">
               {isShuffled && (
-                <Button
+                <button
                   onClick={resetToToday}
                   data-testid="button-back-to-today"
-                  variant="outline"
-                  size="sm"
-                  className="border-white/30 text-white hover:bg-white/15 hover:text-white bg-white/10"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 border border-border text-[11px] uppercase tracking-[0.16em] text-foreground hover:bg-foreground hover:text-background transition-colors"
                 >
-                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                  Today's tune
-                </Button>
+                  <Calendar className="w-3 h-3" /> Today
+                </button>
               )}
-              <Button
+              <button
                 onClick={shuffle}
                 data-testid="button-shuffle-totd"
-                variant="outline"
-                size="sm"
-                className="border-white/30 text-white hover:bg-white/15 hover:text-white bg-white/10"
+                className="inline-flex items-center gap-1.5 px-3 py-2 border border-foreground text-[11px] uppercase tracking-[0.16em] text-foreground hover:bg-foreground hover:text-background transition-colors"
               >
-                <Shuffle className="w-3.5 h-3.5 mr-1.5" />
-                Explore another
-              </Button>
+                <Shuffle className="w-3 h-3" /> Explore another
+              </button>
             </div>
           </div>
-          <p className="text-primary-foreground/60 text-sm max-w-lg mt-4">
-            {isShuffled
-              ? "Exploring a random tune — press \"Today's tune\" to return."
-              : "One tune, picked for today. Changes at midnight. Everyone sees the same one."}
-          </p>
-        </div>
+        </header>
       </div>
 
-      <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
+      <div className="container mx-auto max-w-3xl px-6 pb-10 space-y-10">
         {isLoading || !tune ? (
           <div className="space-y-4">
             <Skeleton className="h-8 w-64" />
@@ -152,179 +131,145 @@ export default function TuneOfTheDayPage() {
           </div>
         ) : (
           <>
-            {/* Shuffled notice */}
-            {isShuffled && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 border border-border rounded-xl px-4 py-3">
-                <Shuffle className="w-4 h-4 shrink-0 text-amber-500" />
-                <span>You're exploring a random tune.</span>
-                <button
-                  onClick={resetToToday}
-                  className="ml-auto text-amber-600 hover:underline font-medium whitespace-nowrap"
-                  data-testid="button-return-to-today-inline"
-                >
-                  Back to today's tune →
-                </button>
+            {/* Tune editorial header */}
+            <div className="border-t border-border pt-8">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium mb-4">
+                <span className="text-foreground">Key of {tune.key}</span>
+                <span className="capitalize">{tune.tuneType}</span>
+                {tune.difficulty && <span className="capitalize">{tune.difficulty}</span>}
+                {tune.region && <span>{tune.region}</span>}
+                {tune.era && <span>{tune.era}</span>}
               </div>
-            )}
 
-            {/* Tune header */}
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <h2 className="text-3xl font-serif font-bold text-foreground">{tune.title}</h2>
-                {tune.alternativeTitles && (
-                  <p className="text-muted-foreground text-sm mt-0.5">Also known as: {tune.alternativeTitles}</p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-medium">{tune.key}</Badge>
-                  <Badge variant="outline" className="capitalize">{tune.tuneType}</Badge>
-                  {tune.difficulty && (
-                    <Badge className={DIFFICULTY_COLORS[tune.difficulty] ?? ""}>{tune.difficulty}</Badge>
-                  )}
-                  {tune.region && <Badge variant="outline">{tune.region}</Badge>}
-                  {tune.era && <Badge variant="outline">{tune.era}</Badge>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="button-favorite-totd"
-                  onClick={() => toggleFavorite(tune.id)}
-                  className={faved ? "border-amber-400 text-amber-600" : ""}
-                >
-                  <Star className={`w-4 h-4 mr-1.5 ${faved ? "fill-amber-400 text-amber-400" : ""}`} />
-                  {faved ? "Saved" : "Save"}
-                </Button>
+              <h2 className="font-display text-4xl sm:text-5xl font-semibold text-foreground tracking-tight leading-[1.0]">
+                {tune.title}
+              </h2>
+              {tune.alternativeTitles && (
+                <p className="font-display italic text-lg text-muted-foreground mt-2">
+                  <span className="text-[11px] uppercase tracking-[0.18em] not-italic font-sans mr-1.5">a.k.a.</span>
+                  {tune.alternativeTitles}
+                </p>
+              )}
+
+              <div className="flex items-center gap-3 mt-5">
                 {(tune.audioUrl || tune.locItemId) && (
-                  <Button
-                    size="sm"
+                  <button
                     data-testid="button-play-totd"
                     onClick={() => playTune(tune)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background text-[11px] uppercase tracking-[0.16em] font-medium hover:bg-primary transition-colors"
                   >
-                    <Play className="w-4 h-4 mr-1.5" /> Play
-                  </Button>
+                    <Play className="w-3 h-3" fill="currentColor" /> Play
+                  </button>
                 )}
+                <button
+                  data-testid="button-favorite-totd"
+                  onClick={() => toggleFavorite(tune.id)}
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-border text-[11px] uppercase tracking-[0.16em] text-foreground hover:bg-foreground/[0.04] transition-colors"
+                >
+                  <Star className={`w-3 h-3 ${faved ? "fill-primary text-primary" : ""}`} />
+                  {faved ? "Saved" : "Save"}
+                </button>
               </div>
             </div>
 
             {/* Source fiddler */}
             {tune.sourceFiddler && (
-              <div className="text-sm text-muted-foreground italic border-l-2 border-amber-400 pl-3">
-                Associated with <strong className="text-foreground">{tune.sourceFiddler}</strong>
-              </div>
+              <p className="text-sm text-muted-foreground border-l-2 border-primary pl-4 -mt-2">
+                <span className="text-[11px] uppercase tracking-[0.18em] mr-1.5">From</span>
+                <span className="font-medium text-foreground">{tune.sourceFiddler}</span>
+              </p>
             )}
 
             {/* Description */}
             {tune.description && (
-              <div>
-                <h3 className="text-lg font-serif font-semibold text-foreground mb-2">Historical Background</h3>
-                <p className="text-muted-foreground leading-relaxed">{tune.description}</p>
-              </div>
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-2">History & Notes</div>
+                <h3 className="font-display text-xl font-semibold text-foreground mb-3">About this tune</h3>
+                <p className="font-serif text-[17px] leading-[1.7] text-foreground/85 max-w-prose">{tune.description}</p>
+              </section>
             )}
 
             {/* Playing Notes */}
             {tune.notes && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-                <h3 className="text-base font-serif font-semibold text-amber-900 mb-2">Playing Notes</h3>
-                <p className="text-amber-800 text-sm leading-relaxed">{tune.notes}</p>
-              </div>
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-2">On the bow</div>
+                <h3 className="font-display text-xl font-semibold text-foreground mb-3">Playing notes</h3>
+                <p className="font-serif italic text-[16px] leading-[1.7] text-foreground/85 border-l-2 border-primary pl-5 max-w-prose">{tune.notes}</p>
+              </section>
             )}
 
             {/* Audio */}
             {(tune.audioUrl || tune.locItemId) && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Headphones className="w-4 h-4 text-sky-600" />
-                  <h3 className="font-semibold text-sm text-foreground">Audio Recording</h3>
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">
+                    <Headphones className="w-3 h-3" /> Audio recording
+                  </div>
                   {tune.audioAttribution && (
-                    <span className="text-xs text-muted-foreground ml-auto">via {tune.audioAttribution}</span>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">via {tune.audioAttribution}</span>
                   )}
                 </div>
                 <AudioPlayer tune={tune} />
-              </div>
+              </section>
             )}
 
             {/* YouTube */}
             {tune.youtubeVideoId && videoAvailable && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Video className="w-4 h-4 text-rose-600" />
-                  <h3 className="font-semibold text-sm text-foreground">Video Performance</h3>
+              <section>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold mb-3">
+                  <Video className="w-3 h-3" /> Video performance
                 </div>
                 <YoutubePlayer
                   videoId={tune.youtubeVideoId}
                   title={tune.title}
                   onUnavailable={() => setVideoAvailable(false)}
                 />
-              </div>
+              </section>
             )}
 
             {/* Sheet Music */}
             {tune.transcriptUrl && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-emerald-600" />
-                  <h3 className="font-semibold text-sm text-foreground">Sheet Music</h3>
-                  <span className="text-xs text-muted-foreground ml-auto">via FiddleTunes.net</span>
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">
+                    <FileText className="w-3 h-3" /> Sheet music
+                  </div>
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">via FiddleTunes.net</span>
                 </div>
                 <img
                   src={tune.transcriptUrl}
                   alt={`Sheet music for ${tune.title}`}
-                  className="w-full rounded-lg cursor-zoom-in"
+                  className="w-full border border-border cursor-zoom-in"
                   onClick={() => window.open(tune.transcriptUrl!, "_blank")}
                 />
-              </div>
+              </section>
             )}
 
             {/* ABC Notation */}
             {tune.abcNotation && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <BookOpen className="w-4 h-4 text-violet-600" />
-                  <h3 className="font-semibold text-sm text-foreground">Staff Notation (ABC)</h3>
+              <section>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold mb-3">
+                  <BookOpen className="w-3 h-3" /> Staff notation
                 </div>
-                <AbcStaffRenderer abc={tune.abcNotation} />
-              </div>
+                <div className="border border-border p-5 bg-card">
+                  <AbcStaffRenderer notation={tune.abcNotation} />
+                </div>
+              </section>
             )}
 
             {/* Explore full tune */}
             <Link href={`/tune/${tune.id}`} data-testid="link-explore-totd">
-              <div className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/40 transition-colors cursor-pointer group">
+              <div className="flex items-center justify-between py-5 border-t border-b border-border hover:bg-foreground/[0.02] transition-colors cursor-pointer group">
                 <div>
-                  <p className="font-semibold text-foreground">Explore this tune fully</p>
-                  <p className="text-muted-foreground text-sm">See all recordings, related tunes, and more</p>
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1">Continue</div>
+                  <p className="font-display text-xl font-semibold text-foreground">Explore this tune in full →</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
               </div>
             </Link>
 
-            {/* Bottom CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              <Button
-                onClick={shuffle}
-                data-testid="button-shuffle-totd-bottom"
-                variant="outline"
-                size="lg"
-                className="px-8"
-              >
-                <Shuffle className="w-4 h-4 mr-2" />
-                Explore a random tune
-              </Button>
-              {isShuffled && (
-                <Button
-                  onClick={resetToToday}
-                  data-testid="button-today-bottom"
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Back to today's tune
-                </Button>
-              )}
-            </div>
-            <p className="text-center text-muted-foreground text-xs">
-              {isShuffled ? `${total.toLocaleString()} tunes in the vault` : "A new tune every day at midnight UTC"}
+            <p className="text-center text-[10px] uppercase tracking-[0.18em] text-muted-foreground pt-2">
+              {isShuffled ? `${total.toLocaleString("en-US")} tunes in the vault` : "A new tune every day at midnight UTC"}
             </p>
           </>
         )}

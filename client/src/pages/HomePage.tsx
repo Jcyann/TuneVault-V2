@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check } from "lucide-react";
@@ -14,35 +12,17 @@ import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "bg-green-100 text-green-800 border-green-200",
-  intermediate: "bg-amber-100 text-amber-800 border-amber-200",
-  advanced: "bg-red-100 text-red-800 border-red-200",
-};
-
 const TUNE_TYPE_COLORS: Record<string, string> = {
-  breakdown: "#F59E0B",
-  reel: "#0EA5E9",
-  waltz: "#8B5CF6",
-  jig: "#10B981",
-  modal: "#F43F5E",
-  polka: "#F97316",
-  march: "#6366F1",
-  hornpipe: "#14B8A6",
-  polska: "#A855F7",
-  schottische: "#EC4899",
-};
-
-const TUNE_TYPE_BADGE: Record<string, string> = {
-  breakdown: "bg-amber-50 text-amber-700 border-amber-200",
-  reel: "bg-sky-50 text-sky-700 border-sky-200",
-  waltz: "bg-violet-50 text-violet-700 border-violet-200",
-  jig: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  modal: "bg-rose-50 text-rose-700 border-rose-200",
-  polka: "bg-orange-50 text-orange-700 border-orange-200",
-  march: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  hornpipe: "bg-teal-50 text-teal-700 border-teal-200",
-  polska: "bg-purple-50 text-purple-700 border-purple-200",
+  breakdown: "#B45309",
+  reel: "#0369A1",
+  waltz: "#6D28D9",
+  jig: "#047857",
+  modal: "#BE123C",
+  polka: "#C2410C",
+  march: "#4338CA",
+  hornpipe: "#0F766E",
+  polska: "#7E22CE",
+  schottische: "#BE185D",
 };
 
 const KEY_ORDER = ["A", "Am", "D", "Dm", "G", "Gm", "C", "Em", "F", "Bm"];
@@ -58,34 +38,19 @@ interface TunesResponse {
 }
 
 interface SearchState {
-  search: string;
-  key: string;
-  difficulty: string;
-  region: string;
-  tuneType: string;
-  page: number;
+  search: string; key: string; difficulty: string;
+  region: string; tuneType: string; page: number;
 }
 
 function loadSession(): SearchState | null {
-  try {
-    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  try { const raw = sessionStorage.getItem(SESSION_STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch { return null; }
 }
-
-function saveSession(state: SearchState) {
-  try {
-    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(state));
-  } catch {}
-}
+function saveSession(s: SearchState) { try { sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(s)); } catch {} }
 
 function getInitialState(): SearchState {
   const p = new URLSearchParams(window.location.search);
-  const hasUrl =
-    p.has("search") || p.has("key") || p.has("difficulty") ||
-    p.has("region") || p.has("tuneType") || p.has("page");
+  const hasUrl = p.has("search") || p.has("key") || p.has("difficulty") || p.has("region") || p.has("tuneType") || p.has("page");
   if (hasUrl) {
     return {
       search: p.get("search") || "",
@@ -121,14 +86,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (showFavorites) return;
-    const state: SearchState = {
-      search,
-      key: selectedKey,
-      difficulty: selectedDifficulty,
-      region: selectedRegion,
-      tuneType: selectedType,
-      page,
-    };
+    const state: SearchState = { search, key: selectedKey, difficulty: selectedDifficulty, region: selectedRegion, tuneType: selectedType, page };
     saveSession(state);
     const p = new URLSearchParams();
     if (search) p.set("search", search);
@@ -148,19 +106,11 @@ export default function HomePage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  useEffect(() => {
-    if (!hasMounted.current) return;
-    setPage(1);
-  }, [selectedKey, selectedDifficulty, selectedRegion, selectedType]);
-
-  useEffect(() => {
-    hasMounted.current = true;
-    setSearch(init.search);
-  }, []);
+  useEffect(() => { if (!hasMounted.current) return; setPage(1); }, [selectedKey, selectedDifficulty, selectedRegion, selectedType]);
+  useEffect(() => { hasMounted.current = true; setSearch(init.search); }, []);
 
   const queryParams = new URLSearchParams({
-    page: String(page),
-    limit: String(PAGE_SIZE),
+    page: String(page), limit: String(PAGE_SIZE),
     ...(search && { search }),
     ...(selectedKey !== "all" && { key: selectedKey }),
     ...(selectedDifficulty !== "all" && { difficulty: selectedDifficulty }),
@@ -209,36 +159,20 @@ export default function HomePage() {
   };
 
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const copyFilterLink = useCallback(() => {
     if (copied) return;
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {
-      const textArea = document.createElement("textarea");
-      textArea.value = url;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand("copy");
-        setCopied(true);
-        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-        copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
-      } catch {}
-      document.body.removeChild(textArea);
+    const done = () => { setCopied(true); if (copyTimerRef.current) clearTimeout(copyTimerRef.current); copyTimerRef.current = setTimeout(() => setCopied(false), 2000); };
+    navigator.clipboard.writeText(url).then(done).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand("copy"); done(); } catch {}
+      document.body.removeChild(ta);
     });
   }, [copied]);
 
-  const changePage = (n: number) => {
-    setPage(n);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const changePage = (n: number) => { setPage(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => { if (!showFavorites && page < totalPages) changePage(page + 1); },
@@ -259,11 +193,24 @@ export default function HomePage() {
       const res = await fetch(`/api/tunes/playlist?${params}`);
       const allTunes: Tune[] = await res.json();
       if (allTunes.length > 0) startPlaylist(allTunes);
-    } catch (e) {
-      if (tunesWithAudio.length > 0) startPlaylist(tunesWithAudio);
-    } finally {
-      setShuffleLoading(false);
-    }
+    } catch { if (tunesWithAudio.length > 0) startPlaylist(tunesWithAudio); }
+    finally { setShuffleLoading(false); }
+  }, [search, selectedKey, selectedDifficulty, selectedRegion, selectedType, tunesWithAudio, startPlaylist]);
+
+  const handleChronoPlay = useCallback(async () => {
+    setShuffleLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (selectedKey !== "all") params.set("key", selectedKey);
+      if (selectedDifficulty !== "all") params.set("difficulty", selectedDifficulty);
+      if (selectedRegion !== "all") params.set("region", selectedRegion);
+      if (selectedType !== "all") params.set("tuneType", selectedType);
+      const res = await fetch(`/api/tunes/playlist?${params}`);
+      const allTunes: Tune[] = await res.json();
+      if (allTunes.length > 0) startPlaylist(allTunes, "chronological");
+    } catch { if (tunesWithAudio.length > 0) startPlaylist(tunesWithAudio, "chronological"); }
+    finally { setShuffleLoading(false); }
   }, [search, selectedKey, selectedDifficulty, selectedRegion, selectedType, tunesWithAudio, startPlaylist]);
 
   const handleFavoritesShufflePlay = useCallback(() => {
@@ -271,46 +218,67 @@ export default function HomePage() {
     if (favTunes.length > 0) startPlaylist(favTunes);
   }, [favData, startPlaylist]);
 
+  // Compact filter trigger styling
+  const filterTrigger = (active: boolean) =>
+    `h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium rounded-none border bg-transparent transition-colors focus:ring-0 focus:ring-offset-0 ${
+      active
+        ? "border-foreground text-foreground bg-foreground/[0.04]"
+        : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50"
+    }`;
+
   return (
-    <div className="min-h-screen bg-background pb-24 pt-12 sm:pt-12" {...swipeHandlers}>
+    <div className="min-h-screen bg-background pb-32" {...swipeHandlers}>
 
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div
-        className="relative text-primary-foreground px-4 pt-12 pb-10 overflow-hidden border-b border-white/10"
-        style={{
-          backgroundImage: [
-            "linear-gradient(150deg, hsla(25,65%,16%,0.80) 0%, hsla(25,60%,22%,0.72) 100%)",
-            `url(${fiddleHero})`,
-          ].join(", "),
-          backgroundSize: "auto, cover",
-          backgroundPosition: "center, center 30%",
-          backgroundRepeat: "no-repeat, no-repeat",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.18),transparent_65%)] pointer-events-none" />
+      {/* ── HERO ─────────────────────────────────────────────────────── */}
+      <section className="border-b border-border pt-20 sm:pt-24 pb-10 sm:pb-14">
+        <div className="container mx-auto max-w-6xl px-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-16 items-end">
 
-        <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="flex items-center gap-4 mb-1">
-            <Music2 className="w-16 h-16 drop-shadow" style={{ strokeWidth: 3, color: "#F59E0B" }} />
             <div>
-              <h1 className="text-5xl font-bold tracking-tight font-serif drop-shadow-sm">TuneVault</h1>
-              <p className="text-base opacity-80 mt-0.5 tracking-wide" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 500 }}>A Treasury of Old-Time Fiddle Music</p>
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-5 sm:mb-6 flex items-center gap-3">
+                <span className="h-px w-8 bg-foreground/40" />
+                An Old-Time Fiddle Treasury
+              </p>
+              <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+                <span className="block">TuneVault</span>
+                <span className="block italic font-medium text-primary mt-1.5">in every key.</span>
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground mt-6 max-w-xl leading-relaxed">
+                Source recordings, sheet music, and history for{" "}
+                <strong className="text-foreground font-semibold tabular-nums">{Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"}</strong>{" "}
+                tunes from the living American old-time tradition.
+              </p>
+            </div>
+
+            <div className="relative w-full max-w-[260px] sm:max-w-[300px] justify-self-start lg:justify-self-end">
+              <div className="absolute -inset-2 bg-primary/10 -z-10" aria-hidden />
+              <img
+                src={fiddleHero}
+                alt="A fiddle on weathered wood"
+                className="w-full aspect-[4/5] object-cover shadow-md"
+              />
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Hero search */}
-          <div className="relative max-w-2xl mt-7">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+      {/* ── SEARCH + FILTERS ────────────────────────────────────────── */}
+      <section className="border-b border-border bg-card">
+        <div className="container mx-auto max-w-6xl px-5 py-6 sm:py-7">
+
+          {/* Search input — underline editorial style */}
+          <div className="relative">
+            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
             <input
               data-testid="input-search"
-              className="w-full rounded-full bg-white border border-white/90 text-gray-800 placeholder:text-gray-400 pl-12 pr-10 py-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-lg transition-all"
-              placeholder={`Search ${stats?.total?.toLocaleString() ?? "1,000+"} old-time tunes…`}
+              className="w-full bg-transparent border-0 border-b border-foreground/30 focus:border-foreground pl-8 pr-10 py-3 text-lg sm:text-xl font-display text-foreground placeholder:text-muted-foreground/60 focus:outline-none transition-colors"
+              placeholder={`Search ${Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"} tunes by title…`}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); setShowFavorites(false); }}
             />
             {searchInput && (
               <button
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
                 onClick={() => { setSearchInput(""); setSearch(""); }}
                 data-testid="button-clear-search"
               >
@@ -319,17 +287,10 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Hero filter row */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none">
+          {/* Filter row */}
+          <div className="flex flex-wrap items-center gap-2 mt-5">
             <Select value={selectedKey} onValueChange={(v) => { setSelectedKey(v); setShowFavorites(false); }}>
-              <SelectTrigger
-                data-testid="select-key"
-                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
-                  selectedKey !== "all"
-                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
-                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
-                }`}
-              >
+              <SelectTrigger data-testid="select-key" className={filterTrigger(selectedKey !== "all") + " w-[7.5rem]"}>
                 <SelectValue placeholder="All Keys" />
               </SelectTrigger>
               <SelectContent>
@@ -341,14 +302,7 @@ export default function HomePage() {
             </Select>
 
             <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setShowFavorites(false); }}>
-              <SelectTrigger
-                data-testid="select-type"
-                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
-                  selectedType !== "all"
-                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
-                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
-                }`}
-              >
+              <SelectTrigger data-testid="select-type" className={filterTrigger(selectedType !== "all") + " w-[8rem]"}>
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
@@ -362,14 +316,7 @@ export default function HomePage() {
             </Select>
 
             <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setShowFavorites(false); }}>
-              <SelectTrigger
-                data-testid="select-region"
-                className={`h-9 shrink-0 w-36 text-sm rounded-full border transition-all focus:ring-amber-400 ${
-                  selectedRegion !== "all"
-                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
-                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
-                }`}
-              >
+              <SelectTrigger data-testid="select-region" className={filterTrigger(selectedRegion !== "all") + " w-[9rem]"}>
                 <SelectValue placeholder="All Regions" />
               </SelectTrigger>
               <SelectContent>
@@ -381,14 +328,7 @@ export default function HomePage() {
             </Select>
 
             <Select value={selectedDifficulty} onValueChange={(v) => { setSelectedDifficulty(v); setShowFavorites(false); }}>
-              <SelectTrigger
-                data-testid="select-difficulty"
-                className={`h-9 shrink-0 w-32 text-sm rounded-full border transition-all focus:ring-amber-400 ${
-                  selectedDifficulty !== "all"
-                    ? "bg-amber-500 border-amber-400 text-white font-semibold [&>svg]:text-white"
-                    : "bg-white/15 border-white/30 text-white [&>svg]:text-white/70 hover:bg-white/25"
-                }`}
-              >
+              <SelectTrigger data-testid="select-difficulty" className={filterTrigger(selectedDifficulty !== "all") + " w-[8rem]"}>
                 <SelectValue placeholder="All Levels" />
               </SelectTrigger>
               <SelectContent>
@@ -399,294 +339,223 @@ export default function HomePage() {
               </SelectContent>
             </Select>
 
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               data-testid="button-toggle-favorites"
               onClick={() => setShowFavorites((v) => !v)}
-              className={`h-9 shrink-0 px-4 rounded-full border text-sm font-medium transition-all gap-1.5 ${
+              className={`h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border transition-colors inline-flex items-center gap-1.5 ${
                 showFavorites
-                  ? "bg-amber-500 border-amber-400 text-white hover:bg-amber-600"
-                  : "bg-white/15 border-white/30 text-white hover:bg-white/25"
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 bg-transparent"
               }`}
             >
-              <Star className={`w-3.5 h-3.5 ${showFavorites ? "fill-white" : "fill-amber-300"}`} />
-              Favorites {favoritesCount > 0 && `(${favoritesCount})`}
-            </Button>
+              <Star className={`w-3.5 h-3.5 ${showFavorites ? "fill-current" : ""}`} />
+              Favorites {favoritesCount > 0 && <span className="tabular-nums">({favoritesCount})</span>}
+            </button>
 
             {(hasFilters || showFavorites) && (
-              <Button
-                size="sm"
+              <button
                 data-testid="button-clear-filters"
                 onClick={clearFilters}
-                className="h-9 shrink-0 px-4 rounded-full border border-white/30 bg-white/15 text-white hover:bg-white/25 text-sm font-medium gap-1.5"
+                className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
               >
                 <X className="w-3.5 h-3.5" /> Clear
-              </Button>
+              </button>
             )}
 
             {hasFilters && (
-              <Button
-                size="sm"
+              <button
                 data-testid="button-copy-link"
                 onClick={copyFilterLink}
-                className={`h-9 shrink-0 px-4 rounded-full border text-sm font-medium gap-1.5 transition-all ${
-                  copied
-                    ? "bg-green-500 border-green-400 text-white"
-                    : "bg-white/15 border-white/30 text-white hover:bg-white/25"
+                className={`h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium transition-colors inline-flex items-center gap-1.5 ${
+                  copied ? "text-emerald-700" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
-                {copied ? "Copied!" : "Copy link"}
-              </Button>
+                {copied ? "Copied" : "Share link"}
+              </button>
             )}
           </div>
 
-          {/* Stats */}
+          {/* Stats strip */}
           {stats && (
-            <div className="flex flex-wrap gap-x-7 gap-y-2 mt-5 text-sm">
-              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-total">
-                <Disc className="w-4 h-4" />
-                <strong>{stats.total?.toLocaleString()}</strong> tunes
-              </span>
-              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-audio">
-                <Headphones className="w-4 h-4" />
-                <strong>{stats.withAudio?.toLocaleString()}</strong> with audio
-              </span>
-              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-video">
-                <Video className="w-4 h-4" />
-                <strong>{stats.withVideo?.toLocaleString()}</strong> with video
-              </span>
-              <span className="flex items-center gap-1.5 opacity-80" data-testid="stat-abc">
-                <BookOpen className="w-4 h-4" />
-                <strong>{stats.withAbc?.toLocaleString()}</strong> with notation
-              </span>
+            <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-6">
+              {[
+                { label: "Tunes", value: stats.total, icon: Disc },
+                { label: "With audio", value: stats.withAudio, icon: Headphones },
+                { label: "With video", value: stats.withVideo, icon: Video },
+                { label: "With notation", value: stats.withAbc, icon: BookOpen },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="flex items-baseline gap-2" data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <span className="font-display text-2xl sm:text-3xl font-bold tabular-nums text-foreground leading-none">{Number(value ?? 0).toLocaleString("en-US")}</span>
+                  <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium">{label}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
-      </div>
+      </section>
 
 
-      {/* ── Main content ─────────────────────────────────────────────── */}
-      <div className="container mx-auto max-w-5xl px-4 py-6">
+      {/* ── MAIN ─────────────────────────────────────────────────────── */}
+      <div className="container mx-auto max-w-6xl px-5 py-8">
 
-        {/* Active filter tags */}
-        {(selectedKey !== "all" || selectedDifficulty !== "all" || selectedRegion !== "all" || selectedType !== "all" || search !== "") && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {search && (
-              <button data-testid="tag-filter-search" onClick={() => { setSearchInput(""); setSearch(""); }}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
-                Search: "{search}" <X className="w-3 h-3" />
-              </button>
+        {/* Header row: results count + play controls */}
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-border">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-medium text-muted-foreground mb-1">
+              {showFavorites ? "Saved tunes" : hasFilters ? "Results" : "Browse"}
+            </p>
+            {!isLoadingAny && total > 0 ? (
+              <p className="font-display text-2xl font-semibold text-foreground" data-testid="text-page-position">
+                {showFavorites ? (
+                  <span><span className="tabular-nums">{total}</span> {total !== 1 ? "saved tunes" : "saved tune"}</span>
+                ) : (
+                  <span>
+                    <span className="tabular-nums">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</span>{" "}
+                    <span className="text-muted-foreground font-normal italic"> of </span>
+                    <span className="tabular-nums">{total.toLocaleString("en-US")}</span>
+                  </span>
+                )}
+              </p>
+            ) : isLoadingAny ? (
+              <p className="font-display text-2xl text-muted-foreground" data-testid="text-page-position">Loading…</p>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isLoadingAny && !showFavorites && tunesWithAudio.length > 0 && (
+              <>
+                <button
+                  onClick={handleShufflePlay}
+                  disabled={shuffleLoading}
+                  data-testid="button-shuffle-play"
+                  className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  {shuffleLoading ? "Loading" : "Shuffle play"}
+                </button>
+                <button
+                  onClick={handleChronoPlay}
+                  disabled={shuffleLoading}
+                  data-testid="button-chrono-play"
+                  className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                  Play in order
+                </button>
+              </>
             )}
-            {selectedKey !== "all" && (
-              <button data-testid="tag-filter-key" onClick={() => setSelectedKey("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
-                Key of {selectedKey} <X className="w-3 h-3" />
-              </button>
-            )}
-            {selectedType !== "all" && (
-              <button data-testid="tag-filter-type" onClick={() => setSelectedType("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
-                {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}s <X className="w-3 h-3" />
-              </button>
-            )}
-            {selectedRegion !== "all" && (
-              <button data-testid="tag-filter-region" onClick={() => setSelectedRegion("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
-                {selectedRegion} <X className="w-3 h-3" />
-              </button>
-            )}
-            {selectedDifficulty !== "all" && (
-              <button data-testid="tag-filter-difficulty" onClick={() => setSelectedDifficulty("all")}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors">
-                {selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} <X className="w-3 h-3" />
+            {showFavorites && (favData?.tunes?.filter(t => t.audioUrl || t.locItemId).length ?? 0) > 0 && (
+              <button
+                onClick={handleFavoritesShufflePlay}
+                data-testid="button-shuffle-favorites"
+                className="h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center gap-1.5"
+              >
+                <Shuffle className="w-3.5 h-3.5" /> Shuffle favorites
               </button>
             )}
           </div>
-        )}
-
-        {/* Results count — prominent standalone row above grid */}
-        <div className="flex items-center justify-between mb-3">
-          {!isLoadingAny && total > 0 ? (
-            <p className="text-sm font-medium text-foreground" data-testid="text-page-position">
-              {showFavorites ? (
-                <span><strong>{total}</strong> saved tune{total !== 1 ? "s" : ""}</span>
-              ) : (
-                <span>
-                  Showing <strong>{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}</strong>{" "}
-                  of <strong>{total.toLocaleString()}</strong> tunes
-                  {totalPages > 1 && <span className="text-muted-foreground font-normal"> · Page {page} of {totalPages}</span>}
-                </span>
-              )}
-            </p>
-          ) : isLoadingAny ? (
-            <p className="text-sm text-muted-foreground" data-testid="text-page-position">Loading…</p>
-          ) : null}
-        </div>
-
-        {/* Play controls row */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          {!isLoadingAny && !showFavorites && tunesWithAudio.length > 0 && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3.5 text-xs rounded-full gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-                onClick={handleShufflePlay}
-                disabled={shuffleLoading}
-                data-testid="button-shuffle-play"
-              >
-                <Shuffle className="w-3.5 h-3.5" />
-                {shuffleLoading ? "Loading…" : "Shuffle Play"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3.5 text-xs rounded-full gap-1.5 border-border text-muted-foreground hover:bg-muted"
-                onClick={async () => {
-                  setShuffleLoading(true);
-                  try {
-                    const params = new URLSearchParams();
-                    if (search) params.set("search", search);
-                    if (selectedKey !== "all") params.set("key", selectedKey);
-                    if (selectedDifficulty !== "all") params.set("difficulty", selectedDifficulty);
-                    if (selectedRegion !== "all") params.set("region", selectedRegion);
-                    if (selectedType !== "all") params.set("tuneType", selectedType);
-                    const res = await fetch(`/api/tunes/playlist?${params}`);
-                    const allTunes: Tune[] = await res.json();
-                    if (allTunes.length > 0) startPlaylist(allTunes, "chronological");
-                  } catch { if (tunesWithAudio.length > 0) startPlaylist(tunesWithAudio, "chronological"); }
-                  finally { setShuffleLoading(false); }
-                }}
-                disabled={shuffleLoading}
-                data-testid="button-chrono-play"
-              >
-                <ListOrdered className="w-3.5 h-3.5" />
-                Play In Order
-              </Button>
-            </>
-          )}
-          {showFavorites && (favData?.tunes?.filter(t => t.audioUrl || t.locItemId).length ?? 0) > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-3.5 text-xs rounded-full gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-              onClick={handleFavoritesShufflePlay}
-              data-testid="button-shuffle-favorites"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-              Shuffle Favorites
-            </Button>
-          )}
         </div>
 
         {/* Grid */}
         {isLoadingAny ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
             {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i} className="h-40">
-                <CardHeader>
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-3 w-full mb-2" />
-                  <Skeleton className="h-3 w-5/6" />
-                </CardContent>
-              </Card>
+              <div key={i} className="py-5 border-b border-border">
+                <Skeleton className="h-5 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2 mb-3" />
+                <Skeleton className="h-3 w-full mb-1.5" />
+                <Skeleton className="h-3 w-5/6" />
+              </div>
             ))}
           </div>
         ) : showFavorites && tunes.length === 0 ? (
-          <div className="text-center py-20">
-            <Star className="w-14 h-14 mx-auto mb-4 text-amber-400 opacity-40" />
-            <p className="text-lg text-muted-foreground">No favorites yet.</p>
+          <div className="text-center py-24">
+            <Star className="w-12 h-12 mx-auto mb-4 text-primary/30" />
+            <p className="font-display text-xl text-foreground">No favorites yet</p>
             <p className="text-sm text-muted-foreground mt-2">Click the ★ on any tune to save it here.</p>
           </div>
         ) : tunes.length === 0 ? (
-          <div className="text-center py-20">
-            <Music2 className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-30" />
-            <p className="text-lg text-muted-foreground">No tunes found.</p>
-            <Button variant="outline" className="mt-4 rounded-full" onClick={clearFilters}>Clear Filters</Button>
+          <div className="text-center py-24">
+            <Music2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <p className="font-display text-xl text-foreground">No tunes found</p>
+            <button onClick={clearFilters} className="mt-4 text-[11px] uppercase tracking-[0.12em] font-medium text-primary hover:underline">Clear filters</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
             {tunes.map((tune) => {
-              const leftColor = TUNE_TYPE_COLORS[tune.tuneType ?? ""] ?? "hsl(var(--primary) / 0.35)";
-              const typeBadge = TUNE_TYPE_BADGE[tune.tuneType ?? ""] ?? "bg-muted text-muted-foreground border-muted";
+              const typeColor = TUNE_TYPE_COLORS[tune.tuneType ?? ""] ?? "hsl(var(--primary))";
               const faved = isFavorite(tune.id);
+              const meta = [
+                tune.key ? `Key of ${tune.key}` : null,
+                tune.tuneType ? tune.tuneType.charAt(0).toUpperCase() + tune.tuneType.slice(1) : null,
+                tune.difficulty ? tune.difficulty.charAt(0).toUpperCase() + tune.difficulty.slice(1) : null,
+              ].filter(Boolean).join(" · ");
+
               return (
-                <div key={tune.id} className="relative">
+                <Link
+                  key={tune.id}
+                  href={`/tune/${tune.id}`}
+                  data-testid={`card-tune-${tune.id}`}
+                  className="group relative block py-5 border-b border-border hover:bg-muted/40 transition-colors px-2 -mx-2"
+                >
                   <button
                     data-testid={`button-favorite-${tune.id}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(tune.id); }}
-                    className="absolute top-2 right-2 z-10 p-1 rounded-full hover:bg-muted/80 transition-colors"
+                    className="absolute top-5 right-2 p-1 text-muted-foreground hover:text-primary transition-colors"
                     aria-label={faved ? "Remove from favorites" : "Add to favorites"}
                   >
-                    <Star className={`w-4 h-4 transition-colors ${faved ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                    <Star className={`w-4 h-4 transition-colors ${faved ? "fill-primary text-primary" : ""}`} />
                   </button>
-                  <Link href={`/tune/${tune.id}`}>
-                    <Card
-                      data-testid={`card-tune-${tune.id}`}
-                      className="h-full cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-                      style={{ borderLeftColor: leftColor, borderLeftWidth: "3px" }}
-                    >
-                      <CardHeader className="pb-2 pt-4 pr-8">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-base font-bold font-serif leading-snug">
-                            {tune.title}
-                          </CardTitle>
-                          {(tune.popularity ?? 0) >= 9 && (
-                            <Badge className="shrink-0 text-xs bg-amber-100 text-amber-800 border-amber-300 font-medium">
-                              Essential
-                            </Badge>
-                          )}
-                        </div>
-                        <CardDescription className="flex flex-wrap gap-1 mt-1.5">
-                          <Badge variant="outline" className="text-xs border-primary/40 text-primary font-semibold">
-                            Key of {tune.key}
-                          </Badge>
-                          {tune.tuneType && (
-                            <Badge variant="outline" className={`text-xs capitalize ${typeBadge}`}>
-                              {tune.tuneType}
-                            </Badge>
-                          )}
-                          {tune.difficulty && (
-                            <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[tune.difficulty] ?? ""}`}>
-                              {tune.difficulty}
-                            </Badge>
-                          )}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0 pb-4">
-                        {tune.description ? (
-                          <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed mb-2">
-                            {tune.description}
-                          </p>
-                        ) : tune.region ? (
-                          <p className="text-xs text-muted-foreground mb-2">{tune.region}</p>
-                        ) : null}
-                        <div className="flex gap-1.5 flex-wrap">
-                          {(tune.audioUrl || tune.locItemId) && (
-                            <Badge variant="secondary" className="text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 py-0" data-testid={`badge-audio-${tune.id}`}>
-                              <Headphones className="w-3 h-3" /> Audio
-                            </Badge>
-                          )}
-                          {tune.isEmbeddable === true && (
-                            <Badge variant="secondary" className="text-xs gap-1 bg-red-50 text-red-600 border-red-200 py-0" data-testid={`badge-video-${tune.id}`}>
-                              <Video className="w-3 h-3" /> Video
-                            </Badge>
-                          )}
-                          {tune.abcNotation && (
-                            <Badge variant="secondary" className="text-xs gap-1 bg-sky-50 text-sky-700 border-sky-200 py-0" data-testid={`badge-abc-${tune.id}`}>
-                              <BookOpen className="w-3 h-3" /> Notation
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
+
+                  <div className="flex items-start gap-2.5 pr-7">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full mt-[0.55rem] shrink-0"
+                      style={{ background: typeColor }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="font-display text-lg sm:text-xl font-semibold leading-tight text-foreground group-hover:text-primary transition-colors truncate">
+                          {tune.title}
+                        </h3>
+                        {(tune.popularity ?? 0) >= 9 && (
+                          <span className="shrink-0 text-[9px] uppercase tracking-[0.18em] font-semibold text-primary/80">★ Ess.</span>
+                        )}
+                      </div>
+
+                      <p className="text-[10px] uppercase tracking-[0.14em] font-medium text-muted-foreground mt-1.5">
+                        {meta}
+                      </p>
+
+                      {tune.description ? (
+                        <p className="text-sm text-foreground/70 mt-2 line-clamp-2 leading-relaxed">
+                          {tune.description}
+                        </p>
+                      ) : tune.region ? (
+                        <p className="text-sm text-muted-foreground/80 italic mt-2">{tune.region}</p>
+                      ) : null}
+
+                      <div className="flex gap-3 mt-2.5 text-[10px] uppercase tracking-[0.12em] font-medium text-muted-foreground">
+                        {(tune.audioUrl || tune.locItemId) && (
+                          <span className="inline-flex items-center gap-1" data-testid={`badge-audio-${tune.id}`}>
+                            <Headphones className="w-3 h-3" /> Audio
+                          </span>
+                        )}
+                        {tune.isEmbeddable === true && (
+                          <span className="inline-flex items-center gap-1" data-testid={`badge-video-${tune.id}`}>
+                            <Video className="w-3 h-3" /> Video
+                          </span>
+                        )}
+                        {tune.abcNotation && (
+                          <span className="inline-flex items-center gap-1" data-testid={`badge-abc-${tune.id}`}>
+                            <BookOpen className="w-3 h-3" /> Notation
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               );
             })}
           </div>
@@ -694,59 +563,60 @@ export default function HomePage() {
 
         {/* Pagination */}
         {!showFavorites && totalPages > 1 && !isLoadingAny && (
-          <div className="flex items-center justify-center gap-3 mt-10">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-5"
+          <div className="flex items-center justify-center gap-6 mt-14">
+            <button
               onClick={() => changePage(Math.max(1, page - 1))}
               disabled={page <= 1}
               data-testid="button-prev-page"
+              className="text-[11px] uppercase tracking-[0.14em] font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground inline-flex items-center gap-1.5 transition-colors"
             >
-              <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-            </Button>
-            <span className="text-sm text-muted-foreground tabular-nums min-w-[90px] text-center" data-testid="text-page-indicator">
-              {page} / {totalPages}
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <span className="font-display text-base text-foreground tabular-nums" data-testid="text-page-indicator">
+              <span className="font-semibold">{page}</span>
+              <span className="text-muted-foreground mx-2">/</span>
+              <span className="text-muted-foreground">{totalPages}</span>
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-5"
+            <button
               onClick={() => changePage(Math.min(totalPages, page + 1))}
               disabled={page >= totalPages}
               data-testid="button-next-page"
+              className="text-[11px] uppercase tracking-[0.14em] font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground inline-flex items-center gap-1.5 transition-colors"
             >
-              Next <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         )}
 
         {/* Footer archives */}
-        <div className="mt-16">
-          <h3 className="text-center text-muted-foreground text-xs font-semibold uppercase tracking-widest mb-4">
+        <div className="mt-20 pt-10 border-t border-border">
+          <p className="text-[10px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-6 flex items-center gap-3">
+            <span className="h-px w-8 bg-foreground/40" />
             Source Archives
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border border-t border-b border-border">
             {[
               { name: "Library of Congress", url: "https://www.loc.gov/collections/henry-reed-fiddle-tunes/", desc: "Henry Reed Collection" },
-              { name: "Slippery Hill", url: "https://www.slippery-hill.com/", desc: "15,000+ Source Recordings" },
-              { name: "TheSession.org", url: "https://thesession.org", desc: "ABC Notation Database" },
-              { name: "OT Fiddle Tunes", url: "https://www.oldtimefiddletunes.net/links.html", desc: "Master Resource List" },
+              { name: "Slippery Hill", url: "https://www.slippery-hill.com/", desc: "15,000+ source recordings" },
+              { name: "TheSession.org", url: "https://thesession.org", desc: "ABC notation database" },
+              { name: "OT Fiddle Tunes", url: "https://www.oldtimefiddletunes.net/links.html", desc: "Master resource list" },
             ].map((src) => (
               <a
                 key={src.name}
                 href={src.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-colors"
+                className="block py-5 px-4 hover:bg-muted/40 transition-colors group"
                 data-testid={`link-archive-${src.name.replace(/\s+/g, "-").toLowerCase()}`}
               >
-                <p className="font-semibold text-xs">{src.name}</p>
-                <p className="text-muted-foreground text-xs mt-1">{src.desc}</p>
+                <p className="font-display text-base font-semibold text-foreground group-hover:text-primary transition-colors">{src.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{src.desc}</p>
               </a>
             ))}
           </div>
-          <TipJar />
+          <div className="mt-12">
+            <TipJar />
+          </div>
         </div>
       </div>
     </div>
