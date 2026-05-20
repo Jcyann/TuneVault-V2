@@ -222,10 +222,10 @@ export default function HomePage() {
 
   // Compact filter trigger styling
   const filterTrigger = (active: boolean) =>
-    `h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium rounded-none border bg-transparent transition-colors focus:ring-0 focus:ring-offset-0 ${
+    `h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium rounded-none border transition-colors focus:ring-0 focus:ring-offset-0 ${
       active
         ? "border-foreground text-foreground bg-foreground/[0.04]"
-        : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50"
+        : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 bg-muted"
     }`;
 
   return (
@@ -354,7 +354,7 @@ export default function HomePage() {
               className={`h-9 px-3 text-[11px] uppercase tracking-[0.12em] font-medium border transition-colors inline-flex items-center gap-1.5 ${
                 showFavorites
                   ? "bg-primary border-primary text-primary-foreground"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 bg-transparent"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 bg-muted"
               }`}
             >
               <Star className={`w-3.5 h-3.5 ${showFavorites ? "fill-current" : ""}`} />
