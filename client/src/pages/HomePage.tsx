@@ -422,19 +422,15 @@ export default function HomePage() {
 
           {/* Stats strip */}
           {stats && (
-            <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-6">
-              {[
-                { label: "Tunes", value: stats.total, icon: Disc },
-                { label: "With audio", value: stats.withAudio, icon: Headphones },
-                { label: "With video", value: stats.withVideo, icon: Video },
-                { label: "With notation", value: stats.withAbc, icon: BookOpen },
-              ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="flex items-baseline gap-2" data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-                  <span className="font-display text-2xl sm:text-3xl font-bold tabular-nums text-foreground leading-none">{Number(value ?? 0).toLocaleString("en-US")}</span>
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium">{label}</span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-5 text-xs text-muted-foreground tabular-nums" data-testid="stat-strip">
+              <span className="text-foreground font-medium">{Number(stats.total).toLocaleString("en-US")}</span> tunes
+              {" · "}
+              <span className="text-foreground font-medium">{Number(stats.withAudio).toLocaleString("en-US")}</span> with audio
+              {" · "}
+              <span className="text-foreground font-medium">{Number(stats.withVideo).toLocaleString("en-US")}</span> with video
+              {" · "}
+              <span className="text-foreground font-medium">{Number(stats.withAbc).toLocaleString("en-US")}</span> with notation
+            </p>
           )}
         </div>
       </section>
