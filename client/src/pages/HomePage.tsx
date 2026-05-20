@@ -235,10 +235,10 @@ export default function HomePage() {
       <section className="border-b border-foreground pt-20 sm:pt-24 pb-10 sm:pb-14 relative overflow-hidden">
         {/* Fiddle image — fades in from right */}
         <div
-          className="absolute inset-y-0 right-0 w-[55%] sm:w-[50%] pointer-events-none"
+          className="absolute inset-y-0 right-0 w-[75%] sm:w-[65%] pointer-events-none"
           style={{
-            maskImage: "linear-gradient(to right, transparent 0%, black 45%)",
-            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 45%)",
+            maskImage: "linear-gradient(to right, transparent 0%, black 65%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 65%)",
           }}
         >
           <img
