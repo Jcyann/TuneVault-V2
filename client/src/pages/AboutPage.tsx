@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic, Gauge, SlidersHorizontal, ExternalLink, ListMusic } from "lucide-react";
+import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, MessageCircleQuestion, Mic, Gauge, SlidersHorizontal, ExternalLink, ListMusic, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -60,11 +60,12 @@ export default function AboutPage() {
         <section className="border-t border-foreground pt-7">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Practice Tools</div>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-6">Built for learning, not just listening.</h2>
-          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-6">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
             {[
+              { icon: Play, label: "Play from the list", body: "Hover any tune in search results to play instantly or add it to your queue — no need to open the tune page first." },
+              { icon: ListMusic, label: "Queue & practice planner", body: "Stack tunes in a play queue, or filter by key, difficulty, region, and type and drill favorites-only to build a set list." },
               { icon: Gauge, label: "Speed control", body: "Slow any recording to 75% or 50% with no pitch change. Hear every grace note at a learnable pace." },
-              { icon: SlidersHorizontal, label: "Transpose", body: "Shift up or down by semitone without retuning. Match a session's pitch or explore cross-tunings." },
-              { icon: ListMusic, label: "Practice planner", body: "Filter by key, difficulty, region, and type. Star targets and drill favorites-only to build your set list." },
+              { icon: SlidersHorizontal, label: "Transpose", body: "Shift the pitch up or down by semitone without retuning. Match a session's key or explore cross-tunings." },
             ].map(({ icon: Icon, label, body }) => (
               <div key={label} className="space-y-2">
                 <Icon className="w-4 h-4 text-primary" />
@@ -82,7 +83,7 @@ export default function AboutPage() {
           <ol className="space-y-5">
             {[
               { title: "Search & filter", body: "Find tunes by name, key, difficulty, region, and type — all filters combine instantly. Star tunes to save them and switch to favorites-only mode." },
-              { title: "Play & slow it down", body: "Click a tune, hit play, and use the mini player's speed control (75%/50%) to hear every ornament at a learnable pace. Transpose to match a different key." },
+              { title: "Play & slow it down", body: "Hover a tune to play it or queue it up without leaving the list. Open the player and use speed (75%/50%) to hear every ornament, or transpose to match a different key." },
               { title: "Suggest & submit", body: "Every tune page has a \"Suggest a correction\" button for wrong keys, missing credits, or anything else. Have a recording? Submit it on the Submit a Recording page." },
             ].map(({ title, body }, i) => (
               <li key={title} className="flex gap-5">
