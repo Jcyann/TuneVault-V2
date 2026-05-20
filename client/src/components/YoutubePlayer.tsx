@@ -58,6 +58,12 @@ export default function YoutubePlayer({ videoId, onUnavailable }: YoutubePlayerP
         playerVars: { rel: 0, modestbranding: 1, enablejsapi: 1 },
         events: {
           onReady: () => { if (!cancelled) setReady(true); },
+          onStateChange: (e: any) => {
+            // YT.PlayerState.PLAYING === 1 — pause the global audio player so they don't overlap
+            if (e?.data === 1) {
+              window.dispatchEvent(new CustomEvent("tunevault:pause-audio"));
+            }
+          },
           onError: () => {
             if (!cancelled) onUnavailable?.();
           },

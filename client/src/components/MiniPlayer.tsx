@@ -116,6 +116,14 @@ export default function MiniPlayer() {
     };
   }, [next]);
 
+  useEffect(() => {
+    const handlePauseAudio = () => {
+      audioRef.current?.pause();
+    };
+    window.addEventListener("tunevault:pause-audio", handlePauseAudio);
+    return () => window.removeEventListener("tunevault:pause-audio", handlePauseAudio);
+  }, []);
+
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !resolvedUrl) return;
