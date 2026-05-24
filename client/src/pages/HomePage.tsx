@@ -260,12 +260,12 @@ export default function HomePage() {
               TuneVault
             </h1>
             <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
-              Where the Old-Time tradition lives on.
+              Where the Old-Time fiddle tradition lives on.
             </p>
             <p className="text-sm sm:text-base text-muted-foreground mt-5 max-w-sm leading-relaxed">
               Source recordings, sheet music, and history for{" "}
               <strong className="text-foreground font-semibold tabular-nums">{Number(stats?.total ?? 0).toLocaleString("en-US") ?? "1,032"}</strong>{" "}
-              tunes from the living American old-time tradition.
+              fiddle tunes from the living American old-time tradition.
             </p>
           </div>
         </div>
