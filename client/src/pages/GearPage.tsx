@@ -7,7 +7,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 // Replace BOOKSHOP_ID with your Bookshop.org affiliate ID (e.g. "tunevault")
 // Replace SWEETWATER_ID with your Sweetwater affiliate referral code
 // Replace SMP_ID with your Sheet Music Plus affiliate ID
-const BOOKSHOP_ID = "YOUR_ID";  // sign up at bookshop.org/affiliates
+const BOOKSHOP_ID = "125147";  // Bookshop.org affiliate ID
 const SWEETWATER_ID = "";       // sign up at sweetwater.com/affiliates
 const SMP_ID = "";              // sign up at sheetmusicplus.com/affiliate
 
