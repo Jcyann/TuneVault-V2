@@ -251,7 +251,7 @@ export default function GearPage() {
         {/* Disclosure */}
         <div className="flex items-start gap-2.5 bg-muted/50 border border-border px-4 py-3 mb-10 text-xs text-muted-foreground leading-relaxed">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <p>Some links on this page are affiliate links — TuneVault earns a small commission if you buy through them, at no cost to you. Everything here is genuinely recommended.</p>
+          <p><span className="font-semibold text-foreground">Affiliate disclosure:</span> Some links on this page are affiliate links. If you buy through them, TuneVault may earn a small commission — at no extra cost to you. We only recommend things we genuinely believe in, and commissions never influence what's listed here.</p>
         </div>
 
         {/* Books */}
@@ -299,6 +299,10 @@ export default function GearPage() {
             </Link>
           </p>
         </div>
+
+        <p className="text-center text-[11px] text-muted-foreground/80 leading-relaxed mb-8 max-w-md mx-auto">
+          As a Bookshop.org, Sheet Music Plus, and Sweetwater affiliate, TuneVault may earn from qualifying purchases made through links on this page, at no extra cost to you.
+        </p>
 
         <TipJar />
       </div>
