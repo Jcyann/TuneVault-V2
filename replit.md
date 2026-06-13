@@ -140,10 +140,30 @@ data/
 The "Start application" workflow runs `fuser -k 5000/tcp 2>/dev/null; npm run dev`.
 
 To re-check YouTube embeddability: `npx tsx server/scripts/checkYoutubeEmbeddability.ts`
+To calibrate key detection (accuracy report): `npx tsx server/scripts/calibrateKeyDetection.ts` (opts: `--limit=N`, `--all`, `--key=D`)
+To batch-detect keys for placeholder "B" tunes → review queue: `npx tsx server/scripts/detectBadKeys.ts` (opts: `--limit=N`, `--reset`, `--key=B`)
 To enrich descriptions from TTA (dry run first): `npx tsx server/scripts/enrichFromTTA.ts --dry-run --limit=20`
 To run for real: `npx tsx server/scripts/enrichFromTTA.ts`
 Options: `--dry-run`, `--limit=N`, `--overwrite`, `--title="Tune Name"`
 Schema changes: do NOT run `npm run db:push` — it tries to drop `seed_meta`. Use `ALTER TABLE` directly.
+
+## Data Health & Key Detection (Monthly Runbook)
+
+TuneVault has an audio key-detection engine (essentia.js `KeyExtractor`, profile `temperley`) used two ways: (1) an **admin review queue** to clean up 260 placeholder `"B"`-key tunes, and (2) a public **"Identify the Key"** page (`/identify-key`, mic + upload, all in-browser via CDN essentia).
+
+**CRITICAL — detection ASSISTS, never auto-fixes.** Calibration on the known-key set tops out at **~46% exact / ~58% tonic-only**, and confidence does NOT predict correctness (solo fiddle open-string drones cause fifth/relative confusion). A human must approve every key via the admin Key Review tab. Never auto-overwrite the `tunes` table. The "bulk-approve high confidence" button is behind an explicit warned confirmation and should generally be avoided.
+
+### Monthly steps
+1. **Check Data Health**: `/admin` → Data Health tab. Watch counts: placeholder `"B"` keys, missing descriptions, missing audio, pending key reviews.
+2. **Re-calibrate** (only if the engine/profile changed): `npx tsx server/scripts/calibrateKeyDetection.ts --limit=150`. Reports exact/tonic accuracy + a confidence-threshold sweep. Don't trust the number from memory — re-measure.
+3. **Populate the review queue**: `npx tsx server/scripts/detectBadKeys.ts` (opts: `--concurrency=N` default 5). Idempotent — skips tunes already `pending`/`applied`, so it can be re-run to finish a partial pass. Download is the bottleneck (oldtimefiddletunes.net throttles per IP), so the batch analyzes only the first 45s of each tune (key is stable). Writes only to `key_reviews`, never `tunes`. Tunes with a dead audio URL (e.g. a 404) error out and are simply retried/skipped — they can't be detected. Run it once sequentially; do NOT launch overlapping runs (they race the not-yet-queued SELECT and create duplicate rows). Expect a small number of tunes to be permanently undetectable because their MP3 URL 404s — those are simply skipped and stay out of the queue.
+4. **Review in admin**: `/admin` → Key Review tab. Each card has inline audio + a detected-key suggestion + a key dropdown. Listen, pick the correct key, Approve (writes to `tunes`) or Reject. Approving updates the live key and is reflected in autoSeed-safe DB-only fields.
+5. **Re-run** `detectBadKeys.ts` if any rejected tunes need a fresh pass (use `--reset` to clear pending first).
+
+### Notes
+- `key_reviews` is created via `CREATE TABLE IF NOT EXISTS` in `ensureRuntimeTables` (autoSeed) — survives restarts; never dropped by autoSeed.
+- Scripts must NOT import from `server/autoSeed.ts` (it imports `server/index.ts`, which calls `app.listen()` → `EADDRINUSE` against the dev server). `detectBadKeys.ts` inlines its own table guard for this reason.
+- Engine constants live in `shared/keyDetection.ts`: `DEFAULT_KEY_PROFILE`, `KEY_CONFIDENCE_THRESHOLD` (advisory UI label only).
 
 ## Back Burner
 

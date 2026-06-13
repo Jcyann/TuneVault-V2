@@ -5,6 +5,7 @@ import { tunes, recordings, lessonInquiries, insertLessonInquirySchema, suggesti
 import { storage } from "./storage";
 import { sendNotificationEmail, lessonInquiryEmail, suggestionEmail } from "./email";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
+import { KEY_CONFIDENCE_THRESHOLD } from "@shared/keyDetection";
 
 const youtubeEmbedCache = new Map<string, boolean>();
 
@@ -472,6 +473,70 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Key Review & Data Health ─────────────────────────────────────
+  const PLACEHOLDER_KEY = "B";
+
+  app.get("/api/admin/data-health", async (_req, res) => {
+    try {
+      const health = await storage.getDataHealth(PLACEHOLDER_KEY);
+      res.json(health);
+    } catch (err) {
+      console.error("Data health error:", err);
+      res.status(500).json({ error: "Failed to fetch data health" });
+    }
+  });
+
+  app.get("/api/admin/key-reviews", async (req, res) => {
+    try {
+      const status = typeof req.query.status === "string" ? req.query.status : undefined;
+      const rows = await storage.getKeyReviews(status);
+      res.json({ reviews: rows, threshold: KEY_CONFIDENCE_THRESHOLD });
+    } catch (err) {
+      console.error("Key reviews error:", err);
+      res.status(500).json({ error: "Failed to fetch key reviews" });
+    }
+  });
+
+  // Approve a key review: writes the (optionally edited) key to the tune.
+  app.patch("/api/admin/key-reviews/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const review = await storage.getKeyReview(id);
+      if (!review) return res.status(404).json({ error: "Key review not found" });
+      const key = (typeof req.body?.key === "string" && req.body.key.trim())
+        ? req.body.key.trim()
+        : (review.reviewedKey ?? review.detectedKey);
+      if (!key) return res.status(400).json({ error: "No key to apply" });
+      const updated = await storage.applyKeyReview(id, key);
+      res.json(updated);
+    } catch (err) {
+      console.error("Approve key review error:", err);
+      res.status(500).json({ error: "Failed to approve key review" });
+    }
+  });
+
+  app.patch("/api/admin/key-reviews/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.setKeyReviewStatus(id, "rejected");
+      if (!updated) return res.status(404).json({ error: "Key review not found" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to reject key review" });
+    }
+  });
+
+  app.post("/api/admin/key-reviews/bulk-approve", async (req, res) => {
+    try {
+      const threshold = typeof req.body?.threshold === "number" ? req.body.threshold : KEY_CONFIDENCE_THRESHOLD;
+      const result = await storage.bulkApplyHighConfidence(threshold);
+      res.json(result);
+    } catch (err) {
+      console.error("Bulk approve key reviews error:", err);
+      res.status(500).json({ error: "Failed to bulk approve" });
+    }
+  });
+
   // ── YouTube Sync ──────────────────────────────────────────────
   function normalizeTitle(t: string): string {
     return t
@@ -764,6 +829,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         { loc: `${base}/tune-of-the-day`, priority: "0.8", changefreq: "daily", lastmod: today },
         { loc: `${base}/about`, priority: "0.6", changefreq: "monthly", lastmod: today },
         { loc: `${base}/book-a-lesson`, priority: "0.7", changefreq: "monthly", lastmod: today },
+        { loc: `${base}/identify-key`, priority: "0.7", changefreq: "monthly", lastmod: today },
       ];
       const tuneUrls = rows.map((t) => {
         const pop = t.popularity ?? 5;

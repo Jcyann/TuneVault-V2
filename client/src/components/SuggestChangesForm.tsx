@@ -32,16 +32,18 @@ const VALUE_LABELS: Record<string, { label: string; placeholder: string; type?: 
 interface Props {
   tuneId?: number;
   tuneName?: string;
+  correctionType?: string;
+  suggestedValue?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
   className?: string;
 }
 
-export default function SuggestChangesForm({ tuneId: initialTuneId, tuneName: initialTuneName, onSuccess, onCancel, className = "" }: Props) {
+export default function SuggestChangesForm({ tuneId: initialTuneId, tuneName: initialTuneName, correctionType: initialCorrectionType, suggestedValue: initialSuggestedValue, onSuccess, onCancel, className = "" }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [correctionType, setCorrectionType] = useState("general");
-  const [suggestedValue, setSuggestedValue] = useState("");
+  const [correctionType, setCorrectionType] = useState(initialCorrectionType ?? "general");
+  const [suggestedValue, setSuggestedValue] = useState(initialSuggestedValue ?? "");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);

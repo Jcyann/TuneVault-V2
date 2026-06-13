@@ -94,6 +94,36 @@ export async function seedBlogPosts(): Promise<void> {
   }
 }
 
+/**
+ * Create DB-only tables that are NOT part of the seed JSON and must never be
+ * dropped by `db:push`. Mirrors the seed_meta pattern (CREATE TABLE IF NOT
+ * EXISTS at startup) so the schema exists in every environment without a push.
+ */
+export async function ensureRuntimeTables(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS key_reviews (
+        id SERIAL PRIMARY KEY,
+        tune_id INTEGER NOT NULL,
+        current_key TEXT,
+        detected_key TEXT,
+        detected_tonic TEXT,
+        detected_scale TEXT,
+        confidence REAL,
+        audio_url TEXT,
+        reviewed_key TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    log(`ensureRuntimeTables failed: ${err}`, "autoSeed");
+  } finally {
+    client.release();
+  }
+}
+
 export async function autoSeed(): Promise<void> {
   const client = await pool.connect();
   try {

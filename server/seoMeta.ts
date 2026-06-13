@@ -162,6 +162,26 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
       genre: "Old-Time Fiddle",
     },
   },
+  "/identify-key": {
+    title: "Identify the Key — Free Fiddle Tune Key Detector | TuneVault",
+    description:
+      "Record or upload an Old-Time fiddle tune and detect its musical key instantly in your browser. A free key-finder tool for fiddlers and traditional musicians.",
+    url: `${BASE}/identify-key`,
+    keywords:
+      "identify key of song, fiddle key detector, find the key of a tune, music key finder, what key is this fiddle tune, old time fiddle key, detect musical key, key detection tool, fiddle tune key finder, audio key analysis, find song key online",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "TuneVault Key Identifier",
+      url: `${BASE}/identify-key`,
+      applicationCategory: "MultimediaApplication",
+      operatingSystem: "Web",
+      description:
+        "Free in-browser tool that estimates the musical key of an Old-Time fiddle tune from a recording or uploaded audio file.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      isPartOf: { "@type": "WebSite", url: BASE, name: "TuneVault" },
+    },
+  },
   "/submit-recording": {
     title: "Submit a Recording — Share Your Fiddle Playing | TuneVault",
     description:

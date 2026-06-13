@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw, BookOpen, Plus, Pencil, Trash2, Eye, EyeOff, Zap } from "lucide-react";
-import type { LessonInquiry, Suggestion, RecordingSubmission, BlogPost } from "@shared/schema";
+import { Inbox, MessageSquare, GraduationCap, Calendar, Mail, Music2, Globe, Clock, Mic, ExternalLink, CheckCircle2, XCircle, Youtube, Loader2, Search, RefreshCw, BookOpen, Plus, Pencil, Trash2, Eye, EyeOff, Zap, KeyRound, Activity, AlertTriangle } from "lucide-react";
+import type { LessonInquiry, Suggestion, RecordingSubmission, BlogPost, KeyReview } from "@shared/schema";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -291,9 +291,104 @@ function SubmissionCard({ sub, onApprove, onReject, onApplyToTune, isPending }: 
   );
 }
 
+type EnrichedKeyReview = KeyReview & { tuneTitle: string };
+
+const KEY_OPTIONS = ["A", "Am", "B", "Bb", "Bbm", "Bm", "C", "C#", "Cm", "D", "Dm", "E", "Eb", "Em", "F", "F#", "Fm", "G", "G#", "Gm"];
+
+function KeyReviewCard({ review, threshold, onApprove, onReject, isPending }: {
+  review: EnrichedKeyReview;
+  threshold: number;
+  onApprove: (id: number, key: string) => void;
+  onReject: (id: number) => void;
+  isPending: boolean;
+}) {
+  const detected = review.detectedKey ?? "";
+  const [chosenKey, setChosenKey] = useState(review.reviewedKey ?? detected);
+  const confidence = review.confidence ?? 0;
+  const highConf = confidence >= threshold;
+  const statusColor = review.status === "applied"
+    ? "text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800"
+    : review.status === "rejected"
+    ? "text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/30 dark:border-red-800"
+    : "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800";
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3" data-testid={`key-review-card-${review.id}`}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="space-y-1">
+          <a href={`/tune/${review.tuneId}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-amber-600 flex items-center gap-1.5" data-testid={`link-tune-${review.tuneId}`}>
+            {review.tuneTitle} <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+          </a>
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <span className="text-muted-foreground">Current:</span>
+            <span className="font-mono font-medium text-foreground bg-muted px-1.5 py-0.5 rounded">{review.currentKey ?? "—"}</span>
+            <span className="text-muted-foreground">→ Detected:</span>
+            <span className="font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded" data-testid={`text-detected-${review.id}`}>
+              {detected || "—"}
+            </span>
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full border ${highConf ? "text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800" : "text-muted-foreground bg-muted border-border"}`} data-testid={`text-confidence-${review.id}`}>
+              {(confidence * 100).toFixed(0)}% confidence
+            </span>
+          </div>
+        </div>
+        <span className={`text-xs font-medium border px-2 py-0.5 rounded-full capitalize shrink-0 ${statusColor}`}>{review.status}</span>
+      </div>
+
+      {review.audioUrl && (
+        <audio
+          controls
+          preload="none"
+          src={review.audioUrl}
+          className="w-full h-9"
+          data-testid={`audio-review-${review.id}`}
+        />
+      )}
+
+      {review.status === "pending" && (
+        <div className="flex items-end gap-3 flex-wrap pt-1">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground block">Key to apply</label>
+            <select
+              value={chosenKey}
+              onChange={(e) => setChosenKey(e.target.value)}
+              data-testid={`select-key-${review.id}`}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+            >
+              {!KEY_OPTIONS.includes(chosenKey) && chosenKey && <option value={chosenKey}>{chosenKey}</option>}
+              {KEY_OPTIONS.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => onApprove(review.id, chosenKey)}
+            disabled={isPending || !chosenKey}
+            data-testid={`button-approve-key-${review.id}`}
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Approve & write key
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onReject(review.id)}
+            disabled={isPending}
+            data-testid={`button-reject-key-${review.id}`}
+            className="border-red-300 text-red-600 hover:bg-red-50"
+          >
+            <XCircle className="w-4 h-4 mr-1" /> Dismiss
+          </Button>
+        </div>
+      )}
+      {review.status === "applied" && (
+        <p className="text-sm text-green-700 dark:text-green-400">Wrote key <span className="font-mono font-semibold">{review.reviewedKey}</span> to this tune.</p>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   usePageMeta("Admin — TuneVault", "TuneVault admin dashboard");
-  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions" | "youtube" | "blog">("inquiries");
+  const [tab, setTab] = useState<"inquiries" | "suggestions" | "submissions" | "youtube" | "blog" | "keyreview" | "datahealth">("inquiries");
 
   const { toast } = useToast();
 
@@ -645,6 +740,80 @@ export default function AdminPage() {
 
   const pendingSuggestionCount = subs.filter((s) => (s.status ?? "pending") === "pending").length;
 
+  // ── Key Review tab state ──
+  const [keyStatusFilter, setKeyStatusFilter] = useState<"pending" | "applied" | "rejected">("pending");
+  const { data: keyReviewData, isLoading: loadingKeyReviews } = useQuery<{ reviews: EnrichedKeyReview[]; threshold: number }>({
+    queryKey: ["/api/admin/key-reviews"],
+    enabled: tab === "keyreview",
+  });
+  const keyReviews = keyReviewData?.reviews ?? [];
+  const keyThreshold = keyReviewData?.threshold ?? 0.8;
+  const pendingKeyCount = keyReviews.filter((r) => r.status === "pending").length;
+  const visibleKeyReviews = keyReviews.filter((r) => r.status === keyStatusFilter);
+
+  const approveKeyMutation = useMutation({
+    mutationFn: ({ id, key }: { id: number; key: string }) =>
+      apiRequest("PATCH", `/api/admin/key-reviews/${id}/approve`, { key }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/key-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/data-health"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tunes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/keys"] });
+      toast({ title: "Key written to tune." });
+    },
+    onError: () => toast({ title: "Approve failed", variant: "destructive" }),
+  });
+
+  const rejectKeyMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/admin/key-reviews/${id}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/key-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/data-health"] });
+      toast({ title: "Detection dismissed." });
+    },
+    onError: () => toast({ title: "Dismiss failed", variant: "destructive" }),
+  });
+
+  const bulkApproveKeyMutation = useMutation({
+    mutationFn: (threshold: number) =>
+      apiRequest("POST", `/api/admin/key-reviews/bulk-approve`, { threshold }),
+    onSuccess: async (res: any) => {
+      const count = res?.applied ?? res?.count ?? 0;
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/key-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/data-health"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tunes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/keys"] });
+      toast({ title: `Bulk-approved ${count} detection${count === 1 ? "" : "s"}.` });
+    },
+    onError: () => toast({ title: "Bulk approve failed", variant: "destructive" }),
+  });
+
+  const highConfidencePendingCount = keyReviews.filter(
+    (r) => r.status === "pending" && (r.confidence ?? 0) >= keyThreshold,
+  ).length;
+
+  function handleBulkApprove() {
+    if (highConfidencePendingCount === 0) {
+      toast({ title: "Nothing to bulk-approve", description: `No pending detections at or above ${(keyThreshold * 100).toFixed(0)}% confidence.` });
+      return;
+    }
+    const ok = window.confirm(
+      `Bulk-approve ${highConfidencePendingCount} pending detection(s) at or above ${(keyThreshold * 100).toFixed(0)}% confidence?\n\n` +
+        `WARNING: detection on solo fiddle is only ~45–60% accurate and confidence does NOT reliably predict correctness. ` +
+        `This writes each detected key straight to its tune WITHOUT you listening first. ` +
+        `Reviewing by ear is strongly recommended instead.`,
+    );
+    if (ok) bulkApproveKeyMutation.mutate(keyThreshold);
+  }
+
+  // ── Data Health tab ──
+  const { data: dataHealth, isLoading: loadingHealth } = useQuery<{
+    total: number; placeholderKeys: number; missingDescriptions: number; missingAudio: number; pendingKeyReviews: number;
+  }>({
+    queryKey: ["/api/admin/data-health"],
+    enabled: tab === "datahealth",
+  });
+
   return (
     <div className="min-h-screen bg-background pb-12">
       <div
@@ -735,6 +904,35 @@ export default function AdminPage() {
           >
             <BookOpen className="w-4 h-4" />
             Blog
+          </button>
+          <button
+            onClick={() => setTab("keyreview")}
+            data-testid="tab-keyreview"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === "keyreview"
+                ? "bg-amber-500 text-white"
+                : "border border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <KeyRound className="w-4 h-4" />
+            Key Review
+            {pendingKeyCount > 0 && (
+              <span className="ml-1 text-xs bg-red-500 text-white rounded-full px-1.5 py-0.5 font-bold leading-none">
+                {pendingKeyCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setTab("datahealth")}
+            data-testid="tab-datahealth"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === "datahealth"
+                ? "bg-amber-500 text-white"
+                : "border border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            Data Health
           </button>
         </div>
 
@@ -1210,6 +1408,118 @@ export default function AdminPage() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "keyreview" && (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-4 text-sm text-amber-900 dark:text-amber-200 flex gap-3">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-medium">Detections are suggestions, not facts.</p>
+                <p className="text-amber-800/90 dark:text-amber-300/80">
+                  Automatic key detection on solo fiddle is only ~45–60% accurate (open-string drones cause fifth/relative confusion),
+                  and confidence does not reliably predict correctness. <strong>Listen to each clip and confirm or correct the key before approving.</strong>
+                  Approving writes the key directly to the tune; dismissing leaves the tune unchanged.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {(["pending", "applied", "rejected"] as const).map((s) => {
+                const count = keyReviews.filter((r) => r.status === s).length;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setKeyStatusFilter(s)}
+                    data-testid={`filter-key-${s}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${
+                      keyStatusFilter === s ? "bg-amber-500 text-white" : "border border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {s} ({count})
+                  </button>
+                );
+              })}
+              <div className="ml-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkApprove}
+                  disabled={bulkApproveKeyMutation.isPending || highConfidencePendingCount === 0}
+                  data-testid="button-bulk-approve-keys"
+                  className="text-xs gap-1.5"
+                >
+                  {bulkApproveKeyMutation.isPending ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Approving…</>
+                  ) : (
+                    <><CheckCircle2 className="w-3.5 h-3.5" /> Bulk-approve ≥{(keyThreshold * 100).toFixed(0)}% ({highConfidencePendingCount})</>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {loadingKeyReviews ? (
+              <p className="text-sm text-muted-foreground">Loading detections…</p>
+            ) : keyReviews.length === 0 ? (
+              <div className="text-center py-16">
+                <KeyRound className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-25" />
+                <p className="text-muted-foreground">No key detections queued yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">Run <code className="font-mono">npx tsx server/scripts/detectBadKeys.ts</code> to populate the review queue.</p>
+              </div>
+            ) : visibleKeyReviews.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No {keyStatusFilter} detections.</p>
+            ) : (
+              <div className="space-y-3">
+                {visibleKeyReviews.map((r) => (
+                  <KeyReviewCard
+                    key={r.id}
+                    review={r}
+                    threshold={keyThreshold}
+                    onApprove={(id, key) => approveKeyMutation.mutate({ id, key })}
+                    onReject={(id) => rejectKeyMutation.mutate(id)}
+                    isPending={approveKeyMutation.isPending || rejectKeyMutation.isPending}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "datahealth" && (
+          <div className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              Live data-quality counts across the tune library. See the monthly runbook in <code className="font-mono">replit.md</code> for the maintenance routine.
+            </p>
+            {loadingHealth || !dataHealth ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { label: "Total tunes", value: dataHealth.total, hint: "Everything in the library", tone: "neutral" as const },
+                  { label: 'Placeholder "B" keys', value: dataHealth.placeholderKeys, hint: "Need a real key — review queue", tone: dataHealth.placeholderKeys > 0 ? "warn" : "ok" as const },
+                  { label: "Pending key reviews", value: dataHealth.pendingKeyReviews, hint: "Detections awaiting approval", tone: dataHealth.pendingKeyReviews > 0 ? "warn" : "ok" as const },
+                  { label: "Missing descriptions", value: dataHealth.missingDescriptions, hint: "No write-up yet", tone: dataHealth.missingDescriptions > 0 ? "warn" : "ok" as const },
+                  { label: "Missing audio", value: dataHealth.missingAudio, hint: "No audio_url or LOC item", tone: dataHealth.missingAudio > 0 ? "warn" : "ok" as const },
+                ].map((c) => (
+                  <div
+                    key={c.label}
+                    data-testid={`health-card-${c.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+                    className={`rounded-xl border p-5 ${
+                      c.tone === "warn"
+                        ? "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20"
+                        : c.tone === "ok"
+                        ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <p className="text-3xl font-bold text-foreground">{c.value.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-foreground mt-1">{c.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{c.hint}</p>
                   </div>
                 ))}
               </div>

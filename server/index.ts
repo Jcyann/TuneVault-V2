@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { autoSeed, seedBlogPosts } from "./autoSeed";
+import { autoSeed, seedBlogPosts, ensureRuntimeTables } from "./autoSeed";
 
 const app = express();
 const httpServer = createServer(app);
@@ -100,6 +100,9 @@ app.use((req, res, next) => {
     () => {
       log(`serving on port ${port}`);
       // Run autoSeed after the port is open so deployment health checks pass immediately
+      ensureRuntimeTables().catch((err) => {
+        console.error("ensureRuntimeTables failed:", err);
+      });
       autoSeed().catch((err) => {
         console.error("autoSeed failed:", err);
       });

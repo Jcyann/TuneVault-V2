@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, timestamp, boolean, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -132,6 +132,24 @@ export const insertRecordingSubmissionSchema = createInsertSchema(recordingSubmi
 });
 export type InsertRecordingSubmission = z.infer<typeof insertRecordingSubmissionSchema>;
 export type RecordingSubmission = typeof recordingSubmissions.$inferSelect;
+
+export const keyReviews = pgTable("key_reviews", {
+  id: serial("id").primaryKey(),
+  tuneId: integer("tune_id").notNull(),
+  currentKey: text("current_key"),
+  detectedKey: text("detected_key"),
+  detectedTonic: text("detected_tonic"),
+  detectedScale: text("detected_scale"),
+  confidence: real("confidence"),
+  audioUrl: text("audio_url"),
+  reviewedKey: text("reviewed_key"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertKeyReviewSchema = createInsertSchema(keyReviews).omit({ id: true, createdAt: true });
+export type InsertKeyReview = z.infer<typeof insertKeyReviewSchema>;
+export type KeyReview = typeof keyReviews.$inferSelect;
 
 export const blogPosts = pgTable("blog_posts", {
   id: serial("id").primaryKey(),

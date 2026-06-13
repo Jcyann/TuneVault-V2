@@ -1,0 +1,1 @@
+- [Audio key-detection accuracy ceiling](key-detection.md) — essentia.js tops ~46% exact on solo fiddle; confidence ≠ correctness; human-review-only, never auto-overwrite.

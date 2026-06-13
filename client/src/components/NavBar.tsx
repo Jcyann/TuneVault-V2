@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Music2, Calendar, Info, GraduationCap, BookOpen } from "lucide-react";
+import { Music2, Calendar, Info, GraduationCap, BookOpen, KeyRound } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Music2 },
   { href: "/tune-of-the-day", label: "Tune of the Day", icon: Calendar },
+  { href: "/identify-key", label: "Identify Key", icon: KeyRound },
   { href: "/blog", label: "Blog", icon: BookOpen },
   { href: "/about", label: "About", icon: Info },
   { href: "/book-a-lesson", label: "Lessons", icon: GraduationCap },
