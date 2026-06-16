@@ -832,24 +832,24 @@ export default function AdminPage() {
       </div>
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
           <button
             onClick={() => setTab("inquiries")}
             data-testid="tab-inquiries"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "inquiries"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
             }`}
           >
             <GraduationCap className="w-4 h-4" />
-            Lesson Inquiries
+            <span className="hidden sm:inline">Lesson </span>Inquiries
             <span className="ml-1 text-xs opacity-75">({inquiries.length})</span>
           </button>
           <button
             onClick={() => setTab("suggestions")}
             data-testid="tab-suggestions"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "suggestions"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
@@ -867,7 +867,7 @@ export default function AdminPage() {
           <button
             onClick={() => setTab("submissions")}
             data-testid="tab-submissions"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "submissions"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
@@ -884,7 +884,7 @@ export default function AdminPage() {
           <button
             onClick={() => setTab("youtube")}
             data-testid="tab-youtube"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "youtube"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
@@ -896,7 +896,7 @@ export default function AdminPage() {
           <button
             onClick={() => setTab("blog")}
             data-testid="tab-blog"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "blog"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
@@ -908,7 +908,7 @@ export default function AdminPage() {
           <button
             onClick={() => setTab("keyreview")}
             data-testid="tab-keyreview"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "keyreview"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
@@ -925,14 +925,14 @@ export default function AdminPage() {
           <button
             onClick={() => setTab("datahealth")}
             data-testid="tab-datahealth"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
               tab === "datahealth"
                 ? "bg-amber-500 text-white"
                 : "border border-border text-muted-foreground hover:bg-muted"
             }`}
           >
             <Activity className="w-4 h-4" />
-            Data Health
+            <span className="hidden sm:inline">Data </span>Health
           </button>
         </div>
 
