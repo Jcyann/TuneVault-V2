@@ -167,7 +167,7 @@ TuneVault has an audio key-detection engine (essentia.js `KeyExtractor`, profile
 
 ## Back Burner
 
-- **Google Search Console setup**: Site is not yet indexed by Google. Steps: (1) Verify ownership at search.google.com/search-console using HTML meta tag — paste tag to agent to add to `<head>`. (2) Submit sitemap: `https://tunevault.org/sitemap.xml`. (3) Use URL Inspection tool to request indexing of homepage. Without this, all SEO work has no effect.
+- **Bluegrass TuneVault** — Full parallel section at `/bluegrass` with ~500 traditional tunes, automated data assembly (Wikipedia + MusicBrainz + Internet Archive + YouTube API), same infrastructure as Old-Time. Task #11 is planned and ready to execute. Copyright-safe: YouTube embeds + Internet Archive early recordings only.
 - **AI description enrichment**: ~19 ultra-obscure tunes (popularity=5) still have no description after web search enrichment — no findable web content exists for them. May need manual write-ups or OpenAI generation.
 - **Slug-based URLs**: `/tune/soldiers-joy` instead of `/tune/9` — significant Google SEO win; requires DB slug column, redirect strategy for existing links, and sitemap update.
 - **Related Tunes**: Same-key, same-type, or commonly-played-together suggestions on each tune page — improves both UX and Google's internal link graph.
