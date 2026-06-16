@@ -228,3 +228,44 @@
     inset: -1px;
   }
 }
+
+/* ── Motion polish ─────────────────────────────────────────── */
+@keyframes tv-eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50%      { transform: scaleY(1); }
+}
+.tv-eq-bar {
+  transform-origin: bottom;
+  animation: tv-eq 0.9s ease-in-out infinite;
+}
+
+@keyframes tv-sweep {
+  0%   { transform: translateX(-40%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(220%); opacity: 0; }
+}
+.tv-hero-staff {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    hsl(var(--foreground) / 0.05) 0,
+    hsl(var(--foreground) / 0.05) 1px,
+    transparent 1px,
+    transparent 13px
+  );
+}
+.tv-hero-sweep {
+  background: linear-gradient(
+    to right,
+    transparent,
+    hsl(var(--accent) / 0.14),
+    transparent
+  );
+  animation: tv-sweep 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-eq-bar, .tv-hero-sweep { animation: none; }
+  .tv-eq-bar  { transform: scaleY(0.7); }
+  .tv-hero-sweep { opacity: 0; }
+}

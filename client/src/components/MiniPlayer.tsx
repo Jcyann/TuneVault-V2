@@ -175,10 +175,22 @@ export default function MiniPlayer() {
             {/* LEFT — Title + meta */}
             <Link href={`/tune/${current.id}`} className="flex items-center gap-3 min-w-0 group">
               <div
-                className="w-11 h-11 rounded flex items-center justify-center shrink-0"
+                className="w-11 h-11 rounded flex items-center justify-center shrink-0 overflow-hidden"
                 style={{ background: typeColor + "20", border: `1px solid ${typeColor}55` }}
               >
-                <Music2 className="w-4 h-4" style={{ color: typeColor }} />
+                {isPlaying ? (
+                  <div className="flex items-end gap-[2px] h-4" aria-hidden>
+                    {[0, 0.18, 0.36, 0.12].map((d, i) => (
+                      <span
+                        key={i}
+                        className="tv-eq-bar w-[2.5px] h-full rounded-full"
+                        style={{ background: typeColor, animationDelay: `${d}s` }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Music2 className="w-4 h-4" style={{ color: typeColor }} />
+                )}
               </div>
               <div className="min-w-0">
                 <p className="font-display text-[15px] font-semibold leading-tight truncate group-hover:text-primary transition-colors" data-testid="mini-player-title">

@@ -233,6 +233,9 @@ export default function HomePage() {
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="border-b border-foreground pt-20 sm:pt-24 pb-10 sm:pb-14 relative overflow-hidden">
+        {/* Animated staff lines + sweeping playhead */}
+        <div className="absolute inset-0 tv-hero-staff opacity-70 pointer-events-none" aria-hidden />
+        <div className="absolute inset-y-0 left-0 w-1/3 tv-hero-sweep pointer-events-none" aria-hidden />
         {/* Fiddle image — fades in from right */}
         <div
           className="hidden sm:block absolute inset-y-0 right-0 w-[65%] pointer-events-none"
@@ -504,8 +507,9 @@ export default function HomePage() {
                   key={tune.id}
                   href={`/tune/${tune.id}`}
                   data-testid={`card-tune-${tune.id}`}
-                  className="group relative block py-5 border-b border-border hover:bg-muted/40 transition-colors px-2 -mx-2"
+                  className="group relative block py-5 border-b border-border hover:bg-muted/40 transition-all duration-200 px-2 -mx-2 hover:px-3"
                 >
+                  <span className="absolute left-0 top-2 bottom-2 w-[2px] bg-primary rounded-full origin-center scale-y-0 group-hover:scale-y-100 transition-transform duration-200" aria-hidden />
                   <div className="absolute top-4 right-1.5 flex items-center gap-0.5">
                     {(tune.audioUrl || tune.locItemId) && (
                       <>
