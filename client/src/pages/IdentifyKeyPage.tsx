@@ -242,7 +242,7 @@ export default function IdentifyKeyPage() {
                   <span className="font-display text-5xl sm:text-6xl font-bold tabular-nums leading-none" data-testid="text-countdown">
                     {MAX_RECORD_SECONDS - elapsed}
                   </span>
-                  <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Tap to stop</span>
+                  <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Tap to guess now</span>
                 </>
               ) : result ? (
                 <>
@@ -271,12 +271,12 @@ export default function IdentifyKeyPage() {
                 {sourceLabel && <p className="text-xs text-muted-foreground mt-1 truncate max-w-xs mx-auto">from {sourceLabel}</p>}
               </div>
             ) : recording ? (
-              <p className="font-serif text-[15px] text-muted-foreground">Listening… play near your device.</p>
+              <p className="font-serif text-[15px] text-muted-foreground">Listening… play a note, then tap the dial anytime for an instant read.</p>
             ) : analyzing ? (
               <p className="font-serif text-[15px] text-muted-foreground">Working out the key…</p>
             ) : (
               <p className="font-serif text-[15px] text-muted-foreground max-w-sm">
-                Tap the dial and play up to {MAX_RECORD_SECONDS} seconds of a tune.
+                Tap the dial and play a tune — or a single note to tune up. Tap again anytime for an instant read, or let it run up to {MAX_RECORD_SECONDS} seconds.
               </p>
             )}
           </div>
