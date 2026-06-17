@@ -38,7 +38,7 @@ export default function AboutPage() {
             <ol className="space-y-5">
               {[
                 { title: "Search & filter", body: "Find tunes by name, key, difficulty, region, or type — all filters stack instantly. Star any tune to save it and switch to favorites-only mode." },
-                { title: "Play from the list", body: "Hover a tune in search results to play it directly without leaving the page. Tap the mini player at the bottom to expand controls." },
+                { title: "Play from the list", body: "Hover a tune to play it without leaving the page. In the mini player, slow down to 75% or 50% with no pitch change, or transpose by semitone to match any key." },
                 { title: "Dig into a tune", body: "Open a tune page for the full history, multiple recordings, embedded video, ABC notation, and sheet music. Recordings are credited to the source fiddler where known." },
                 { title: "Contribute & correct", body: "Every tune page has a \"Suggest a correction\" button for wrong keys, missing credits, or bad links. Have a recording? Submit it and it may appear on the page." },
               ].map(({ title, body }, i) => (
