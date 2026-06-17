@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePlaylist } from "@/context/PlaylistContext";
-import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useSwipe } from "@/hooks/useSwipe";
 
@@ -43,6 +43,8 @@ const fmt = (s: number) => {
 export default function MiniPlayer() {
   const { playlist, currentIndex, isActive, next, prev, reshuffle, dismiss, playMode, setPlayMode } = usePlaylist();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [barHeight, setBarHeight] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -56,15 +58,20 @@ export default function MiniPlayer() {
 
   useEffect(() => {
     if (!expanded) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(false); };
     window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
+
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const update = () => setBarHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isActive, current?.id]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -178,29 +185,22 @@ export default function MiniPlayer() {
 
   return (
     <>
-      {/* ============ EXPANDED BOTTOM SHEET (swipe up to open) ============ */}
+      {/* ============ EXPANDED DOCKED PANEL (swipe up to open) — non-modal ============ */}
       <div
-        className={`fixed inset-0 z-[60] flex items-end justify-center sm:justify-end transition-opacity duration-300 ${expanded ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className="fixed inset-0 z-[60] flex items-end justify-center sm:justify-end px-0 sm:px-4 pointer-events-none"
+        style={{ paddingBottom: barHeight }}
         aria-hidden={!expanded}
       >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={collapse}
-          data-testid="player-sheet-backdrop"
-        />
-
-        {/* Panel */}
+        {/* Panel — only this region captures pointer events; the page behind stays scrollable */}
         <div
           {...sheetSwipe}
-          role="dialog"
-          aria-modal="true"
+          role="region"
           aria-label="Now playing"
-          className={`relative w-full max-w-md sm:m-4 transition-transform duration-300 ease-out ${expanded ? "translate-y-0" : "translate-y-full"}`}
+          className={`relative w-full max-w-md mb-2 sm:mb-4 transition-all duration-300 ease-out ${expanded ? "translate-y-0 opacity-100 pointer-events-auto" : "translate-y-4 opacity-0 pointer-events-none"}`}
           data-testid="player-sheet"
         >
           <div
-            className="rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            className="rounded-2xl border border-border shadow-2xl overflow-hidden max-h-[70vh] sm:max-h-[80vh] flex flex-col"
             style={{ background: "hsl(var(--card))" }}
           >
             {/* Grab handle + close */}
@@ -343,6 +343,7 @@ export default function MiniPlayer() {
       </div>
 
     <div
+      ref={barRef}
       className="fixed bottom-0 left-0 right-0 z-50 shadow-2xl border-t border-border"
       style={{ background: "hsl(var(--card))" }}
       {...swipe}
