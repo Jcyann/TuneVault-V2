@@ -4,7 +4,7 @@ import { Music2, Calendar, Info, GraduationCap, BookOpen, KeyRound, ShoppingBag 
 const navLinks = [
   { href: "/", label: "Home", mobileLabel: "Home", icon: Music2 },
   { href: "/tune-of-the-day", label: "Tune of the Day", mobileLabel: "Today", icon: Calendar },
-  { href: "/identify-key", label: "KeyHound", mobileLabel: "KeyHound", icon: KeyRound },
+  { href: "/identify-key", label: "Pitch Detective", mobileLabel: "Detect", icon: KeyRound },
   { href: "/blog", label: "Blog", mobileLabel: "Blog", icon: BookOpen },
   { href: "/gear", label: "Store", mobileLabel: "Store", icon: ShoppingBag },
   { href: "/about", label: "About", mobileLabel: "About", icon: Info },
