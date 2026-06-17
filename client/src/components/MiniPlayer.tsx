@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePlaylist } from "@/context/PlaylistContext";
-import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw } from "lucide-react";
+import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useSwipe } from "@/hooks/useSwipe";
 
@@ -50,8 +50,21 @@ export default function MiniPlayer() {
   const [skipping, setSkipping] = useState(false);
   const [speed, setSpeed] = useState<SpeedOption>(1.0);
   const [semitones, setSemitones] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   const current = playlist[currentIndex] ?? null;
+
+  useEffect(() => {
+    if (!expanded) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(false); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [expanded]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -139,7 +152,15 @@ export default function MiniPlayer() {
   };
 
   const toggleMode = () => setPlayMode(playMode === "shuffle" ? "chronological" : "shuffle");
-  const swipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
+  const collapse = useCallback(() => setExpanded(false), []);
+  const swipe = useSwipe({
+    onSwipeLeft: next,
+    onSwipeRight: prev,
+    onSwipeUp: () => setExpanded(true),
+    onSwipeDown: dismiss,
+    ignoreInteractive: true,
+  });
+  const sheetSwipe = useSwipe({ onSwipeDown: collapse, threshold: 60, ignoreInteractive: true });
 
   if (!isActive || !current) return null;
 
@@ -156,6 +177,171 @@ export default function MiniPlayer() {
     : [credit, current.tuneType, `${currentIndex + 1} / ${playlist.length}`].filter(Boolean).join(" · ");
 
   return (
+    <>
+      {/* ============ EXPANDED BOTTOM SHEET (swipe up to open) ============ */}
+      <div
+        className={`fixed inset-0 z-[60] flex items-end justify-center sm:justify-end transition-opacity duration-300 ${expanded ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        aria-hidden={!expanded}
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={collapse}
+          data-testid="player-sheet-backdrop"
+        />
+
+        {/* Panel */}
+        <div
+          {...sheetSwipe}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Now playing"
+          className={`relative w-full max-w-md sm:m-4 transition-transform duration-300 ease-out ${expanded ? "translate-y-0" : "translate-y-full"}`}
+          data-testid="player-sheet"
+        >
+          <div
+            className="rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            style={{ background: "hsl(var(--card))" }}
+          >
+            {/* Grab handle + close */}
+            <div className="relative pt-2.5 pb-1 shrink-0">
+              <button
+                onClick={collapse}
+                className="mx-auto block h-1.5 w-10 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors"
+                aria-label="Collapse player"
+                data-testid="player-sheet-collapse"
+              />
+              <button
+                onClick={dismiss}
+                className="absolute right-3 top-2 p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                aria-label="Close player"
+                data-testid="player-sheet-close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-5 pb-6 pt-1 overflow-y-auto">
+              {/* Artwork + title */}
+              <div className="flex flex-col items-center text-center gap-3 mb-5">
+                <div
+                  className="w-28 h-28 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
+                  style={{ background: typeColor + "20", border: `1px solid ${typeColor}55` }}
+                >
+                  {isPlaying ? (
+                    <div className="flex items-end gap-[3px] h-9" aria-hidden>
+                      {[0, 0.18, 0.36, 0.12, 0.28].map((d, i) => (
+                        <span key={i} className="tv-eq-bar w-[4px] h-full rounded-full" style={{ background: typeColor, animationDelay: `${d}s` }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <Music2 className="w-12 h-12" style={{ color: typeColor }} />
+                  )}
+                </div>
+                <div className="min-w-0 w-full">
+                  <Link
+                    href={`/tune/${current.id}`}
+                    onClick={collapse}
+                    className="font-display text-xl font-semibold leading-tight hover:text-primary transition-colors block truncate"
+                    data-testid="player-sheet-title"
+                  >
+                    {current.title}
+                  </Link>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground truncate mt-1.5">
+                    {metaLine}
+                  </p>
+                </div>
+              </div>
+
+              {/* Seek */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[11px] text-muted-foreground tabular-nums w-9 text-right shrink-0">{fmt(progress)}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 1}
+                  step={0.5}
+                  value={progress}
+                  onChange={handleSeek}
+                  className="flex-1 h-1.5 accent-amber-500 cursor-pointer"
+                  data-testid="player-sheet-progress"
+                  aria-label="Seek"
+                />
+                <span className="text-[11px] text-muted-foreground tabular-nums w-9 shrink-0">{fmt(duration)}</span>
+              </div>
+
+              {/* Transport */}
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <button onClick={toggleMode} title={playMode === "shuffle" ? "Shuffle on" : "In order"} className={`p-2 rounded-full transition-colors ${playMode === "shuffle" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} aria-label={`Mode: ${playMode}`} data-testid="player-sheet-mode">
+                  {playMode === "shuffle" ? <Shuffle className="w-5 h-5" /> : <ListOrdered className="w-5 h-5" />}
+                </button>
+                <button onClick={prev} className="p-2 rounded-full hover:bg-muted transition-colors text-foreground" aria-label="Previous" data-testid="player-sheet-prev">
+                  <SkipBack className="w-7 h-7" fill="currentColor" />
+                </button>
+                <button
+                  onClick={togglePlay}
+                  disabled={!resolvedUrl && !skipping}
+                  className="w-16 h-16 rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 shadow-md flex items-center justify-center"
+                  style={{ background: typeColor }}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  data-testid="player-sheet-play-pause"
+                >
+                  {isPlaying ? <Pause className="w-8 h-8" fill="currentColor" /> : <Play className="w-8 h-8 ml-1" fill="currentColor" />}
+                </button>
+                <button onClick={next} className="p-2 rounded-full hover:bg-muted transition-colors text-foreground" aria-label="Next" data-testid="player-sheet-next">
+                  <SkipForward className="w-7 h-7" fill="currentColor" />
+                </button>
+                <button onClick={reshuffle} title="Reshuffle" disabled={playMode !== "shuffle"} className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30" aria-label="Reshuffle" data-testid="player-sheet-reshuffle">
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Speed */}
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Speed</span>
+                <div className="flex items-center gap-1.5">
+                  {SPEED_OPTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSpeed(s)}
+                      data-testid={`sheet-speed-btn-${s}`}
+                      aria-label={`Speed ${SPEED_LABELS[s]}`}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-semibold tabular-nums transition-colors ${speed === s ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                      style={speed === s ? { background: typeColor } : {}}
+                    >
+                      {SPEED_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pitch */}
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Pitch</span>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6} className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-base font-bold transition-colors" aria-label="Pitch down" data-testid="sheet-pitch-down">−</button>
+                  <span className={`text-sm font-semibold tabular-nums min-w-[3.5rem] text-center px-2 py-1.5 rounded-lg transition-colors ${semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"}`} style={semitones !== 0 ? { background: typeColor } : {}} data-testid="sheet-pitch-display">{keyDisplay}</span>
+                  <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6} className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-base font-bold transition-colors" aria-label="Pitch up" data-testid="sheet-pitch-up">+</button>
+                  {semitones !== 0 && (
+                    <button onClick={() => setSemitones(0)} className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1" data-testid="sheet-pitch-reset">reset</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Details link */}
+              <Link
+                href={`/tune/${current.id}`}
+                onClick={collapse}
+                className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+                data-testid="player-sheet-details"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> View tune details
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
     <div
       className="fixed bottom-0 left-0 right-0 z-50 shadow-2xl border-t border-border"
       style={{ background: "hsl(var(--card))" }}
@@ -164,6 +350,16 @@ export default function MiniPlayer() {
     >
       {/* Thin color accent line */}
       <div className="h-0.5 w-full" style={{ background: typeColor }} />
+
+      {/* Grab handle — tap or swipe up to expand */}
+      <button
+        onClick={() => setExpanded(true)}
+        className="group w-full flex items-center justify-center pt-1.5 pb-0.5"
+        aria-label="Expand player"
+        data-testid="mini-player-expand"
+      >
+        <span className="h-1 w-9 rounded-full bg-muted-foreground/30 group-hover:bg-muted-foreground/50 transition-colors" />
+      </button>
 
       <audio ref={audioRef} preload="auto" />
 
@@ -385,5 +581,6 @@ export default function MiniPlayer() {
         </div>
       </div>
     </div>
+    </>
   );
 }

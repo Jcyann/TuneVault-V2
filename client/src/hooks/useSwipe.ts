@@ -6,7 +6,10 @@ interface SwipeOptions {
   onSwipeUp?: () => void;
   onSwipeDown?: () => void;
   threshold?: number;
+  ignoreInteractive?: boolean;
 }
+
+const INTERACTIVE_SELECTOR = 'input, button, a, select, textarea, [role="slider"], [role="button"]';
 
 export function useSwipe({
   onSwipeLeft,
@@ -14,13 +17,18 @@ export function useSwipe({
   onSwipeUp,
   onSwipeDown,
   threshold = 50,
+  ignoreInteractive = false,
 }: SwipeOptions) {
   const start = useRef<{ x: number; y: number } | null>(null);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (ignoreInteractive && (e.target as HTMLElement)?.closest?.(INTERACTIVE_SELECTOR)) {
+      start.current = null;
+      return;
+    }
     const t = e.touches[0];
     start.current = { x: t.clientX, y: t.clientY };
-  }, []);
+  }, [ignoreInteractive]);
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent) => {
