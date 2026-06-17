@@ -48,6 +48,46 @@ function normalizeNote(n: string): string {
   return (n || "").replace("♯", "#").replace("♭", "b");
 }
 
+// Chromatic pitch class (C=0) -> index in the circle-of-fifths array above.
+const PC_TO_FIFTHS: Record<number, number> = {
+  0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: 7, 8: 8, 3: 9, 10: 10, 5: 11,
+};
+
+// Lightweight time-domain autocorrelation pitch detector (ACF2+). Returns the
+// fundamental frequency in Hz, or -1 when the signal is too quiet/ambiguous.
+function detectPitch(buf: Float32Array, sampleRate: number): number {
+  const SIZE = buf.length;
+  let rms = 0;
+  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.012) return -1;
+
+  let r1 = 0, r2 = SIZE - 1;
+  const thres = 0.2;
+  for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+  for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+
+  const b = buf.subarray(r1, r2);
+  const n = b.length;
+  if (n < 8) return -1;
+  const c = new Float32Array(n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n - i; j++) c[i] += b[j] * b[j + i];
+
+  let d = 0;
+  while (d < n - 1 && c[d] > c[d + 1]) d++;
+  let maxval = -1, maxpos = -1;
+  for (let i = d; i < n; i++) if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+  if (maxpos <= 0) return -1;
+
+  let T0 = maxpos;
+  const x1 = c[T0 - 1] || 0, x2 = c[T0] || 0, x3 = c[T0 + 1] || 0;
+  const a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
+  if (a) T0 = T0 - bb / (2 * a);
+
+  const freq = sampleRate / T0;
+  return freq >= 60 && freq <= 2000 ? freq : -1;
+}
+
 export default function IdentifyKeyPage() {
   usePageMeta(
     "Identify the Key — TuneVault",
@@ -62,20 +102,139 @@ export default function IdentifyKeyPage() {
   const [sourceLabel, setSourceLabel] = useState<string>("");
   const [showSuggest, setShowSuggest] = useState(false);
 
+  const [liveIndex, setLiveIndex] = useState(-1);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Live tuner visualization (Web Audio)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const freqDataRef = useRef<Uint8Array | null>(null);
+  const timeDataRef = useRef<Float32Array | null>(null);
+  const primaryRef = useRef<string>("");
+  const frameRef = useRef(0);
+  const vizRunningRef = useRef(false);
+  const mountedRef = useRef(true);
+
   // Warm up the WASM engine in the background as soon as the page loads.
   useEffect(() => {
     getEssentia().catch(() => {/* surfaced on first use */});
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      mountedRef.current = false;
+      teardownRecording();
     };
   }, []);
+
+  // Fully tear down a recording session: timer, viz/rAF, AudioContext, mic
+  // tracks, and the recorder (with handlers detached so a late onstop can't
+  // fire analysis after unmount or an aborted start).
+  function teardownRecording() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    stopViz();
+    const mr = mediaRecorderRef.current;
+    if (mr) {
+      mr.ondataavailable = null;
+      mr.onstop = null;
+      if (mr.state !== "inactive") { try { mr.stop(); } catch { /* already stopped */ } }
+      mediaRecorderRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }
+
+  function setupViz(stream: MediaStream) {
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new Ctx();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.82;
+      source.connect(analyser);
+      audioCtxRef.current = ctx;
+      analyserRef.current = analyser;
+      freqDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      timeDataRef.current = new Float32Array(analyser.fftSize);
+      primaryRef.current = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "25 70% 45%";
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = 360 * dpr;
+        canvas.height = 360 * dpr;
+        canvas.getContext("2d")?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      frameRef.current = 0;
+      vizRunningRef.current = true;
+      rafRef.current = requestAnimationFrame(drawViz);
+    } catch {
+      /* visualization is non-critical; detection still works */
+    }
+  }
+
+  function drawViz() {
+    const analyser = analyserRef.current;
+    const canvas = canvasRef.current;
+    const freq = freqDataRef.current;
+    if (analyser && canvas && freq) {
+      const c = canvas.getContext("2d");
+      if (c) {
+        analyser.getByteFrequencyData(freq);
+        c.clearRect(0, 0, 360, 360);
+        const cx = 180, cy = 180, innerR = 116, maxLen = 34, N = 72;
+        const usable = Math.floor(freq.length * 0.55);
+        const p = primaryRef.current || "25 70% 45%";
+        c.lineWidth = 2.4;
+        c.lineCap = "round";
+        for (let i = 0; i < N; i++) {
+          const t = i < N / 2 ? i / (N / 2) : (N - i) / (N / 2);
+          const mag = (freq[Math.floor(t * usable)] || 0) / 255;
+          const len = 2 + mag * maxLen;
+          const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+          const ca = Math.cos(ang), sa = Math.sin(ang);
+          c.strokeStyle = `hsl(${p} / ${0.22 + mag * 0.6})`;
+          c.beginPath();
+          c.moveTo(cx + ca * innerR, cy + sa * innerR);
+          c.lineTo(cx + ca * (innerR + len), cy + sa * (innerR + len));
+          c.stroke();
+        }
+      }
+    }
+
+    frameRef.current = (frameRef.current + 1) % 600;
+    if (frameRef.current % 6 === 0) {
+      const time = timeDataRef.current;
+      const ctx = audioCtxRef.current;
+      if (analyser && time && ctx) {
+        analyser.getFloatTimeDomainData(time);
+        const hz = detectPitch(time, ctx.sampleRate);
+        if (hz > 0) {
+          const midi = Math.round(12 * Math.log2(hz / 440) + 69);
+          const slot = PC_TO_FIFTHS[((midi % 12) + 12) % 12];
+          setLiveIndex((prev) => (prev === slot ? prev : slot));
+        }
+      }
+    }
+
+    if (vizRunningRef.current) rafRef.current = requestAnimationFrame(drawViz);
+  }
+
+  function stopViz() {
+    vizRunningRef.current = false;
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    const canvas = canvasRef.current;
+    const c = canvas?.getContext("2d");
+    if (canvas && c) { c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, canvas.width, canvas.height); }
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    analyserRef.current = null;
+    setLiveIndex(-1);
+  }
 
   async function analyze(data: ArrayBuffer, label: string) {
     setAnalyzing(true);
@@ -83,11 +242,11 @@ export default function IdentifyKeyPage() {
     setSourceLabel(label);
     try {
       const r = await detectKeyFromBlob(data);
-      setResult(r);
+      if (mountedRef.current) setResult(r);
     } catch (err: any) {
-      toast({ title: "Could not detect a key", description: err.message, variant: "destructive" });
+      if (mountedRef.current) toast({ title: "Could not detect a key", description: err.message, variant: "destructive" });
     } finally {
-      setAnalyzing(false);
+      if (mountedRef.current) setAnalyzing(false);
     }
   }
 
@@ -96,6 +255,8 @@ export default function IdentifyKeyPage() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      setLiveIndex(-1);
+      setupViz(stream);
       chunksRef.current = [];
       const mr = new MediaRecorder(stream);
       mediaRecorderRef.current = mr;
@@ -117,6 +278,8 @@ export default function IdentifyKeyPage() {
         });
       }, 1000);
     } catch (err: any) {
+      teardownRecording();
+      setRecording(false);
       toast({ title: "Microphone unavailable", description: "Please allow microphone access and try again.", variant: "destructive" });
     }
   }
@@ -124,6 +287,7 @@ export default function IdentifyKeyPage() {
   function stopRecording() {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setRecording(false);
+    stopViz();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
     }
@@ -169,12 +333,12 @@ export default function IdentifyKeyPage() {
 
             {/* Circle of fifths labels */}
             {CIRCLE_OF_FIFTHS.map((s, i) => {
-              const active = i === activeIndex;
+              const hot = (result != null && i === activeIndex) || (recording && i === liveIndex);
               return (
                 <span
                   key={s.label}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-display tabular-nums transition-all duration-500 ${
-                    active
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-display tabular-nums transition-all duration-300 ${
+                    hot
                       ? "text-primary font-bold scale-[1.6] text-lg sm:text-xl drop-shadow"
                       : result
                         ? "text-muted-foreground/35 text-sm sm:text-base"
@@ -228,6 +392,23 @@ export default function IdentifyKeyPage() {
                 <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--primary) / 0.55)" strokeWidth="2" />
               )}
             </svg>
+
+            {/* Live circular EQ (drawn during recording) */}
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 h-full w-full pointer-events-none"
+              aria-hidden="true"
+            />
+
+            {/* Tuner needle — points at the note currently being played */}
+            {recording && liveIndex >= 0 && (
+              <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full pointer-events-none">
+                <g transform={`rotate(${liveIndex * 30} 50 50)`}>
+                  <line x1="50" y1="50" x2="50" y2="15" stroke="hsl(var(--primary))" strokeWidth="1.4" strokeLinecap="round" opacity="0.9" />
+                  <circle cx="50" cy="15" r="2.6" fill="hsl(var(--primary))" />
+                </g>
+              </svg>
+            )}
 
             {/* Center disc — the button */}
             <button
