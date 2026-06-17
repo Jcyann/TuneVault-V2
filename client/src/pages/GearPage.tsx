@@ -4,15 +4,16 @@ import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 // ─── AFFILIATE LINK HELPER ────────────────────────────────────────────────────
-// Replace BOOKSHOP_ID with your Bookshop.org affiliate ID (e.g. "tunevault")
-// Replace SWEETWATER_ID with your Sweetwater affiliate referral code
-// Replace SMP_ID with your Sheet Music Plus affiliate ID
-const BOOKSHOP_ID = "125147";  // Bookshop.org affiliate ID
-const SWEETWATER_ID = "";       // sign up at sweetwater.com/affiliates
-const SMP_ID = "";              // sign up at sheetmusicplus.com/affiliate
+const BOOKSHOP_ID = "125147";
+const SWEETWATER_ID = "";
+const SMP_ID = "";
 
 function bookshopUrl(isbn: string) {
-  return `https://bookshop.org/a/${BOOKSHOP_ID}/isbn/${isbn}`;
+  return `https://bookshop.org/a/${BOOKSHOP_ID}/${isbn}`;
+}
+
+function coverUrl(isbn: string) {
+  return `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
 }
 
 // ─── CONTENT ─────────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ const BOOKS = [
     desc: "The definitive guide to the Round Peak tradition. Leftwich learned directly from Tommy Jarrell — this is the source.",
     price: "~$25",
     url: bookshopUrl("9780786680283"),
+    cover: coverUrl("9780786680283"),
     tag: "Essential",
   },
   {
@@ -32,6 +34,7 @@ const BOOKS = [
     desc: "Over 100 tunes in notation and tab with regional style notes. A working player's reference.",
     price: "~$20",
     url: `https://www.sheetmusicplus.com/search?Ntt=stacy+phillips+fiddle&aff_id=${SMP_ID}`,
+    cover: coverUrl("9780825612688"),
     tag: "Reference",
   },
   {
@@ -40,6 +43,7 @@ const BOOKS = [
     desc: "The ethnomusicological classic — 150 tunes from the Southern mountains with historical context. Dense and essential.",
     price: "~$20",
     url: bookshopUrl("9780806802572"),
+    cover: coverUrl("9780806802572"),
     tag: "Classic",
   },
   {
@@ -48,6 +52,7 @@ const BOOKS = [
     desc: "Clear notation, cultural context, and approachable arrangements. One of the best entry points for new old-time players.",
     price: "~$15",
     url: bookshopUrl("9780825601927"),
+    cover: coverUrl("9780825601927"),
     tag: "Beginner-friendly",
   },
   {
@@ -56,6 +61,7 @@ const BOOKS = [
     desc: "245 tunes collected from Missouri fiddlers in the 1940s–60s. A goldmine of less-known repertoire.",
     price: "~$25",
     url: bookshopUrl("9780826202765"),
+    cover: coverUrl("9780826202765"),
     tag: "Deep Cuts",
   },
   {
@@ -64,6 +70,7 @@ const BOOKS = [
     desc: "Community tune book from Portland's old-time scene — hundreds of tunes you'll actually hear at jams.",
     price: "~$20",
     url: "https://portlandcollection.com",
+    cover: null,
     tag: "Jam Ready",
   },
 ];
@@ -87,7 +94,7 @@ const RECORDINGS = [
     title: "Doc Watson",
     artist: "Doc Watson",
     desc: "The 1964 debut. Watson's fiddle tunes on guitar alone are a masterclass in melodic old-time.",
-    url: bookshopUrl("8712177062461"),
+    url: "https://folkways.si.edu/doc-watson/doc-watson/american-folk-bluegrass/music/album/smithsonian",
     tag: "Essential",
   },
   {
@@ -154,9 +161,33 @@ function Tag({ label }: { label: string }) {
   );
 }
 
-function BookCard({ title, author, desc, price, url, tag }: typeof BOOKS[0]) {
+function BookCover({ src, title }: { src: string | null; title: string }) {
+  if (!src) {
+    return (
+      <div className="w-12 sm:w-14 shrink-0 aspect-[2/3] bg-muted rounded flex items-center justify-center">
+        <BookOpen className="w-5 h-5 text-muted-foreground/40" />
+      </div>
+    );
+  }
   return (
-    <div className="border-b border-border py-5 last:border-0 flex gap-4">
+    <img
+      src={src}
+      alt={`Cover of ${title}`}
+      className="w-12 sm:w-14 shrink-0 aspect-[2/3] object-cover rounded shadow-sm bg-muted"
+      onError={(e) => {
+        const target = e.currentTarget;
+        target.style.display = "none";
+        const placeholder = target.nextElementSibling as HTMLElement | null;
+        if (placeholder) placeholder.style.display = "flex";
+      }}
+    />
+  );
+}
+
+function BookCard({ title, author, desc, price, url, cover, tag }: typeof BOOKS[0]) {
+  return (
+    <div className="border-b border-border py-5 last:border-0 flex gap-4 items-start">
+      <BookCover src={cover} title={title} />
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2 flex-wrap mb-0.5">
           <Tag label={tag} />

@@ -1,13 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { Music2, Calendar, Info, GraduationCap, BookOpen, KeyRound } from "lucide-react";
+import { Music2, Calendar, Info, GraduationCap, BookOpen, KeyRound, ShoppingBag } from "lucide-react";
 
 const navLinks = [
-  { href: "/", label: "Home", icon: Music2 },
-  { href: "/tune-of-the-day", label: "Tune of the Day", icon: Calendar },
-  { href: "/identify-key", label: "Identify Key", icon: KeyRound },
-  { href: "/blog", label: "Blog", icon: BookOpen },
-  { href: "/about", label: "About", icon: Info },
-  { href: "/book-a-lesson", label: "Lessons", icon: GraduationCap },
+  { href: "/", label: "Home", mobileLabel: "Home", icon: Music2 },
+  { href: "/tune-of-the-day", label: "Tune of the Day", mobileLabel: "Today", icon: Calendar },
+  { href: "/identify-key", label: "Identify Key", mobileLabel: "Key", icon: KeyRound },
+  { href: "/blog", label: "Blog", mobileLabel: "Blog", icon: BookOpen },
+  { href: "/gear", label: "Store", mobileLabel: "Store", icon: ShoppingBag },
+  { href: "/about", label: "About", mobileLabel: "About", icon: Info },
+  { href: "/book-a-lesson", label: "Lessons", mobileLabel: "Lessons", icon: GraduationCap },
 ];
 
 export default function NavBar() {
@@ -47,7 +48,7 @@ export default function NavBar() {
 
       {/* Mobile bottom tab strip */}
       <div className="sm:hidden flex border-t border-border bg-background">
-        {navLinks.map(({ href, label, icon: Icon }) => {
+        {navLinks.map(({ href, mobileLabel, icon: Icon }) => {
           const active = location === href || (href === "/" && location === "");
           return (
             <Link
@@ -58,7 +59,7 @@ export default function NavBar() {
               }`}
             >
               <Icon className="w-4 h-4 mb-0.5" />
-              {label}
+              {mobileLabel}
             </Link>
           );
         })}
