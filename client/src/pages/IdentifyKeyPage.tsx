@@ -60,7 +60,7 @@ function detectPitch(buf: Float32Array, sampleRate: number): number {
   let rms = 0;
   for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
   rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.012) return -1;
+  if (rms < 0.006) return -1;
 
   let r1 = 0, r2 = SIZE - 1;
   const thres = 0.2;
@@ -154,8 +154,8 @@ export default function IdentifyKeyPage() {
       const ctx = new Ctx();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.82;
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.7;
       source.connect(analyser);
       audioCtxRef.current = ctx;
       analyserRef.current = analyser;
@@ -186,14 +186,15 @@ export default function IdentifyKeyPage() {
       if (c) {
         analyser.getByteFrequencyData(freq);
         c.clearRect(0, 0, 360, 360);
-        const cx = 180, cy = 180, innerR = 116, maxLen = 34, N = 72;
-        const usable = Math.floor(freq.length * 0.55);
+        const cx = 180, cy = 180, innerR = 116, maxLen = 38, N = 132, SENS = 1.9;
+        const usable = Math.floor(freq.length * 0.5);
         const p = primaryRef.current || "25 70% 45%";
-        c.lineWidth = 2.4;
+        c.lineWidth = 1.8;
         c.lineCap = "round";
         for (let i = 0; i < N; i++) {
           const t = i < N / 2 ? i / (N / 2) : (N - i) / (N / 2);
-          const mag = (freq[Math.floor(t * usable)] || 0) / 255;
+          const raw = (freq[Math.floor(t * usable)] || 0) / 255;
+          const mag = Math.min(1, raw * SENS);
           const len = 2 + mag * maxLen;
           const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
           const ca = Math.cos(ang), sa = Math.sin(ang);
@@ -207,7 +208,7 @@ export default function IdentifyKeyPage() {
     }
 
     frameRef.current = (frameRef.current + 1) % 600;
-    if (frameRef.current % 6 === 0) {
+    if (frameRef.current % 4 === 0) {
       const time = timeDataRef.current;
       const ctx = audioCtxRef.current;
       if (analyser && time && ctx) {
