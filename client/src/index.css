@@ -264,8 +264,34 @@
   animation: tv-sweep 9s ease-in-out infinite;
 }
 
+/* ── Key finder dial ───────────────────────────────────────── */
+@keyframes tv-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.5; }
+  50%      { transform: translate(-50%, -50%) scale(1.08); opacity: 0.85; }
+}
+.tv-breathe { animation: tv-breathe 3.4s ease-in-out infinite; }
+
+@keyframes tv-sonar {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
+}
+.tv-sonar { animation: tv-sonar 1.9s ease-out infinite; }
+
+@keyframes tv-spin {
+  to { transform: rotate(360deg); }
+}
+.tv-spin-slow { animation: tv-spin 14s linear infinite; }
+
+@keyframes tv-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.tv-pop { animation: tv-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+
 @media (prefers-reduced-motion: reduce) {
-  .tv-eq-bar, .tv-hero-sweep { animation: none; }
+  .tv-eq-bar, .tv-hero-sweep, .tv-breathe, .tv-sonar, .tv-spin-slow, .tv-pop { animation: none; }
   .tv-eq-bar  { transform: scaleY(0.7); }
   .tv-hero-sweep { opacity: 0; }
+  .tv-breathe { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
 }

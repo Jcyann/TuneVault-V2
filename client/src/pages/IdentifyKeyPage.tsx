@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { KeyRound, Mic, Square, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag } from "lucide-react";
+import { Mic, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { detectKeyFromBlob, getEssentia } from "@/lib/keyDetectionClient";
@@ -10,6 +9,36 @@ import SuggestChangesForm from "@/components/SuggestChangesForm";
 import type { KeyDetectionResult } from "@shared/keyDetection";
 
 const MAX_RECORD_SECONDS = 15;
+
+// Circle of fifths, clockwise from the top. Each slot lists the spellings
+// essentia might report so we can light up the matching tonic.
+const CIRCLE_OF_FIFTHS = [
+  { label: "C", names: ["C"] },
+  { label: "G", names: ["G"] },
+  { label: "D", names: ["D"] },
+  { label: "A", names: ["A"] },
+  { label: "E", names: ["E"] },
+  { label: "B", names: ["B"] },
+  { label: "F♯", names: ["F#", "Gb"] },
+  { label: "D♭", names: ["Db", "C#"] },
+  { label: "A♭", names: ["Ab", "G#"] },
+  { label: "E♭", names: ["Eb", "D#"] },
+  { label: "B♭", names: ["Bb", "A#"] },
+  { label: "F", names: ["F"] },
+];
+
+const LABEL_RADIUS = 45; // % of container from center
+const POSITIONS = CIRCLE_OF_FIFTHS.map((_, i) => {
+  const a = ((-90 + i * 30) * Math.PI) / 180;
+  return { left: 50 + LABEL_RADIUS * Math.cos(a), top: 50 + LABEL_RADIUS * Math.sin(a) };
+});
+
+const RING_R = 46;
+const RING_C = 2 * Math.PI * RING_R;
+
+function normalizeNote(n: string): string {
+  return (n || "").replace("♯", "#").replace("♭", "b");
+}
 
 export default function IdentifyKeyPage() {
   usePageMeta(
@@ -100,95 +129,165 @@ export default function IdentifyKeyPage() {
     e.target.value = "";
   }
 
-  const busy = analyzing || recording;
+  function onDialClick() {
+    if (analyzing) return;
+    if (recording) stopRecording();
+    else startRecording();
+  }
+
+  const idle = !recording && !analyzing && !result;
+  const activeIndex = result
+    ? CIRCLE_OF_FIFTHS.findIndex((s) => s.names.map(normalizeNote).includes(normalizeNote(result.tonic)))
+    : -1;
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div
-        className="px-4 pt-12 pb-10 border-b border-border"
-        style={{ background: "linear-gradient(150deg, hsl(var(--primary)) 0%, hsl(25 75% 28%) 100%)" }}
-      >
-        <div className="container mx-auto max-w-2xl text-center">
-          <KeyRound className="w-10 h-10 mx-auto text-primary-foreground opacity-90 mb-3" />
-          <h1 className="text-3xl sm:text-4xl font-bold font-serif text-primary-foreground">Identify the Key</h1>
-          <p className="text-primary-foreground/70 text-sm sm:text-base mt-2 max-w-lg mx-auto">
-            Record a few seconds of a tune or upload an audio file, and we'll estimate its musical key — right in your browser, nothing uploaded to a server.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
+      <div className="container mx-auto max-w-2xl px-6">
 
-      <div className="container mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Record */}
-          <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center gap-3">
-            <Mic className="w-8 h-8 text-amber-500" />
-            <h2 className="font-semibold text-foreground">Record live</h2>
-            <p className="text-xs text-muted-foreground">Play or hold your device near the music for up to {MAX_RECORD_SECONDS} seconds.</p>
-            {!recording ? (
-              <Button
-                onClick={startRecording}
-                disabled={busy}
-                data-testid="button-start-recording"
-                className="bg-amber-500 hover:bg-amber-600 text-white gap-2 mt-1"
-              >
-                <Mic className="w-4 h-4" /> Start recording
-              </Button>
+        {/* Header */}
+        <header className="border-t border-foreground pt-6 pb-8 text-center sm:text-left">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Tool</div>
+          <h1 className="font-display text-[40px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">
+            What key is this?
+          </h1>
+          <p className="font-display italic text-lg sm:text-xl text-muted-foreground mt-3 max-w-lg mx-auto sm:mx-0">
+            Play a few bars or upload a clip — TuneVault names the key, right in your browser.
+          </p>
+        </header>
+
+        {/* ── The dial ─────────────────────────────────────────── */}
+        <div className="flex flex-col items-center pt-2 pb-6">
+          <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] select-none">
+
+            {/* Circle of fifths labels */}
+            {CIRCLE_OF_FIFTHS.map((s, i) => {
+              const active = i === activeIndex;
+              return (
+                <span
+                  key={s.label}
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-display tabular-nums transition-all duration-500 ${
+                    active
+                      ? "text-primary font-bold scale-[1.6] text-lg sm:text-xl drop-shadow"
+                      : result
+                        ? "text-muted-foreground/35 text-sm sm:text-base"
+                        : "text-muted-foreground/55 text-sm sm:text-base"
+                  }`}
+                  style={{ left: `${POSITIONS[i].left}%`, top: `${POSITIONS[i].top}%` }}
+                  data-testid={`fifth-${s.label}`}
+                >
+                  {s.label}
+                </span>
+              );
+            })}
+
+            {/* Idle breathing halo */}
+            {idle && (
+              <>
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[66%] h-[66%] rounded-full bg-primary/15 tv-breathe pointer-events-none" />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[66%] h-[66%] rounded-full bg-primary/10 tv-breathe pointer-events-none" style={{ animationDelay: "1.7s" }} />
+              </>
+            )}
+
+            {/* Recording sonar ripples */}
+            {recording && [0, 1, 2].map((k) => (
+              <span
+                key={k}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full border-2 border-primary/40 tv-sonar pointer-events-none"
+                style={{ animationDelay: `${k * 0.63}s` }}
+              />
+            ))}
+
+            {/* Outer ring + countdown / result arc */}
+            <svg viewBox="0 0 100 100" className={`absolute inset-[11%] w-[78%] h-[78%] -rotate-90 pointer-events-none ${analyzing ? "tv-spin-slow" : ""}`}>
+              <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--foreground) / 0.12)" strokeWidth="1.5" />
+              {recording && (
+                <circle
+                  cx="50" cy="50" r={RING_R} fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round"
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={RING_C * (elapsed / MAX_RECORD_SECONDS)}
+                  className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+                />
+              )}
+              {analyzing && (
+                <circle
+                  cx="50" cy="50" r={RING_R} fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round"
+                  strokeDasharray={`${RING_C * 0.25} ${RING_C * 0.75}`}
+                />
+              )}
+              {result && activeIndex >= 0 && (
+                <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--primary) / 0.55)" strokeWidth="2" />
+              )}
+            </svg>
+
+            {/* Center disc — the button */}
+            <button
+              type="button"
+              onClick={onDialClick}
+              disabled={analyzing}
+              data-testid="button-dial"
+              aria-label={recording ? "Stop listening" : result ? "Listen again" : "Tap to listen"}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4
+                bg-gradient-to-br from-[hsl(25_55%_32%)] to-[hsl(var(--primary))] text-primary-foreground shadow-2xl ring-1 ring-black/10
+                transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-default"
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="w-7 h-7 animate-spin" />
+                  <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1">Reading the key…</span>
+                </>
+              ) : recording ? (
+                <>
+                  <span className="font-display text-5xl sm:text-6xl font-bold tabular-nums leading-none" data-testid="text-countdown">
+                    {MAX_RECORD_SECONDS - elapsed}
+                  </span>
+                  <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Tap to stop</span>
+                </>
+              ) : result ? (
+                <>
+                  <span key={result.key} className="font-display text-5xl sm:text-6xl font-bold leading-none tv-pop" data-testid="text-detected-key">
+                    {result.key}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.16em] opacity-80 mt-2">Tap to try again</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-8 h-8 sm:w-9 sm:h-9" />
+                  <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Tap to listen</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Status caption under the dial */}
+          <div className="mt-7 text-center min-h-[3.5rem]" role="status" aria-live="polite">
+            {result && !analyzing ? (
+              <div className="tv-pop" data-testid="result-caption">
+                <p className="font-display text-xl text-foreground">
+                  {result.tonic} {result.scale}
+                  <span className="text-muted-foreground"> · {(result.confidence * 100).toFixed(0)}% confidence</span>
+                </p>
+                {sourceLabel && <p className="text-xs text-muted-foreground mt-1 truncate max-w-xs mx-auto">from {sourceLabel}</p>}
+              </div>
+            ) : recording ? (
+              <p className="font-serif text-[15px] text-muted-foreground">Listening… play near your device.</p>
+            ) : analyzing ? (
+              <p className="font-serif text-[15px] text-muted-foreground">Working out the key…</p>
             ) : (
-              <Button
-                onClick={stopRecording}
-                data-testid="button-stop-recording"
-                className="bg-red-600 hover:bg-red-700 text-white gap-2 mt-1"
-              >
-                <Square className="w-4 h-4" /> Stop ({MAX_RECORD_SECONDS - elapsed}s)
-              </Button>
+              <p className="font-serif text-[15px] text-muted-foreground max-w-sm">
+                Tap the dial and play up to {MAX_RECORD_SECONDS} seconds of a tune.
+              </p>
             )}
           </div>
 
-          {/* Upload */}
-          <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center gap-3">
-            <Upload className="w-8 h-8 text-amber-500" />
-            <h2 className="font-semibold text-foreground">Upload a file</h2>
-            <p className="text-xs text-muted-foreground">MP3, WAV, M4A, OGG, or any audio your browser can read.</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*"
-              onChange={onFileChange}
-              className="hidden"
-              data-testid="input-audio-file"
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={busy}
-              variant="outline"
-              data-testid="button-choose-file"
-              className="gap-2 mt-1"
-            >
-              <Upload className="w-4 h-4" /> Choose file
-            </Button>
-          </div>
-        </div>
-
-        {analyzing && (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center" data-testid="status-analyzing">
-            <Loader2 className="w-8 h-8 mx-auto animate-spin text-amber-500 mb-3" />
-            <p className="text-sm text-muted-foreground">Analyzing audio…</p>
-          </div>
-        )}
-
-        {result && !analyzing && (
-          <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-8 text-center" data-testid="result-card">
-            {sourceLabel && <p className="text-xs text-muted-foreground mb-2 truncate">From: {sourceLabel}</p>}
-            <p className="text-sm uppercase tracking-wide text-amber-700 dark:text-amber-400 font-medium">Estimated key</p>
-            <p className="text-6xl font-bold font-serif text-foreground my-2" data-testid="text-detected-key">{result.key}</p>
-            <p className="text-sm text-muted-foreground">
-              {result.tonic} {result.scale} · {(result.confidence * 100).toFixed(0)}% confidence
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-4">
+          {/* Result actions */}
+          {result && !analyzing && (
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-4 tv-pop">
               <Link
                 href={`/?key=${encodeURIComponent(result.key)}`}
                 data-testid="link-browse-key"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
                 <Music2 className="w-4 h-4" /> Browse {result.key} tunes <ArrowRight className="w-4 h-4" />
               </Link>
@@ -196,20 +295,40 @@ export default function IdentifyKeyPage() {
                 type="button"
                 onClick={() => setShowSuggest(true)}
                 data-testid="button-suggest-key"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
                 <Flag className="w-4 h-4" /> Suggest "{result.key}" for a library tune
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground flex gap-2.5">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-          <p>
+          {/* Upload — always available */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            onChange={onFileChange}
+            className="hidden"
+            data-testid="input-audio-file"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={recording || analyzing}
+            data-testid="button-choose-file"
+            className="mt-6 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+          >
+            <Upload className="w-3.5 h-3.5" /> or upload an audio file
+          </button>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="border-t border-border pt-5 mt-2 flex gap-2.5 max-w-xl mx-auto">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+          <p className="font-serif text-[13px] text-muted-foreground leading-relaxed">
             Key detection is an estimate. Old-time fiddle uses lots of open-string drones, which can fool the analysis into the
             dominant (a fifth away) or the relative major/minor. Trust your ears — and if you spot a tune in our library with the
-            wrong key, please <Link href="/about" className="text-amber-600 hover:underline">suggest a correction</Link>.
+            wrong key, please <Link href="/about" className="text-primary hover:underline">suggest a correction</Link>.
           </p>
         </div>
       </div>
