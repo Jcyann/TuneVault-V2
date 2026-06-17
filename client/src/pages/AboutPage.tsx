@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, Mic, ExternalLink } from "lucide-react";
+import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, Mic, ExternalLink, KeyRound, ShoppingBag, GraduationCap, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -15,7 +15,7 @@ const BADGE_EXPLANATIONS = [
 export default function AboutPage() {
   usePageMeta(
     "About & FAQ",
-    "Learn how to use TuneVault — over 1,050 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, community recordings, Tune of the Day, blog, and lessons."
+    "Learn how to use TuneVault — over 1,000 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, an in-browser key finder, community recordings, Tune of the Day, a store, lessons, and the blog."
   );
 
   return (
@@ -26,7 +26,7 @@ export default function AboutPage() {
         <header className="border-t border-foreground pt-6 pb-10">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Field Guide</div>
           <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">About TuneVault</h1>
-          <p className="font-display italic text-xl text-muted-foreground mt-3">1,050+ Old-Time fiddle tunes — built for practice, not just browsing.</p>
+          <p className="font-display italic text-xl text-muted-foreground mt-3">Over 1,000 Old-Time fiddle tunes — built for practice, not just browsing.</p>
         </header>
 
         <div className="space-y-10">
@@ -56,6 +56,29 @@ export default function AboutPage() {
                 <ExternalLink className="w-3.5 h-3.5" />
                 New to old-time music? Read the full essay →
               </Link>
+            </div>
+          </section>
+
+          {/* Key Finder — featured tool */}
+          <section className="border-t border-border pt-7">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Tool</div>
+            <div className="border border-foreground bg-foreground text-background p-7 sm:p-9">
+              <div className="flex items-start gap-5">
+                <KeyRound className="w-8 h-8 shrink-0 text-background/90" />
+                <div className="flex-1">
+                  <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight mb-2">What key is this?</h2>
+                  <p className="font-serif text-[15px] leading-relaxed text-background/80 max-w-xl mb-5">
+                    Stuck on a tune at a jam, or puzzling out a recording by ear? Play into your mic or drop in an audio clip and TuneVault names the key for you — in seconds, right in your browser. Nothing leaves your device, and it's completely free.
+                  </p>
+                  <Link
+                    href="/identify-key"
+                    data-testid="link-identify-key-about"
+                    className="inline-flex items-center gap-2 bg-background text-foreground px-5 py-2.5 text-[11px] uppercase tracking-[0.16em] font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <Mic className="w-3.5 h-3.5" /> Identify a key
+                  </Link>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -95,6 +118,33 @@ export default function AboutPage() {
               >
                 Try it now <ChevronRight className="w-3.5 h-3.5" />
               </Link>
+            </div>
+          </section>
+
+          {/* More to explore */}
+          <section className="border-t border-border pt-7">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">More to Explore</div>
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-6">Beyond the tunes</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { href: "/gear", icon: ShoppingBag, title: "The Store", desc: "Hand-picked books, classic recordings, and gear for old-time players." },
+                { href: "/book-a-lesson", icon: GraduationCap, title: "Lessons", desc: "Private instruction in fiddle, clawhammer banjo, guitar, and upright bass." },
+                { href: "/blog", icon: Newspaper, title: "The Journal", desc: "Stories, history, and deep dives into the old-time tradition." },
+              ].map(({ href, icon: Icon, title, desc }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  data-testid={`link-explore-${href.replace(/\//g, "")}`}
+                  className="group border border-border bg-card p-5 hover:border-foreground transition-colors"
+                >
+                  <Icon className="w-5 h-5 text-primary mb-3" />
+                  <div className="font-display text-lg font-semibold text-foreground mb-1 flex items-center gap-1.5">
+                    {title}
+                    <ChevronRight className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </div>
+                  <p className="font-serif text-[14px] text-muted-foreground leading-relaxed">{desc}</p>
+                </Link>
+              ))}
             </div>
           </section>
 

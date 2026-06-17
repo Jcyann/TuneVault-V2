@@ -73,7 +73,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
   "/": {
     title: "TuneVault — Old-Time Fiddle Treasury",
     description:
-      "1,032+ Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.",
+      "Over 1,000 Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.",
     url: BASE,
     keywords:
       "old time fiddle, fiddle tunes, old time music, appalachian music, clawhammer banjo, american folk music, ABC notation fiddle, free fiddle sheet music, fiddle tune database, old time fiddle tunes list, old time fiddle songs, traditional fiddle, mountain music, string band music, fiddle breakdown, fiddle reel, fiddle jig, fiddle waltz, fiddle hornpipe, fiddle polka, learn old time fiddle, fiddle notation, Southern Appalachian fiddle, Blue Ridge fiddle, Texas fiddle, Ozark fiddle, old time jam session, fiddle tune repertoire, American folk fiddle, fiddle tab, old time music songs, fiddle music free, fiddle tune list, old time tune library",
@@ -84,7 +84,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
         name: "TuneVault",
         url: BASE,
         description:
-          "The definitive online treasury of Old-Time fiddle tunes — over 1,032 tunes with audio, history, notation, and video.",
+          "The definitive online treasury of Old-Time fiddle tunes — over 1,000 tunes with audio, history, notation, and video.",
         potentialAction: {
           "@type": "SearchAction",
           target: {
@@ -101,7 +101,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
         url: BASE,
         genre: ["Old-Time", "Appalachian", "American Folk Music"],
         description:
-          "A comprehensive library of over 1,032 Old-Time fiddle tunes including reels, breakdowns, waltzes, jigs, hornpipes, polkas, and more.",
+          "A comprehensive library of over 1,000 Old-Time fiddle tunes including reels, breakdowns, waltzes, jigs, hornpipes, polkas, and more.",
       },
     ],
   },

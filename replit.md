@@ -15,7 +15,7 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 
 | Field | Count | Notes |
 |---|---|---|
-| Total tunes | 1,032 | |
+| Total tunes | 1,051 | |
 | With audio | 978 | OldTimeFiddleTunes, Canote Brothers, LOC proxy, Internet Archive |
 | No audio | 54 | Obscure tunes with no known recording source |
 | Internet Archive recordings | 54 | Historical 78rpm + field recordings; 49 added in last enrichment session |

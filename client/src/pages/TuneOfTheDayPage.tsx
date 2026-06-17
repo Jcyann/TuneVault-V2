@@ -38,11 +38,11 @@ export default function TuneOfTheDayPage() {
   const { data: statsData } = useQuery<{ total: string }>({
     queryKey: ["/api/stats"],
   });
-  const total = parseInt(statsData?.total ?? "1032", 10);
+  const total = parseInt(statsData?.total ?? "1051", 10);
 
   const shuffle = useCallback(() => {
     setVideoAvailable(true);
-    setShufflePage(randomPage(total > 0 ? total : 1032));
+    setShufflePage(randomPage(total > 0 ? total : 1051));
   }, [total]);
 
   const resetToToday = useCallback(() => {

@@ -130,13 +130,13 @@ export default function TuneDetailPage() {
 
     return () => {
       document.title = "TuneVault — Old-Time Fiddle Treasury";
-      setMeta('meta[name="description"]', 'name="description"', "1,031+ Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.");
+      setMeta('meta[name="description"]', 'name="description"', "Over 1,000 Old-Time fiddle tunes with audio recordings, historical context, ABC notation, sheet music, and YouTube performances. Searchable, filterable, free.");
       setMeta('meta[property="og:title"]', 'property="og:title"', "TuneVault — Old-Time Fiddle Treasury");
-      setMeta('meta[property="og:description"]', 'property="og:description"', "1,031+ Old-Time fiddle tunes with audio, history, notation, and video — the definitive online tune library.");
+      setMeta('meta[property="og:description"]', 'property="og:description"', "Over 1,000 Old-Time fiddle tunes with audio, history, notation, and video — the definitive online tune library.");
       setMeta('meta[property="og:url"]', 'property="og:url"', "https://tunevault.org");
       setMeta('meta[property="og:type"]', 'property="og:type"', "website");
       setMeta('meta[name="twitter:title"]', 'name="twitter:title"', "TuneVault — Old-Time Fiddle Treasury");
-      setMeta('meta[name="twitter:description"]', 'name="twitter:description"', "1,031+ Old-Time fiddle tunes with audio, history, notation, and video.");
+      setMeta('meta[name="twitter:description"]', 'name="twitter:description"', "Over 1,000 Old-Time fiddle tunes with audio, history, notation, and video.");
       const canon = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (canon) canon.setAttribute("href", "https://tunevault.org");
       const ld = document.getElementById("tune-jsonld");
