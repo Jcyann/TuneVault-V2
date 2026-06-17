@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { Mic, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag } from "lucide-react";
+import { Mic, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag, Guitar, Users, Search, PencilLine } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,14 @@ const POSITIONS = CIRCLE_OF_FIFTHS.map((_, i) => {
 
 const RING_R = 46;
 const RING_C = 2 * Math.PI * RING_R;
+
+const USES = [
+  { icon: Guitar, text: "Tuning up — bow one sustained note and get its name in about a second." },
+  { icon: Music2, text: "Naming a recording's key — record a clip playing nearby, or upload an audio file." },
+  { icon: Users, text: "Jamming with confidence — learn the key before you jump into a session." },
+  { icon: Search, text: "Browsing smarter — leap straight to every TuneVault tune in that key." },
+  { icon: PencilLine, text: "Transcribing — confirm the key before you write out the notation." },
+];
 
 function normalizeNote(n: string): string {
   return (n || "").replace("♯", "#").replace("♭", "b");
@@ -322,8 +330,30 @@ export default function IdentifyKeyPage() {
           </button>
         </div>
 
+        {/* How it works + uses */}
+        <section className="border-t border-border pt-7 mt-4 max-w-xl mx-auto">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">How it works</div>
+          <p className="font-serif text-[15px] text-muted-foreground leading-relaxed">
+            Pitch Detective listens to a few seconds of sound and works out the musical key — the home note and
+            whether it's major or minor — using a pitch-analysis engine that runs entirely inside your browser.
+            Nothing is uploaded; your audio never leaves your device.
+          </p>
+
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mt-8 mb-4">Great for</div>
+          <ul className="space-y-3.5">
+            {USES.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex gap-3" data-testid={`use-${text.split(" ")[0].toLowerCase()}`}>
+                <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <p className="font-serif text-[15px] text-foreground leading-relaxed pt-0.5">{text}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* Disclaimer */}
-        <div className="border-t border-border pt-5 mt-2 flex gap-2.5 max-w-xl mx-auto">
+        <div className="border-t border-border pt-5 mt-8 flex gap-2.5 max-w-xl mx-auto">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
           <p className="font-serif text-[13px] text-muted-foreground leading-relaxed">
             Key detection is an estimate. Old-time fiddle uses lots of open-string drones, which can fool the analysis into the
