@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, Mic, ExternalLink, KeyRound, ShoppingBag, GraduationCap, Newspaper } from "lucide-react";
+import { Headphones, Video, BookOpen, FileText, Star, ChevronRight, Mic, ExternalLink, KeyRound, ShoppingBag, GraduationCap, Newspaper, Library, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -148,14 +148,85 @@ export default function AboutPage() {
             </div>
           </section>
 
+          {/* Sources & methodology */}
+          <section id="sources" data-testid="section-sources-methodology" className="border-t border-border pt-7">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">
+              <ShieldCheck className="w-3 h-3 text-primary" /> Trust & Transparency
+            </div>
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-4">Sources & methodology</h2>
+            <p className="font-serif text-[15px] text-muted-foreground leading-relaxed max-w-prose mb-7">
+              TuneVault is built for serious learners and history buffs, so accuracy matters more than volume. Every tune draws on references and archives trusted within the old-time community. We don't invent or embellish history, and we don't overstate what we don't know — tunes without a documented source carry an honest "not yet documented" note instead of filler.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7 mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Headphones className="w-4 h-4 text-primary" />
+                  <h3 className="font-display text-lg font-semibold text-foreground">Audio recordings</h3>
+                </div>
+                <ul className="space-y-2 font-serif text-[14px] text-muted-foreground leading-relaxed">
+                  {[
+                    "Slippery Hill — a leading old-time field-recording archive",
+                    "The Canote Brothers recording archive",
+                    "Library of Congress, American Folklife Center field recordings (1937–1938)",
+                    "Internet Archive — historical 78rpm digitizations and field recordings",
+                    "OldTimeFiddleTunes.net (John Lamancusa)",
+                  ].map((s) => (
+                    <li key={s} className="flex gap-2"><span className="text-primary mt-0.5">·</span><span>{s}</span></li>
+                  ))}
+                </ul>
+                <p className="font-serif text-[13px] text-muted-foreground/80 italic mt-3">Each recording is credited to its performer and source on the tune's page wherever known.</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Library className="w-4 h-4 text-primary" />
+                  <h3 className="font-display text-lg font-semibold text-foreground">History & tune notes</h3>
+                </div>
+                <ul className="space-y-2 font-serif text-[14px] text-muted-foreground leading-relaxed">
+                  {[
+                    "The Traditional Tune Archive (tunearch.org)",
+                    "OldTimeFiddleTunes.net tune write-ups (John Lamancusa)",
+                    "O'Neill's collections",
+                    "Marion Thede, \"The Fiddle Book\"",
+                    "Rounder Records liner notes",
+                    "Library of Congress American Folklife Center",
+                    "Documented fiddler biographies and fiddle-contest records",
+                  ].map((s) => (
+                    <li key={s} className="flex gap-2"><span className="text-primary mt-0.5">·</span><span>{s}</span></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="border border-border bg-card p-6">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-4">How we handle accuracy</h3>
+              <ul className="space-y-3">
+                {[
+                  "We source from references known and trusted in the old-time community — not from anonymous or unverifiable web content.",
+                  "We never fabricate history. Tunes with no findable, documented source show a placeholder asking for help, rather than invented prose.",
+                  "We don't overstate certainty. The automated key detector only assists — a human reviews and approves every key, and it never silently overwrites a tune.",
+                  "Performers and recording sources are attributed on each tune page wherever they're known.",
+                  "We respect copyright: playback relies on YouTube embeds and public-domain or openly-archived recordings.",
+                ].map((s) => (
+                  <li key={s} className="flex gap-3 font-serif text-[14px] text-foreground/85 leading-relaxed">
+                    <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="font-serif text-[14px] text-muted-foreground leading-relaxed mt-5">
+                Spot something wrong or have a better source? Use the <a href="#suggestion-box" className="text-amber-700 hover:text-amber-800 underline underline-offset-2">suggestion box below</a> or the "Suggest a correction" button on any tune page. Corrections from the community are how this stays accurate.
+              </p>
+            </div>
+          </section>
+
           {/* FAQ */}
           <section className="border-t border-border pt-7">
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">Questions</div>
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-6">Frequently asked</h2>
             <dl className="space-y-5 mb-12">
               {[
-                { q: "Where does the audio come from?", a: "Slippery Hill, the Canote Brothers archive, the Library of Congress American Folklife Center, and Old Time Fiddle Tunes archives. Each recording is credited on the tune page." },
-                { q: "Where does the historical information come from?", a: "Fiddle contest records, the LOC American Folklife Center, O'Neill's collections, Marion Thede's 'The Fiddle Book,' Rounder Records liner notes, and documented fiddler biographies." },
+                { q: "Where do the audio and history come from?", a: "From archives and references trusted in the old-time community — see the Sources & methodology section above for the full list and our accuracy standards." },
                 { q: "Does TuneVault work on mobile?", a: "Yes — fully mobile-responsive. Swipe left/right on the home page to page through tunes. In the mini player, swipe left for next and right for previous." },
               ].map(({ q, a }) => (
                 <div key={q} className="border-b border-border pb-5 last:border-0 last:pb-0">
