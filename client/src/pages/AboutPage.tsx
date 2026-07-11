@@ -190,6 +190,8 @@ export default function AboutPage() {
                     "Marion Thede, \"The Fiddle Book\"",
                     "Rounder Records liner notes",
                     "Library of Congress American Folklife Center",
+                    "Internet Archive item records — performer credits and 78rpm disc dates",
+                    "TheSession.org — cross-checked tune listings and ABC notation settings (CC BY-SA)",
                     "Documented fiddler biographies and fiddle-contest records",
                   ].map((s) => (
                     <li key={s} className="flex gap-2"><span className="text-primary mt-0.5">·</span><span>{s}</span></li>
