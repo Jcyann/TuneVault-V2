@@ -23,7 +23,7 @@ Live at **tunevault.org** · GA4: `G-ZG7NE7DJCP` · Venmo: `@Jason-Chinchen` · 
 | With YouTube ID (total) | 274 | Several replaced with new embeddable alternatives |
 | With ABC notation | 30 | Rendered via abcjs; 14 imported from TheSession.org (CC BY-SA, source comment embedded) |
 | TheSession IDs (verified) | 25 | All 35 legacy IDs were wrong — 24 corrected via strict title search, 10 cleared, 1 already correct |
-| With description | 1,013+ | All 1,032 tunes attempted; ~19 ultra-obscure tunes had no web results |
+| With description | 927 | 124 tunes intentionally blank (honest placeholder); July 2026 cleanup nulled 105 hedge-narrative "search results" write-ups and stripped AI meta-language from 558 more |
 | With source fiddler | ~129 | |
 
 ## Features
@@ -144,6 +144,7 @@ To re-check YouTube embeddability: `npx tsx server/scripts/checkYoutubeEmbeddabi
 To calibrate key detection (accuracy report): `npx tsx server/scripts/calibrateKeyDetection.ts` (opts: `--limit=N`, `--all`, `--key=D`)
 To batch-detect keys for placeholder "B" tunes → review queue: `npx tsx server/scripts/detectBadKeys.ts` (opts: `--limit=N`, `--reset`, `--key=B`)
 Public-source enrichment (ID-matched, zero title-guess risk): `npx tsx server/scripts/enrichFromPublicSources.ts --source=ia|loc|thesession|fix-session-ids [--dry-run] [--limit=N]` — all modes idempotent/resumable.
+Description artifact cleanup (strips AI/web-research meta-language, nulls hedge narratives): `npx tsx server/scripts/cleanDescriptionArtifacts.ts [--dry-run]`. The export script refuses to run while any description still contains meta-language.
 **After ANY DB-side tune enrichment, run `npx tsx server/scripts/exportTunesToSeed.ts`** — autoSeed's sync upsert overwrites description/abc/aliases/attribution/the_session_id from `server/seedData/tunes.json` whenever the seed hash changes, so DB-only edits get silently reverted unless exported back. (is_embeddable is the only DB-only exception.)
 To enrich descriptions from TTA (dry run first): `npx tsx server/scripts/enrichFromTTA.ts --dry-run --limit=20`
 To run for real: `npx tsx server/scripts/enrichFromTTA.ts`

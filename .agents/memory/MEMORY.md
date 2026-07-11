@@ -1,3 +1,4 @@
 - [Audio key-detection accuracy ceiling](key-detection.md) — essentia.js tops ~46% exact on solo fiddle; confidence ≠ correctness; human-review-only, never auto-overwrite.
 - [External reference IDs must be verified, not trusted](external-id-trust.md) — stored TheSession IDs were fabricated; strict title-match before enriching or linking through any third-party ID.
 - [Background shell processes die between tool calls](background-process-quirk.md) — nohup/setsid don't survive the bash tool session; make long scripts resumable and run in timed chunks.
+- [Tune descriptions can carry AI meta-language from old sessions](description-contamination.md) — cleanup script + export gate block "search results" prose; honest gap beats hedge narrative.

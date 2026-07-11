@@ -31,8 +31,22 @@ const FIELDS = [
   "audio_attribution", "created_at",
 ] as const;
 
+// Validation gate: refuse to export descriptions containing AI/web-research
+// meta-language — that content violates the site's zero-invented-facts policy
+// and must be cleaned (see cleanDescriptionArtifacts.ts) before export.
+const META_LANGUAGE_RE =
+  /search results|web research compiled|the searches\b|search turned up|wasn'?t able to (find|retrieve)|unable to (find|retrieve)|as an AI\b/i;
+
 async function main() {
   const { rows } = await pool.query(`SELECT ${FIELDS.join(", ")} FROM tunes ORDER BY id ASC`);
+
+  const contaminated = rows.filter((r: any) => r.description && META_LANGUAGE_RE.test(r.description));
+  if (contaminated.length > 0) {
+    console.error(`REFUSING to export: ${contaminated.length} description(s) contain unverifiable meta-language:`);
+    for (const r of contaminated.slice(0, 20)) console.error(`  #${r.id} ${r.title}`);
+    console.error("Run: npx tsx server/scripts/cleanDescriptionArtifacts.ts");
+    process.exit(1);
+  }
   const out = rows.map((r: any) => {
     const o: Record<string, unknown> = {};
     for (const f of FIELDS) {
