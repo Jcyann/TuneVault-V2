@@ -61,15 +61,24 @@ export default function MiniPlayer() {
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
+  // Speed and transpose cannot be combined on one <audio> element: transpose
+  // works by varispeed (preservesPitch off + rate change), which would make
+  // any slowdown also drop the pitch. So speed always preserves pitch, and
+  // transpose only applies at 1× speed.
+  const applyPlaybackSettings = useCallback((audio: HTMLAudioElement) => {
+    const transposing = semitones !== 0 && speed === 1;
+    const preserve = !transposing;
+    (audio as any).preservesPitch = preserve;
+    (audio as any).mozPreservesPitch = preserve;
+    (audio as any).webkitPreservesPitch = preserve;
+    audio.playbackRate = transposing ? Math.pow(2, semitones / 12) : speed;
+  }, [speed, semitones]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const pitchRate = Math.pow(2, semitones / 12);
-    audio.playbackRate = speed * pitchRate;
-    (audio as any).preservesPitch = semitones === 0;
-    (audio as any).mozPreservesPitch = semitones === 0;
-    (audio as any).webkitPreservesPitch = semitones === 0;
-  }, [speed, semitones]);
+    applyPlaybackSettings(audio);
+  }, [applyPlaybackSettings]);
 
   useEffect(() => {
     if (!current) { setResolvedUrl(null); return; }
@@ -97,11 +106,7 @@ export default function MiniPlayer() {
     if (!audio || !resolvedUrl) return;
     audio.src = resolvedUrl;
     audio.load();
-    const pitchRate = Math.pow(2, semitones / 12);
-    audio.playbackRate = speed * pitchRate;
-    (audio as any).preservesPitch = semitones === 0;
-    (audio as any).mozPreservesPitch = semitones === 0;
-    (audio as any).webkitPreservesPitch = semitones === 0;
+    applyPlaybackSettings(audio);
     audio.play().catch(() => setIsPlaying(false));
   }, [resolvedUrl]);
 
@@ -160,8 +165,10 @@ export default function MiniPlayer() {
 
   const typeColor = TUNE_TYPE_COLORS[current.tuneType ?? ""] ?? "#F59E0B";
   const credit = current.sourceFiddler ?? current.audioSource ?? null;
+  const transposeActive = semitones !== 0 && speed === 1;
+  const pitchLocked = speed !== 1;
   const displayedKey = transposeKey(current.key ?? "", semitones);
-  const keyDisplay = semitones !== 0
+  const keyDisplay = transposeActive
     ? `${semitones > 0 ? "+" : ""}${semitones} · ${displayedKey}`
     : (current.key ?? "—");
 
@@ -285,13 +292,14 @@ export default function MiniPlayer() {
             <div className="rounded-xl bg-muted/40 px-4 py-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Pitch</p>
-                {semitones !== 0 && <button onClick={() => setSemitones(0)} className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2" data-testid="sheet-pitch-reset">reset</button>}
+                {semitones !== 0 && !pitchLocked && <button onClick={() => setSemitones(0)} className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2" data-testid="sheet-pitch-reset">reset</button>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch down" data-testid="sheet-pitch-down">−</button>
-                <span className={`flex-1 text-sm font-semibold tabular-nums text-center py-2 rounded-lg transition-colors ${semitones !== 0 ? "text-white" : "bg-background text-muted-foreground"}`} style={semitones !== 0 ? { background: typeColor } : {}} data-testid="sheet-pitch-display">{keyDisplay}</span>
-                <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch up" data-testid="sheet-pitch-up">+</button>
+                <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6 || pitchLocked} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch down" data-testid="sheet-pitch-down">−</button>
+                <span className={`flex-1 text-sm font-semibold tabular-nums text-center py-2 rounded-lg transition-colors ${transposeActive ? "text-white" : "bg-background text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}} data-testid="sheet-pitch-display">{keyDisplay}</span>
+                <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6 || pitchLocked} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch up" data-testid="sheet-pitch-up">+</button>
               </div>
+              {pitchLocked && <p className="text-[10px] text-muted-foreground mt-2" data-testid="sheet-pitch-locked-note">Pitch shift is available at 1× speed</p>}
             </div>
           </div>
         </div>
@@ -406,19 +414,19 @@ export default function MiniPlayer() {
               <div className="w-px h-7 bg-border" aria-hidden />
 
               {/* Pitch */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" title={pitchLocked ? "Pitch shift is available at 1× speed" : undefined}>
                 <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Pitch</span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setSemitones((n) => Math.max(-6, n - 1))}
                     data-testid="pitch-down"
-                    disabled={semitones <= -6}
+                    disabled={semitones <= -6 || pitchLocked}
                     className="w-6 h-6 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
                     aria-label="Pitch down"
                   >−</button>
                   <span
-                    className={`text-xs font-semibold tabular-nums min-w-[3rem] text-center px-2 py-1 rounded transition-colors ${semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"}`}
-                    style={semitones !== 0 ? { background: typeColor } : {}}
+                    className={`text-xs font-semibold tabular-nums min-w-[3rem] text-center px-2 py-1 rounded transition-colors ${transposeActive ? "text-white" : "bg-muted text-muted-foreground"}`}
+                    style={transposeActive ? { background: typeColor } : {}}
                     data-testid="pitch-display"
                   >
                     {keyDisplay}
@@ -426,11 +434,11 @@ export default function MiniPlayer() {
                   <button
                     onClick={() => setSemitones((n) => Math.min(6, n + 1))}
                     data-testid="pitch-up"
-                    disabled={semitones >= 6}
+                    disabled={semitones >= 6 || pitchLocked}
                     className="w-6 h-6 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors"
                     aria-label="Pitch up"
                   >+</button>
-                  {semitones !== 0 && (
+                  {semitones !== 0 && !pitchLocked && (
                     <button onClick={() => setSemitones(0)} data-testid="pitch-reset" className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1">reset</button>
                   )}
                 </div>
@@ -497,11 +505,11 @@ export default function MiniPlayer() {
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted-foreground truncate flex-1 leading-tight">{metaLine}</p>
 
-          <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch down">−</button>
-            <span className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${semitones !== 0 ? "text-white" : "bg-muted text-muted-foreground"}`} style={semitones !== 0 ? { background: typeColor } : {}}>{keyDisplay}</span>
-            <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch up">+</button>
-            {semitones !== 0 && (
+          <div className="flex items-center gap-1 shrink-0" title={pitchLocked ? "Pitch shift is available at 1× speed" : undefined}>
+            <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6 || pitchLocked} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch down">−</button>
+            <span className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${transposeActive ? "text-white" : "bg-muted text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}}>{keyDisplay}</span>
+            <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6 || pitchLocked} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch up">+</button>
+            {semitones !== 0 && !pitchLocked && (
               <button onClick={() => setSemitones(0)} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">reset</button>
             )}
           </div>

@@ -2,3 +2,4 @@
 - [External reference IDs must be verified, not trusted](external-id-trust.md) — stored TheSession IDs were fabricated; strict title-match before enriching or linking through any third-party ID.
 - [Background shell processes die between tool calls](background-process-quirk.md) — nohup/setsid don't survive the bash tool session; make long scripts resumable and run in timed chunks.
 - [Tune descriptions can carry AI meta-language from old sessions](description-contamination.md) — cleanup script + export gate block "search results" prose; honest gap beats hedge narrative.
+- [Audio player pitch vs. speed](audio-player-pitch-speed.md) — slowdown must always preserve pitch; transpose only at 1×; Web Audio pitch-shift blocked by missing CORS on external MP3s.
