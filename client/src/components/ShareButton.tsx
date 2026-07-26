@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Share2, Check } from "lucide-react";
+import { Share, Check } from "lucide-react";
 
 interface ShareButtonProps {
   url?: string;
@@ -70,7 +70,7 @@ export default function ShareButton({
     >
       {copied
         ? <Check style={{ width: size, height: size }} className="text-green-500" />
-        : <Share2 style={{ width: size, height: size }} />
+        : <Share style={{ width: size, height: size }} />
       }
     </button>
   );
