@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Star, Calendar, Shuffle, Headphones, Video, BookOpen, FileText, Play, ArrowRight } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Tune } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -99,7 +100,7 @@ export default function TuneOfTheDayPage() {
                   : "One tune, picked for today. Changes at midnight."}
               </p>
             </div>
-            <div className="flex gap-3 flex-wrap self-start mt-2">
+            <div className="flex gap-3 flex-wrap self-start mt-2 items-center">
               {isShuffled && (
                 <button
                   onClick={resetToToday}
@@ -116,6 +117,15 @@ export default function TuneOfTheDayPage() {
               >
                 <Shuffle className="w-3 h-3" /> Explore another
               </button>
+              {tune && (
+                <ShareButton
+                  url={`${window.location.origin}/tune/${tune.id}`}
+                  title={tune.title}
+                  className="p-2 border border-border hover:border-foreground"
+                  size={13}
+                  aria-label="Share tune"
+                />
+              )}
             </div>
           </div>
         </header>

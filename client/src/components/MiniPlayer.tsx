@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePlaylist } from "@/context/PlaylistContext";
 import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, RotateCcw, ChevronUp, ChevronDown } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { Link } from "wouter";
 import { useSwipe } from "@/hooks/useSwipe";
 
@@ -447,6 +448,14 @@ export default function MiniPlayer() {
               {/* Divider */}
               <div className="w-px h-7 bg-border" aria-hidden />
 
+              <ShareButton
+                url={`${window.location.origin}/tune/${current.id}`}
+                title={current.title}
+                className="p-1.5 rounded-full hover:bg-muted"
+                size={14}
+                aria-label={`Share ${current.title}`}
+              />
+
               <button onClick={dismiss} className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" data-testid="mini-player-dismiss" aria-label="Close player">
                 <X className="w-4 h-4" />
               </button>
@@ -521,6 +530,13 @@ export default function MiniPlayer() {
             {playMode === "shuffle" && (
               <button onClick={reshuffle} title="Reshuffle" className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" aria-label="Reshuffle"><RotateCcw className="w-3 h-3" /></button>
             )}
+            <ShareButton
+              url={`${window.location.origin}/tune/${current.id}`}
+              title={current.title}
+              className="p-1 rounded-full hover:bg-muted ml-0.5"
+              size={12}
+              aria-label={`Share ${current.title}`}
+            />
             <button onClick={dismiss} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-0.5" aria-label="Close player"><X className="w-3.5 h-3.5" /></button>
           </div>
         </div>

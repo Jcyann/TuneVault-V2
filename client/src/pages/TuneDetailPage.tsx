@@ -4,6 +4,7 @@ import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Music2, ExternalLink, Video, BookOpen, Star, MessageSquarePlus, Play } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import type { Tune, Recording } from "@shared/schema";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
@@ -263,14 +264,23 @@ export default function TuneDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </button>
-          <button
-            onClick={() => toggleFavorite(tune.id)}
-            className="flex items-center gap-1.5 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
-            data-testid="button-favorite-detail"
-          >
-            <Star className={`w-3.5 h-3.5 ${faved ? "fill-primary text-primary" : ""}`} />
-            {faved ? "Saved" : "Save"}
-          </button>
+          <div className="flex items-center gap-3">
+            <ShareButton
+              url={`${window.location.origin}/tune/${tune.id}`}
+              title={tune.title}
+              className="px-2 py-1"
+              size={13}
+              aria-label={`Share ${tune.title}`}
+            />
+            <button
+              onClick={() => toggleFavorite(tune.id)}
+              className="flex items-center gap-1.5 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
+              data-testid="button-favorite-detail"
+            >
+              <Star className={`w-3.5 h-3.5 ${faved ? "fill-primary text-primary" : ""}`} />
+              {faved ? "Saved" : "Save"}
+            </button>
+          </div>
         </div>
 
         {/* Editorial title block */}
