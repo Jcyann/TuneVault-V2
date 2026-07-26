@@ -267,7 +267,9 @@ export default function HomePage() {
             </p>
             <p className="text-sm sm:text-base text-muted-foreground mt-5 max-w-sm leading-relaxed">
               Source recordings, sheet music, and history for{" "}
-              <strong className="text-foreground font-semibold">over 1,000</strong>{" "}
+              <strong className="text-foreground font-semibold">
+                {stats?.total ? `over ${(Math.floor(Number(stats.total) / 100) * 100).toLocaleString("en-US")}` : "over 1,000"}
+              </strong>{" "}
               fiddle tunes from the living American old-time tradition.
             </p>
           </div>
@@ -284,7 +286,7 @@ export default function HomePage() {
             <input
               data-testid="input-search"
               className="w-full bg-transparent border-0 border-b border-foreground/30 focus:border-foreground pl-8 pr-10 py-3 text-lg sm:text-xl font-display text-foreground placeholder:text-muted-foreground/60 focus:outline-none transition-colors"
-              placeholder="Search over 1,000 tunes by title…"
+              placeholder={`Search ${stats?.total ? `over ${(Math.floor(Number(stats.total) / 100) * 100).toLocaleString("en-US")}` : "1,000+"} tunes by title…`}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); setShowFavorites(false); }}
             />

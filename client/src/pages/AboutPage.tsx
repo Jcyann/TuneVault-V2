@@ -15,7 +15,7 @@ const BADGE_EXPLANATIONS = [
 export default function AboutPage() {
   usePageMeta(
     "About & FAQ",
-    "Learn how to use TuneVault — over 1,000 Old-Time fiddle tunes with audio, history, ABC notation, YouTube video, an in-browser key finder, community recordings, Tune of the Day, a store, lessons, and the blog."
+    "Learn how to use TuneVault — thousands of traditional fiddle tunes with audio, history, ABC notation, YouTube video, an in-browser key finder, community recordings, Tune of the Day, a store, and lessons."
   );
 
   return (
