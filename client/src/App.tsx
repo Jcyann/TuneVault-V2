@@ -33,8 +33,10 @@ function Router() {
       <Route path="/book-a-lesson" component={BookALessonPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/submit-recording" component={SubmitRecordingPage} />
+      {/* Blog hidden until posts are rewritten
       <Route path="/blog" component={BlogPage} />
       <Route path="/blog/:slug" component={BlogPostPage} />
+      */}
       <Route path="/gear" component={GearPage} />
       <Route path="/identify-key" component={IdentifyKeyPage} />
       <Route component={NotFound} />
