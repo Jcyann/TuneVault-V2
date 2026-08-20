@@ -3,7 +3,7 @@ name: Description-key audit (in progress)
 description: Ongoing audit matching description key mentions against DB key field; large batch of verified corrections ready to apply.
 ---
 
-## Status: PAUSED mid-execution
+## Status: partially complete; remaining non-B audit is paused
 
 ### What was done
 - Queried all 1,848 descriptions for "in the key of X" patterns vs DB key field
@@ -12,42 +12,14 @@ description: Ongoing audit matching description key mentions against DB key fiel
   - Auger In The Ditch, Old Voile, Poor Little Johnny's Gone to War, Uncle Pink, Big Sandy
 - Big Sandy DB key corrected F→A→G (user confirmed G)
 
-### Confirmed key corrections still to apply to DB
+### Completed B-key audit
 
-**B-key cluster (27 tunes — DB says "B", clearly wrong for old-time fiddle):**
-Verified keys from SH/TTA/web:
-
-| ID | Title | Correct key | Source |
-|---|---|---|---|
-| 157 | Billy in the Lowland | C | TheSession/web |
-| 165 | Blake's March | G | Ken Torke tab |
-| 203 | Cacklin Hen | D | TTA (K:D) |
-| 242 | Corn In The Crib | G | Blaine Smith tab |
-| 317 | Full Moon Reel | A | Slippery Hill |
-| 352 | Grey Haired Dancing Girl | A | AEAE tuning tab |
-| 360 | Harrington Valley Two Step | A | Calvin Vollrath tab |
-| 405 | Jeff Davis County Reel | C | Slippery Hill |
-| 434 | Ladies on the Steamboat | G | TTA |
-| 438 | Lady of the Lake 4 | D | Slippery Hill |
-| 442 | Lantern In The Ditch | D | TTA |
-| 518 | North Carolina Breakdown | G | Slippery Hill (Arthur Smith) |
-| 655 | Santa Anna's Retreat | A Modal | Slippery Hill + Ken Torke tab |
-| 708 | Sweet Dixie | D | Art Stamper tab (D key) |
-
-Still needing verification (partial data only):
-| 524 | Old Abe | ? | only Lamancusa found |
-| 534 | Old Cow Crossing the Road | C or F | SH shows "C & F" |
-| 535 | Old Cumberland | ? | SH found, key not extracted |
-| 542 | Old Melinda | ? | TTA found, key not extracted |
-| 546 | Old Parnell Reel | ? | SH found, key not extracted |
-| 547 | Old Piss | ? | TTA found, key not extracted |
-| 596 | Purcell's Reel | ? | SH found, key not extracted |
-| 747 | Uncle Frank's Piece | ? | sheet music found |
-| 751 | Wagoner | ? | SH found |
-| 802 | Culburnie Cottage | ? | |
-| 808 | Homage a Belle Gaspesie | ? | |
-| 869 | Cherry Blossom Waltz | ? | |
-| 947 | Tuscaloosa Waltz | ? | |
+Every tune that carried the erroneous B-major label was rehomed after
+source verification. Exact collection notation was the primary source for
+the imported collection; Slippery Hill or the Traditional Tune Archive was
+used only when the collection listing did not give a readable key. The
+database and production seed snapshot now contain no B-major records, while
+legitimate B-flat, minor, and modal values remain.
 
 **Other mismatch groups with confirmed corrections:**
 
