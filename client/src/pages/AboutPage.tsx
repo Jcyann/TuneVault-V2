@@ -15,7 +15,7 @@ const BADGE_EXPLANATIONS = [
 export default function AboutPage() {
   usePageMeta(
     "About & FAQ",
-    "Learn how to use TuneVault — thousands of traditional fiddle tunes with audio, history, ABC notation, YouTube video, an in-browser key finder, community recordings, Tune of the Day, a store, and lessons."
+    "Learn how to use TuneVault — thousands of traditional fiddle tunes with audio, history, notation, an in-browser tuner for fiddle, banjo, and guitar, a key finder, recordings, and lessons."
   );
 
   return (
@@ -59,23 +59,23 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* Key Finder — featured tool */}
+          {/* Tuner + Key Finder — featured tool */}
           <section className="border-t border-border pt-7">
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Tool</div>
             <div className="border border-foreground bg-foreground text-background p-7 sm:p-9">
               <div className="flex items-start gap-5">
                 <KeyRound className="w-8 h-8 shrink-0 text-background/90" />
                 <div className="flex-1">
-                  <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight mb-2">What key is this?</h2>
+                  <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight mb-2">Tune your fiddle. Find a key.</h2>
                   <p className="font-serif text-[15px] leading-relaxed text-background/80 max-w-xl mb-5">
-                    Stuck on a tune at a jam, or puzzling out a recording by ear? Play into your mic or drop in an audio clip and TuneVault names the key for you — in seconds, right in your browser. Nothing leaves your device, and it's completely free.
+                    Need to tune up before a jam? Use the free browser tuner for fiddle, banjo, or guitar, with standard tunings and old-time favorites like Calico, Open C, Open D, and Open A. Puzzling out a recording instead? Switch modes and TuneVault can estimate its key — all in one place, with nothing leaving your device.
                   </p>
                   <Link
                     href="/identify-key"
                     data-testid="link-identify-key-about"
                     className="inline-flex items-center gap-2 bg-background text-foreground px-5 py-2.5 text-[11px] uppercase tracking-[0.16em] font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
-                    <Mic className="w-3.5 h-3.5" /> Identify a key
+                    <Mic className="w-3.5 h-3.5" /> Open the tuner & key finder
                   </Link>
                 </div>
               </div>

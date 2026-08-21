@@ -108,17 +108,17 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
   "/about": {
     title: "About TuneVault — Old-Time Fiddle Tune Library",
     description:
-      "Learn about TuneVault: the largest free online treasury of Old-Time fiddle tunes, with audio recordings, staff notation, ABC, YouTube videos, and historical context for every tune.",
+      "Learn about TuneVault: a free Old-Time fiddle library with audio, notation, history, an in-browser tuner for fiddle, banjo, and guitar, and a recording key finder.",
     url: `${BASE}/about`,
     keywords:
-      "about TuneVault, old time fiddle library, fiddle tune source, fiddle tune history, old time fiddle resources, traditional American music, mountain music archive, string band repertoire, Slippery Hill fiddle, Library of Congress fiddle, old time music history, fiddle tune collection, American folk music library, old time recordings archive, fiddle notation library, O'Neill's fiddle tunes, old time fiddle community",
+      "about TuneVault, old time fiddle library, old time fiddle tuner, banjo tuner, guitar tuner, cross tuning fiddle tuner, fiddle tune key finder, fiddle tune source, fiddle tune history, old time fiddle resources, traditional American music, mountain music archive, string band repertoire, old time recordings archive, fiddle notation library",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "AboutPage",
       name: "About TuneVault",
       url: `${BASE}/about`,
       description:
-        "TuneVault is a comprehensive online library of Old-Time fiddle tunes with audio, notation, and historical context.",
+        "TuneVault is a comprehensive online library of Old-Time fiddle tunes with audio, notation, historical context, an in-browser tuner for fiddle, banjo, and guitar, and a recording key finder.",
       isPartOf: { "@type": "WebSite", url: BASE, name: "TuneVault" },
     },
   },
@@ -163,21 +163,21 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     },
   },
   "/identify-key": {
-    title: "Identify the Key — Free Fiddle Tune Key Detector | TuneVault",
+    title: "Free Old-Time Fiddle Tuner & Key Finder | TuneVault",
     description:
-      "Record or upload an Old-Time fiddle tune and detect its musical key instantly in your browser. A free key-finder tool for fiddlers and traditional musicians.",
+      "Tune an Old-Time fiddle, banjo, or guitar in standard and cross-tunings including Calico, Open C, Open D, and Open A — or identify a recording’s key. Free, browser-based tools for musicians.",
     url: `${BASE}/identify-key`,
     keywords:
-      "identify key of song, fiddle key detector, find the key of a tune, music key finder, what key is this fiddle tune, old time fiddle key, detect musical key, key detection tool, fiddle tune key finder, audio key analysis, find song key online",
+      "old time fiddle tuner, fiddle tuner online, banjo tuner, guitar tuner, open C banjo tuning, open D banjo tuning, open A banjo tuning, cross tuning fiddle tuner, calico tuning tuner, AEAE fiddle tuning, ADAE fiddle tuning, DDAD fiddle tuning, GDGD fiddle tuning, free fiddle tuner, identify key of song, fiddle key detector, find the key of a tune, music key finder, old time fiddle key, audio key analysis",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      name: "TuneVault Key Identifier",
+      name: "TuneVault Old-Time Fiddle Tuner & Key Finder",
       url: `${BASE}/identify-key`,
       applicationCategory: "MultimediaApplication",
       operatingSystem: "Web",
       description:
-        "Free in-browser tool that estimates the musical key of an Old-Time fiddle tune from a recording or uploaded audio file.",
+        "Free in-browser tuner for old-time fiddle, banjo, and guitar tunings, plus a tool that estimates a tune’s musical key from a recording or uploaded audio file.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       isPartOf: { "@type": "WebSite", url: BASE, name: "TuneVault" },
     },

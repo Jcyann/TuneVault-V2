@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { Mic, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag, Guitar, Users, Search, PencilLine } from "lucide-react";
+import { Mic, Upload, Loader2, Music2, AlertTriangle, ArrowRight, Flag, Guitar, Users, Search, PencilLine, SlidersHorizontal, CheckCircle2 } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { detectKeyFromBlob, getEssentia } from "@/lib/keyDetectionClient";
 import SuggestChangesForm from "@/components/SuggestChangesForm";
 import type { KeyDetectionResult } from "@shared/keyDetection";
+import {
+  FIDDLE_TUNINGS,
+  TUNER_INSTRUMENTS,
+  TUNING_PRESETS,
+  detectMonophonicPitch,
+  getPitchReading,
+  type PitchReading,
+  type TunerInstrument,
+  type TunerStatus,
+  type TuningPreset,
+} from "@/lib/tuner";
 
 const MAX_RECORD_SECONDS = 15;
 
@@ -53,45 +64,55 @@ const PC_TO_FIFTHS: Record<number, number> = {
   0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: 7, 8: 8, 3: 9, 10: 10, 5: 11,
 };
 
-// Lightweight time-domain autocorrelation pitch detector (ACF2+). Returns the
-// fundamental frequency in Hz, or -1 when the signal is too quiet/ambiguous.
-function detectPitch(buf: Float32Array, sampleRate: number): number {
-  const SIZE = buf.length;
-  let rms = 0;
-  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.006) return -1;
+type ToolMode = "key" | "tuner";
 
-  let r1 = 0, r2 = SIZE - 1;
-  const thres = 0.2;
-  for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
-  for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+const TUNER_THEMES: Record<TunerInstrument, {
+  button: string;
+  halo: string;
+  ring: string;
+  status: string;
+  stroke: string;
+}> = {
+  fiddle: {
+    button: "from-[hsl(25_55%_32%)] to-[hsl(42_70%_40%)]",
+    halo: "bg-amber-500/15",
+    ring: "text-amber-700",
+    status: "text-amber-700",
+    stroke: "hsl(42 70% 40% / 0.78)",
+  },
+  banjo: {
+    button: "from-[hsl(204_55%_30%)] to-[hsl(188_64%_38%)]",
+    halo: "bg-cyan-500/15",
+    ring: "text-cyan-700",
+    status: "text-cyan-700",
+    stroke: "hsl(188 64% 38% / 0.78)",
+  },
+  guitar: {
+    button: "from-[hsl(150_45%_28%)] to-[hsl(166_55%_38%)]",
+    halo: "bg-emerald-500/15",
+    ring: "text-emerald-700",
+    status: "text-emerald-700",
+    stroke: "hsl(166 55% 38% / 0.78)",
+  },
+};
 
-  const b = buf.subarray(r1, r2);
-  const n = b.length;
-  if (n < 8) return -1;
-  const c = new Float32Array(n);
-  for (let i = 0; i < n; i++) for (let j = 0; j < n - i; j++) c[i] += b[j] * b[j + i];
+const TUNER_VISUAL_HUES: Record<TunerInstrument, string> = {
+  fiddle: "42 70% 40%",
+  banjo: "188 64% 38%",
+  guitar: "166 55% 38%",
+};
 
-  let d = 0;
-  while (d < n - 1 && c[d] > c[d + 1]) d++;
-  let maxval = -1, maxpos = -1;
-  for (let i = d; i < n; i++) if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
-  if (maxpos <= 0) return -1;
-
-  let T0 = maxpos;
-  const x1 = c[T0 - 1] || 0, x2 = c[T0] || 0, x3 = c[T0 + 1] || 0;
-  const a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
-  if (a) T0 = T0 - bb / (2 * a);
-
-  const freq = sampleRate / T0;
-  return freq >= 60 && freq <= 2000 ? freq : -1;
+function tunerStatusLabelFor(status: TunerStatus): string {
+  if (status === "in-tune") return "In tune";
+  if (status === "flat") return "Flat";
+  if (status === "sharp") return "Sharp";
+  return "Play a tuning note";
 }
 
 export default function IdentifyKeyPage() {
   usePageMeta(
-    "Identify the Key — TuneVault",
-    "Record or upload a fiddle tune and detect its musical key right in your browser. A free tool for old-time and traditional musicians.",
+    "Free Old-Time Fiddle Tuner & Key Finder",
+    "Free browser tools for old-time musicians: tune fiddle, banjo, or guitar in standard and cross-tunings, including Calico, Open C, Open D, and Open A, or identify the key of a recording.",
   );
   const { toast } = useToast();
 
@@ -101,6 +122,16 @@ export default function IdentifyKeyPage() {
   const [result, setResult] = useState<KeyDetectionResult | null>(null);
   const [sourceLabel, setSourceLabel] = useState<string>("");
   const [showSuggest, setShowSuggest] = useState(false);
+  const [mode, setMode] = useState<ToolMode>("key");
+  const [tunerListening, setTunerListening] = useState(false);
+  const [tunerStarting, setTunerStarting] = useState(false);
+  const [instrumentId, setInstrumentId] = useState<TunerInstrument>("fiddle");
+  const [tuningId, setTuningId] = useState("standard");
+  const [targetStringId, setTargetStringId] = useState<string | null>(null);
+  const [referencePitch, setReferencePitch] = useState(440);
+  const [tunerReading, setTunerReading] = useState<PitchReading | null>(null);
+  const [showTunerSettings, setShowTunerSettings] = useState(false);
+  const [tunerAnnouncement, setTunerAnnouncement] = useState("");
 
   const [liveIndex, setLiveIndex] = useState(-1);
 
@@ -121,12 +152,55 @@ export default function IdentifyKeyPage() {
   const frameRef = useRef(0);
   const vizRunningRef = useRef(false);
   const mountedRef = useRef(true);
+  const modeRef = useRef<ToolMode>("key");
+  const tunerListeningRef = useRef(false);
+  const tunerStartPendingRef = useRef(false);
+  const tunerSessionRef = useRef(0);
+  const lastTunerAnnouncementRef = useRef("");
+  const tunerAnnouncementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tuningRef = useRef<TuningPreset>(FIDDLE_TUNINGS[0]);
+  const targetStringRef = useRef<string | null>(null);
+  const referencePitchRef = useRef(440);
+  const instrumentHueRef = useRef(TUNER_VISUAL_HUES.fiddle);
+  const tunerReadingRef = useRef<PitchReading | null>(null);
+
+  const instrumentTunings = TUNING_PRESETS.filter((tuning) => tuning.instrument === instrumentId);
+  const currentTuning = instrumentTunings.find((tuning) => tuning.id === tuningId) ?? instrumentTunings[0] ?? FIDDLE_TUNINGS[0];
+
+  useEffect(() => {
+    tuningRef.current = currentTuning;
+    targetStringRef.current = targetStringId;
+    referencePitchRef.current = referencePitch;
+    instrumentHueRef.current = TUNER_VISUAL_HUES[instrumentId];
+  }, [currentTuning, targetStringId, referencePitch, instrumentId]);
+
+  useEffect(() => {
+    tunerReadingRef.current = tunerReading;
+  }, [tunerReading]);
+
+  useEffect(() => {
+    if (!tunerListening || !tunerReading) return;
+    const announcementKey = `${tunerReading.target?.id ?? "none"}-${tunerReading.status}`;
+    if (announcementKey === lastTunerAnnouncementRef.current) return;
+    const targetLabel = tunerReading.target ? `target ${tunerReading.target.label}` : "no matching string";
+    tunerAnnouncementTimerRef.current = setTimeout(() => {
+      lastTunerAnnouncementRef.current = announcementKey;
+      setTunerAnnouncement(`${tunerStatusLabelFor(tunerReading.status)}; ${targetLabel}.`);
+    }, 800);
+    return () => {
+      if (tunerAnnouncementTimerRef.current) {
+        clearTimeout(tunerAnnouncementTimerRef.current);
+        tunerAnnouncementTimerRef.current = null;
+      }
+    };
+  }, [tunerListening, tunerReading?.status, tunerReading?.target?.id]);
 
   // Warm up the WASM engine in the background as soon as the page loads.
   useEffect(() => {
     getEssentia().catch(() => {/* surfaced on first use */});
     return () => {
       mountedRef.current = false;
+      if (tunerAnnouncementTimerRef.current) clearTimeout(tunerAnnouncementTimerRef.current);
       teardownRecording();
     };
   }, []);
@@ -135,6 +209,8 @@ export default function IdentifyKeyPage() {
   // tracks, and the recorder (with handlers detached so a late onstop can't
   // fire analysis after unmount or an aborted start).
   function teardownRecording() {
+    tunerSessionRef.current += 1;
+    tunerStartPendingRef.current = false;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     stopViz();
     const mr = mediaRecorderRef.current;
@@ -146,12 +222,14 @@ export default function IdentifyKeyPage() {
     }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    tunerListeningRef.current = false;
   }
 
-  function setupViz(stream: MediaStream) {
+  function setupViz(stream: MediaStream): boolean {
+    let ctx: AudioContext | null = null;
     try {
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new Ctx();
+      ctx = new Ctx();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
@@ -172,8 +250,14 @@ export default function IdentifyKeyPage() {
       frameRef.current = 0;
       vizRunningRef.current = true;
       rafRef.current = requestAnimationFrame(drawViz);
+      return true;
     } catch {
-      /* visualization is non-critical; detection still works */
+      vizRunningRef.current = false;
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      ctx?.close().catch(() => {});
+      audioCtxRef.current = null;
+      analyserRef.current = null;
+      return false;
     }
   }
 
@@ -188,17 +272,30 @@ export default function IdentifyKeyPage() {
         c.clearRect(0, 0, 360, 360);
         const cx = 180, cy = 180, innerR = 116, maxLen = 38, N = 132, SENS = 1.9;
         const usable = Math.floor(freq.length * 0.5);
-        const p = primaryRef.current || "25 70% 45%";
+        const isTuner = modeRef.current === "tuner";
+        const reading = tunerReadingRef.current;
+        const p = isTuner ? instrumentHueRef.current : (primaryRef.current || "25 70% 45%");
+        const needleCents = reading?.cents;
+        const peakAngle = needleCents === null || needleCents === undefined
+          ? null
+          : -Math.PI / 2 + Math.max(-42, Math.min(42, needleCents)) / 42 * (Math.PI / 3);
         c.lineWidth = 1.8;
         c.lineCap = "round";
         for (let i = 0; i < N; i++) {
           const t = i < N / 2 ? i / (N / 2) : (N - i) / (N / 2);
           const raw = (freq[Math.floor(t * usable)] || 0) / 255;
           const mag = Math.min(1, raw * SENS);
-          const len = 2 + mag * maxLen;
           const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+          const angleFromPeak = peakAngle === null
+            ? Math.PI
+            : Math.abs(Math.atan2(Math.sin(ang - peakAngle), Math.cos(ang - peakAngle)));
+          const peak = peakAngle === null ? 0 : Math.exp(-(angleFromPeak * angleFromPeak) / 0.055);
+          const len = isTuner
+            ? 2 + mag * 15 + peak * 31
+            : 2 + mag * maxLen;
           const ca = Math.cos(ang), sa = Math.sin(ang);
-          c.strokeStyle = `hsl(${p} / ${0.22 + mag * 0.6})`;
+          const hue = isTuner && reading?.status === "in-tune" && peak > 0.16 ? "145 55% 42%" : p;
+          c.strokeStyle = `hsl(${hue} / ${isTuner ? 0.14 + mag * 0.38 + peak * 0.48 : 0.22 + mag * 0.6})`;
           c.beginPath();
           c.moveTo(cx + ca * innerR, cy + sa * innerR);
           c.lineTo(cx + ca * (innerR + len), cy + sa * (innerR + len));
@@ -213,11 +310,21 @@ export default function IdentifyKeyPage() {
       const ctx = audioCtxRef.current;
       if (analyser && time && ctx) {
         analyser.getFloatTimeDomainData(time);
-        const hz = detectPitch(time, ctx.sampleRate);
-        if (hz > 0) {
-          const midi = Math.round(12 * Math.log2(hz / 440) + 69);
-          const slot = PC_TO_FIFTHS[((midi % 12) + 12) % 12];
-          setLiveIndex((prev) => (prev === slot ? prev : slot));
+        const pitch = detectMonophonicPitch(time, ctx.sampleRate);
+        if (pitch) {
+          if (modeRef.current === "tuner" && tunerListeningRef.current) {
+            const reading = getPitchReading(
+              pitch.frequency,
+              tuningRef.current,
+              referencePitchRef.current,
+              targetStringRef.current,
+            );
+            if (reading && mountedRef.current) setTunerReading(reading);
+          } else if (modeRef.current === "key") {
+            const midi = Math.round(12 * Math.log2(pitch.frequency / 440) + 69);
+            const slot = PC_TO_FIFTHS[((midi % 12) + 12) % 12];
+            setLiveIndex((prev) => (prev === slot ? prev : slot));
+          }
         }
       }
     }
@@ -235,6 +342,92 @@ export default function IdentifyKeyPage() {
     audioCtxRef.current = null;
     analyserRef.current = null;
     setLiveIndex(-1);
+  }
+
+  async function startTuner() {
+    if (tunerStartPendingRef.current || tunerListeningRef.current) return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({ title: "Microphone unavailable", description: "This browser does not provide microphone access.", variant: "destructive" });
+      return;
+    }
+
+    const session = ++tunerSessionRef.current;
+    tunerStartPendingRef.current = true;
+    setTunerStarting(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!mountedRef.current || session !== tunerSessionRef.current || modeRef.current !== "tuner") {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      streamRef.current = stream;
+      tunerListeningRef.current = true;
+      setTunerReading(null);
+      lastTunerAnnouncementRef.current = "";
+      if (!setupViz(stream)) {
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        tunerListeningRef.current = false;
+        stopViz();
+        setTunerAnnouncement("");
+        toast({ title: "Tuner could not start", description: "Your browser could not prepare the audio input. Please try again.", variant: "destructive" });
+        return;
+      }
+      setTunerListening(true);
+      setTunerAnnouncement("Tuner listening. Play one string at a time.");
+    } catch {
+      if (mountedRef.current && session === tunerSessionRef.current) {
+        setTunerListening(false);
+        toast({ title: "Microphone unavailable", description: "Please allow microphone access and try again.", variant: "destructive" });
+      }
+    } finally {
+      if (session === tunerSessionRef.current) {
+        tunerStartPendingRef.current = false;
+        if (mountedRef.current) setTunerStarting(false);
+      }
+    }
+  }
+
+  function stopTuner() {
+    tunerSessionRef.current += 1;
+    tunerStartPendingRef.current = false;
+    tunerListeningRef.current = false;
+    setTunerListening(false);
+    setTunerStarting(false);
+    setTunerAnnouncement("Tuner stopped.");
+    stopViz();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  function switchMode(nextMode: ToolMode) {
+    if (mode === nextMode) return;
+    if (recording || analyzing || tunerListening || tunerStarting || tunerStartPendingRef.current) {
+      toast({ title: "Stop listening first", description: "Finish the current audio session before changing tools." });
+      return;
+    }
+    modeRef.current = nextMode;
+    setMode(nextMode);
+    setResult(null);
+    setTunerReading(null);
+    setSourceLabel("");
+    setLiveIndex(-1);
+  }
+
+  function changeTuning(nextId: string) {
+    setTuningId(nextId);
+    setTargetStringId(null);
+    setTunerReading(null);
+  }
+
+  function changeInstrument(nextInstrument: TunerInstrument) {
+    const firstTuning = TUNING_PRESETS.find((tuning) => tuning.instrument === nextInstrument);
+    if (!firstTuning) return;
+    setInstrumentId(nextInstrument);
+    setTuningId(firstTuning.id);
+    setTargetStringId(null);
+    setTunerReading(null);
   }
 
   async function analyze(data: ArrayBuffer, label: string) {
@@ -313,6 +506,12 @@ export default function IdentifyKeyPage() {
     ? CIRCLE_OF_FIFTHS.findIndex((s) => s.names.map(normalizeNote).includes(normalizeNote(result.tonic)))
     : -1;
 
+  const tunerCents = tunerReading?.cents ?? 0;
+  const tunerStatusLabel = tunerStatusLabelFor(tunerReading?.status ?? "no-target");
+  const tunerTheme = TUNER_THEMES[instrumentId];
+  const currentInstrumentLabel = TUNER_INSTRUMENTS.find((instrument) => instrument.id === instrumentId)?.label ?? "Instrument";
+  const tunerNeedleRotation = Math.max(-42, Math.min(42, tunerCents)) * 1.15;
+
   return (
     <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
       <div className="container mx-auto max-w-2xl px-6">
@@ -321,15 +520,42 @@ export default function IdentifyKeyPage() {
         <header className="border-t border-foreground pt-6 pb-8 text-center sm:text-left">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Tool</div>
           <h1 className="font-display text-[40px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">
-            What key is this?
+            {mode === "tuner" ? `Tune your ${currentInstrumentLabel.toLowerCase()}.` : "What key is this?"}
           </h1>
           <p className="font-display italic text-lg sm:text-xl text-muted-foreground mt-3 max-w-lg mx-auto sm:mx-0">
-            Play a few bars or upload a clip — TuneVault names the key, right in your browser.
+            {mode === "tuner"
+              ? "A clear, steady tuner for strings, built for the way old-time musicians play."
+              : "Play a few bars or upload a clip — TuneVault names the key, right in your browser."}
           </p>
         </header>
 
-        {/* ── The dial ─────────────────────────────────────────── */}
-        <div className="flex flex-col items-center pt-2 pb-6">
+        <div className="grid grid-cols-2 gap-1 p-1 border border-border bg-card max-w-xl mx-auto" role="tablist" aria-label="Choose an audio tool">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "tuner"}
+            onClick={() => switchMode("tuner")}
+            data-testid="tool-mode-tuner"
+            className={`min-h-16 px-3 text-left transition-colors ${mode === "tuner" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+          >
+            <span className="block text-[10px] uppercase tracking-[0.16em] font-medium mb-1">Tune an instrument</span>
+            <span className="block font-serif text-xs leading-snug opacity-80">Tune one fiddle string at a time.</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "key"}
+            onClick={() => switchMode("key")}
+            data-testid="tool-mode-key"
+            className={`min-h-16 px-3 text-left transition-colors ${mode === "key" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+          >
+            <span className="block text-[10px] uppercase tracking-[0.16em] font-medium mb-1">Identify a tune’s key</span>
+            <span className="block font-serif text-xs leading-snug opacity-80">Analyze a recording or audio clip.</span>
+          </button>
+        </div>
+
+        {mode === "key" ? (
+        <div className="flex flex-col items-center pt-7 pb-6">
           <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] select-none">
 
             {/* Circle of fifths labels */}
@@ -511,19 +737,249 @@ export default function IdentifyKeyPage() {
             <Upload className="w-3.5 h-3.5" /> or upload an audio file
           </button>
         </div>
+        ) : (
+          <section className="pt-7 pb-6 max-w-xl mx-auto" data-testid="tuner-panel">
+            <div className="flex flex-col items-center">
+              <div className="self-stretch flex items-center justify-between gap-4 mb-2">
+                <div>
+                  <div className={`text-[10px] uppercase tracking-[0.2em] font-medium mb-2 ${tunerTheme.status}`}>The tuner</div>
+                  <p className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Play one string.</p>
+                </div>
+                <p className="font-serif text-sm text-muted-foreground text-right">{currentTuning.label}</p>
+              </div>
+
+              <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] select-none">
+                {CIRCLE_OF_FIFTHS.map((s, i) => {
+                  const hot = tunerReading
+                    ? s.names.map(normalizeNote).includes(normalizeNote(tunerReading.note))
+                    : false;
+                  return (
+                    <span
+                      key={s.label}
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 font-display tabular-nums transition-all duration-300 ${
+                        hot
+                          ? `${tunerTheme.status} font-bold scale-[1.6] text-lg sm:text-xl drop-shadow`
+                          : "text-muted-foreground/55 text-sm sm:text-base"
+                      }`}
+                      style={{ left: `${POSITIONS[i].left}%`, top: `${POSITIONS[i].top}%` }}
+                    >
+                      {s.label}
+                    </span>
+                  );
+                })}
+
+                {tunerReading?.status === "in-tune" && (
+                  <>
+                    <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[66%] h-[66%] rounded-full ${tunerTheme.halo} tv-breathe pointer-events-none`} />
+                    <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[66%] h-[66%] rounded-full ${tunerTheme.halo} tv-breathe pointer-events-none`} style={{ animationDelay: "1.7s" }} />
+                  </>
+                )}
+
+                {tunerListening && [0, 1].map((k) => (
+                  <span
+                    key={k}
+                    className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full border-2 ${tunerTheme.ring} tv-sonar pointer-events-none`}
+                    style={{ animationDelay: `${k * 0.8}s` }}
+                  />
+                ))}
+
+                <svg viewBox="0 0 100 100" className="absolute inset-[11%] w-[78%] h-[78%] -rotate-90 pointer-events-none">
+                  <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--foreground) / 0.12)" strokeWidth="1.5" />
+                  {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
+                    <circle
+                      cx="50" cy="50" r={RING_R} fill="none" stroke={tunerTheme.stroke} strokeWidth="2.5" strokeLinecap="round"
+                      strokeDasharray={`${RING_C * 0.2} ${RING_C * 0.8}`}
+                      strokeDashoffset={-RING_C * 0.5}
+                    />
+                  )}
+                  {tunerReading?.status === "in-tune" && (
+                    <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(145 55% 42% / 0.8)" strokeWidth="2.5" />
+                  )}
+                </svg>
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                  aria-hidden="true"
+                  data-testid="tuner-spikes"
+                />
+
+                {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
+                  <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full pointer-events-none" data-testid="tuner-needle" aria-label={tunerReading.status === "in-tune" ? "Needle centered: in tune" : `${tunerStatusLabel} by ${Math.round(Math.abs(tunerCents))} cents`}>
+                    <line x1="50" y1="11" x2="50" y2="18" stroke={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : "hsl(var(--foreground) / 0.3)"} strokeWidth="1.2" strokeLinecap="round" />
+                    <g transform={`rotate(${tunerNeedleRotation} 50 50)`} className="transition-transform duration-200 ease-out">
+                      <path d="M50 12 L46.8 22 L50 19.5 L53.2 22 Z" fill={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} />
+                      <line x1="50" y1="19" x2="50" y2="50" stroke={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} strokeWidth={tunerReading.status === "in-tune" ? "2.4" : "1.9"} strokeLinecap="round" />
+                      <circle cx="50" cy="50" r="2.4" fill={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} />
+                    </g>
+                  </svg>
+                )}
+
+                <button
+                  type="button"
+                  onClick={tunerListening ? stopTuner : startTuner}
+                  disabled={tunerStarting}
+                  data-testid="button-tuner-listen"
+                  aria-label={tunerListening ? "Stop tuner" : "Start tuner"}
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerReading?.status === "in-tune" ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
+                >
+                  {tunerStarting ? (
+                    <>
+                      <Loader2 className="w-7 h-7 animate-spin" />
+                      <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1">Starting tuner</span>
+                    </>
+                  ) : tunerReading ? (
+                    <>
+                      <span className="font-display text-6xl sm:text-7xl font-bold tabular-nums leading-none tv-pop" data-testid="tuner-note">{tunerReading.note}</span>
+                      <span className="font-display text-lg tabular-nums mt-2" data-testid="tuner-cents">
+                        {tunerReading.cents === null ? "—" : `${tunerReading.cents > 0 ? "+" : ""}${Math.round(tunerReading.cents)}¢`}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.13em] opacity-90 mt-1" data-testid="tuner-status">
+                        {tunerReading.status === "in-tune" && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {tunerStatusLabel}
+                      </span>
+                    </>
+                  ) : tunerListening ? (
+                    <>
+                      <Mic className="w-8 h-8 sm:w-9 sm:h-9" />
+                      <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Listening…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-8 h-8 sm:w-9 sm:h-9" />
+                      <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1.5">Tap to tune</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-7 text-center min-h-[3.5rem]">
+                {tunerReading ? (
+                  <div className="tv-pop">
+                    <p className={`font-display text-xl ${tunerReading.status === "in-tune" ? "text-emerald-700" : tunerTheme.status}`}>
+                      {tunerReading.status === "in-tune" ? "That’s it." : tunerStatusLabel}
+                      <span className="text-muted-foreground"> · {tunerReading.cents !== null ? `${Math.abs(Math.round(tunerReading.cents))}¢ ${tunerReading.cents < 0 ? "flat" : tunerReading.cents > 0 ? "sharp" : "centered"}` : "no target"}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Target: {tunerReading.target?.label ?? "nearest string"}</p>
+                  </div>
+                ) : tunerListening ? (
+                  <p className="font-serif text-[15px] text-muted-foreground">Listening… play one string at a time and bring the needle to center.</p>
+                ) : (
+                  <p className="font-serif text-[15px] text-muted-foreground max-w-sm">Tap the dial, choose a string if you like, and bring the needle to the green center.</p>
+                )}
+              </div>
+              <p className="sr-only" role="status" aria-live="polite">{tunerAnnouncement}</p>
+            </div>
+
+            <div className="mt-2 border-t border-border pt-6">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {TUNER_INSTRUMENTS.map((instrument) => (
+                  <button
+                    type="button"
+                    key={instrument.id}
+                    onClick={() => changeInstrument(instrument.id)}
+                    data-testid={`tuner-instrument-${instrument.id}`}
+                    aria-pressed={instrumentId === instrument.id}
+                    className={`border px-3 py-2 text-[10px] uppercase tracking-[0.16em] font-medium transition-colors ${instrumentId === instrument.id ? `${tunerTheme.status} border-current bg-card` : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"}`}
+                  >
+                    {instrument.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-5">
+                <div>
+                  <div className={`text-[10px] uppercase tracking-[0.18em] font-medium ${tunerTheme.status}`}>{currentInstrumentLabel} tuning</div>
+                  <p className="font-display text-xl font-semibold text-foreground mt-1" data-testid="tuner-preset-label">{currentTuning.label}</p>
+                  <p className="font-serif text-sm text-muted-foreground mt-1">{currentTuning.description}</p>
+                </div>
+                <select
+                  value={currentTuning.id}
+                  onChange={(event) => changeTuning(event.target.value)}
+                  data-testid="tuner-preset-select"
+                  className="w-full sm:w-auto border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  aria-label={`Choose ${currentInstrumentLabel.toLowerCase()} tuning`}
+                >
+                  {instrumentTunings.map((tuning) => <option key={tuning.id} value={tuning.id}>{tuning.label}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mt-5" aria-label={`Choose a ${currentInstrumentLabel.toLowerCase()} string to tune`}>
+                {currentTuning.strings.map((string) => {
+                  const selected = targetStringId === string.id;
+                  const matched = tunerReading?.target?.id === string.id;
+                  return (
+                    <button
+                      type="button"
+                      key={string.id}
+                      onClick={() => {
+                        setTargetStringId(selected ? null : string.id);
+                        setTunerReading(null);
+                      }}
+                      data-testid={`tuner-string-${string.id}`}
+                      className={`min-h-20 border px-2 py-3 text-center transition-colors ${selected ? `${tunerTheme.status} border-current bg-card` : matched ? "border-emerald-600 bg-emerald-50 text-emerald-950" : "border-border bg-card text-foreground hover:border-foreground"}`}
+                      aria-pressed={selected}
+                    >
+                      <span className="block font-display text-2xl font-semibold">{string.label}</span>
+                      <span className="block mt-1 text-[9px] uppercase tracking-[0.12em] opacity-65">{string.id.replace("-", " ")}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => setShowTunerSettings((shown) => !shown)}
+                data-testid="button-tuner-settings"
+                className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] font-medium text-muted-foreground hover:text-foreground"
+                aria-expanded={showTunerSettings}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" /> Tuning settings
+              </button>
+              {showTunerSettings && (
+                <div className="mt-3 flex items-center justify-between gap-4 border border-border bg-card p-4">
+                  <div>
+                    <p className="font-display text-base font-semibold">Reference pitch</p>
+                    <p className="font-serif text-xs text-muted-foreground mt-0.5">Most old-time sessions use A = 440 Hz.</p>
+                  </div>
+                  <select
+                    value={referencePitch}
+                    onChange={(event) => setReferencePitch(Number(event.target.value))}
+                    data-testid="tuner-reference-pitch"
+                    className="border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    aria-label="Reference pitch"
+                  >
+                    <option value={432}>A = 432</option>
+                    <option value={440}>A = 440</option>
+                    <option value={442}>A = 442</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* How it works + uses */}
         <section className="border-t border-border pt-7 mt-4 max-w-xl mx-auto">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">How it works</div>
           <p className="font-serif text-[15px] text-muted-foreground leading-relaxed">
-            Pitch Detective listens to a few seconds of sound and works out the musical key — the home note and
-            whether it's major or minor — using a pitch-analysis engine that runs entirely inside your browser.
-            Nothing is uploaded; your audio never leaves your device.
+            {mode === "tuner"
+              ? `The tuner listens for one sustained string at a time and compares it with the selected ${currentInstrumentLabel.toLowerCase()} tuning. It works right in your browser — your microphone audio never leaves your device.`
+              : "Pitch Detective listens to a few seconds of sound and works out the musical key — the home note and whether it's major or minor — using a pitch-analysis engine that runs entirely inside your browser. Nothing is uploaded; your audio never leaves your device."}
           </p>
 
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mt-8 mb-4">Great for</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mt-8 mb-4">
+            {mode === "tuner" ? "A good reading" : "Great for"}
+          </div>
           <ul className="space-y-3.5">
-            {USES.map(({ icon: Icon, text }) => (
+            {(mode === "tuner"
+              ? [
+                  { icon: Mic, text: "Play one open string at a time — a clean, sustained bow stroke gives the steadiest reading." },
+                  { icon: Guitar, text: "Pick a tuning and, if you like, tap the string you are working on to make its target explicit." },
+                  { icon: CheckCircle2, text: "Aim for the green in-tune state, then use your ears to make the final call with your instrument." },
+                ]
+              : USES).map(({ icon: Icon, text }) => (
               <li key={text} className="flex gap-3" data-testid={`use-${text.split(" ")[0].toLowerCase()}`}>
                 <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Icon className="h-3.5 w-3.5" />
@@ -538,9 +994,9 @@ export default function IdentifyKeyPage() {
         <div className="border-t border-border pt-5 mt-8 flex gap-2.5 max-w-xl mx-auto">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
           <p className="font-serif text-[13px] text-muted-foreground leading-relaxed">
-            Key detection is an estimate. Old-time fiddle uses lots of open-string drones, which can fool the analysis into the
-            dominant (a fifth away) or the relative major/minor. Trust your ears — and if you spot a tune in our library with the
-            wrong key, please <Link href="/about" className="text-primary hover:underline">suggest a correction</Link>.
+            {mode === "tuner"
+              ? "This is a monophonic tuner: play one string at a time, away from other instruments, for the clearest result. It is a practical guide, but your ears still have the final word."
+              : <>Key detection is an estimate. Old-time fiddle uses lots of open-string drones, which can fool the analysis into the dominant (a fifth away) or the relative major/minor. Trust your ears — and if you spot a tune in our library with the wrong key, please <Link href="/about" className="text-primary hover:underline">suggest a correction</Link>.</>}
           </p>
         </div>
       </div>
