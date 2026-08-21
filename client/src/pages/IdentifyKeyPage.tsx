@@ -270,9 +270,13 @@ export default function IdentifyKeyPage() {
       if (c) {
         analyser.getByteFrequencyData(freq);
         c.clearRect(0, 0, 360, 360);
-        const cx = 180, cy = 180, innerR = 116, maxLen = 38, N = 132, SENS = 1.9;
-        const usable = Math.floor(freq.length * 0.5);
+        const cx = 180, cy = 180;
         const isTuner = modeRef.current === "tuner";
+        const innerR = isTuner ? 105 : 116;
+        const maxLen = isTuner ? 50 : 38;
+        const N = isTuner ? 72 : 132;
+        const SENS = 1.9;
+        const usable = Math.floor(freq.length * 0.5);
         const reading = tunerReadingRef.current;
         const p = isTuner ? instrumentHueRef.current : (primaryRef.current || "25 70% 45%");
         const needleCents = reading?.cents;
@@ -289,13 +293,15 @@ export default function IdentifyKeyPage() {
           const angleFromPeak = peakAngle === null
             ? Math.PI
             : Math.abs(Math.atan2(Math.sin(ang - peakAngle), Math.cos(ang - peakAngle)));
-          const peak = peakAngle === null ? 0 : Math.exp(-(angleFromPeak * angleFromPeak) / 0.055);
+          const directionalPeak = peakAngle === null ? 0 : Math.max(0, Math.cos(angleFromPeak));
+          const peak = peakAngle === null ? 0 : Math.pow(directionalPeak, 8);
           const len = isTuner
-            ? 2 + mag * 15 + peak * 31
+            ? 4 + mag * 13 + peak * 58
             : 2 + mag * maxLen;
           const ca = Math.cos(ang), sa = Math.sin(ang);
           const hue = isTuner && reading?.status === "in-tune" && peak > 0.16 ? "145 55% 42%" : p;
           c.strokeStyle = `hsl(${hue} / ${isTuner ? 0.14 + mag * 0.38 + peak * 0.48 : 0.22 + mag * 0.6})`;
+          c.lineWidth = isTuner ? 1.8 + peak * 1.8 : 1.8;
           c.beginPath();
           c.moveTo(cx + ca * innerR, cy + sa * innerR);
           c.lineTo(cx + ca * (innerR + len), cy + sa * (innerR + len));
@@ -395,6 +401,7 @@ export default function IdentifyKeyPage() {
     tunerListeningRef.current = false;
     setTunerListening(false);
     setTunerStarting(false);
+    setTunerReading(null);
     setTunerAnnouncement("Tuner stopped.");
     stopViz();
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -816,16 +823,15 @@ export default function IdentifyKeyPage() {
 
                 <button
                   type="button"
-                  onClick={tunerListening ? stopTuner : startTuner}
-                  disabled={tunerStarting}
+                  onClick={tunerListening || tunerStarting ? stopTuner : startTuner}
                   data-testid="button-tuner-listen"
-                  aria-label={tunerListening ? "Stop tuner" : "Start tuner"}
+                  aria-label={tunerListening || tunerStarting ? "Stop tuner" : "Start tuner"}
                   className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerReading?.status === "in-tune" ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
                 >
                   {tunerStarting ? (
                     <>
                       <Loader2 className="w-7 h-7 animate-spin" />
-                      <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1">Starting tuner</span>
+                      <span className="text-[11px] uppercase tracking-[0.16em] opacity-90 mt-1">Tap to cancel</span>
                     </>
                   ) : tunerReading ? (
                     <>
@@ -867,6 +873,16 @@ export default function IdentifyKeyPage() {
                   <p className="font-serif text-[15px] text-muted-foreground max-w-sm">Tap the dial, choose a string if you like, and bring the needle to the green center.</p>
                 )}
               </div>
+              {tunerListening && (
+                <button
+                  type="button"
+                  onClick={stopTuner}
+                  data-testid="button-tuner-stop"
+                  className="mt-3 inline-flex items-center gap-2 border border-border px-4 py-2 text-[10px] uppercase tracking-[0.16em] font-medium text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+                >
+                  Stop tuning
+                </button>
+              )}
               <p className="sr-only" role="status" aria-live="polite">{tunerAnnouncement}</p>
             </div>
 
