@@ -132,6 +132,8 @@ export default function IdentifyKeyPage() {
   const [tunerReading, setTunerReading] = useState<PitchReading | null>(null);
   const [showTunerSettings, setShowTunerSettings] = useState(false);
   const [tunerAnnouncement, setTunerAnnouncement] = useState("");
+  const [tunerConfirmed, setTunerConfirmed] = useState(false);
+  const [inTuneSoundEnabled, setInTuneSoundEnabled] = useState(false);
 
   const [liveIndex, setLiveIndex] = useState(-1);
 
@@ -158,6 +160,10 @@ export default function IdentifyKeyPage() {
   const tunerSessionRef = useRef(0);
   const lastTunerAnnouncementRef = useRef("");
   const tunerAnnouncementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inTuneSinceRef = useRef<number | null>(null);
+  const tunerConfirmedRef = useRef(false);
+  const tunerChimedRef = useRef(false);
+  const inTuneSoundEnabledRef = useRef(false);
   const tuningRef = useRef<TuningPreset>(FIDDLE_TUNINGS[0]);
   const targetStringRef = useRef<string | null>(null);
   const referencePitchRef = useRef(440);
@@ -177,6 +183,10 @@ export default function IdentifyKeyPage() {
   useEffect(() => {
     tunerReadingRef.current = tunerReading;
   }, [tunerReading]);
+
+  useEffect(() => {
+    inTuneSoundEnabledRef.current = inTuneSoundEnabled;
+  }, [inTuneSoundEnabled]);
 
   useEffect(() => {
     if (!tunerListening || !tunerReading) return;
@@ -261,6 +271,37 @@ export default function IdentifyKeyPage() {
     }
   }
 
+  function resetTunerConfirmation() {
+    inTuneSinceRef.current = null;
+    tunerChimedRef.current = false;
+    if (tunerConfirmedRef.current) {
+      tunerConfirmedRef.current = false;
+      setTunerConfirmed(false);
+    }
+  }
+
+  function updateTunerConfirmation(reading: PitchReading | null) {
+    if (!reading || reading.status !== "in-tune") {
+      resetTunerConfirmation();
+      return;
+    }
+
+    const now = performance.now();
+    if (inTuneSinceRef.current === null) {
+      inTuneSinceRef.current = now;
+      return;
+    }
+
+    if (!tunerConfirmedRef.current && now - inTuneSinceRef.current >= 350) {
+      tunerConfirmedRef.current = true;
+      setTunerConfirmed(true);
+      if (inTuneSoundEnabledRef.current && !tunerChimedRef.current) {
+        tunerChimedRef.current = true;
+        playInTuneChime();
+      }
+    }
+  }
+
   function drawViz() {
     const analyser = analyserRef.current;
     const canvas = canvasRef.current;
@@ -272,9 +313,9 @@ export default function IdentifyKeyPage() {
         c.clearRect(0, 0, 360, 360);
         const cx = 180, cy = 180;
         const isTuner = modeRef.current === "tuner";
-        const innerR = isTuner ? 105 : 116;
-        const maxLen = isTuner ? 50 : 38;
-        const N = isTuner ? 72 : 132;
+        const innerR = isTuner ? 102 : 116;
+        const maxLen = isTuner ? 70 : 38;
+        const N = isTuner ? 44 : 132;
         const SENS = 1.9;
         const usable = Math.floor(freq.length * 0.5);
         const reading = tunerReadingRef.current;
@@ -296,12 +337,12 @@ export default function IdentifyKeyPage() {
           const directionalPeak = peakAngle === null ? 0 : Math.max(0, Math.cos(angleFromPeak));
           const peak = peakAngle === null ? 0 : Math.pow(directionalPeak, 8);
           const len = isTuner
-            ? 4 + mag * 13 + peak * 58
+            ? 5 + mag * 17 + peak * 72
             : 2 + mag * maxLen;
           const ca = Math.cos(ang), sa = Math.sin(ang);
           const hue = isTuner && reading?.status === "in-tune" && peak > 0.16 ? "145 55% 42%" : p;
           c.strokeStyle = `hsl(${hue} / ${isTuner ? 0.14 + mag * 0.38 + peak * 0.48 : 0.22 + mag * 0.6})`;
-          c.lineWidth = isTuner ? 1.8 + peak * 1.8 : 1.8;
+          c.lineWidth = isTuner ? 2.2 + peak * 2.6 : 1.8;
           c.beginPath();
           c.moveTo(cx + ca * innerR, cy + sa * innerR);
           c.lineTo(cx + ca * (innerR + len), cy + sa * (innerR + len));
@@ -317,20 +358,21 @@ export default function IdentifyKeyPage() {
       if (analyser && time && ctx) {
         analyser.getFloatTimeDomainData(time);
         const pitch = detectMonophonicPitch(time, ctx.sampleRate);
-        if (pitch) {
-          if (modeRef.current === "tuner" && tunerListeningRef.current) {
-            const reading = getPitchReading(
+        if (modeRef.current === "tuner" && tunerListeningRef.current) {
+          const reading = pitch
+            ? getPitchReading(
               pitch.frequency,
               tuningRef.current,
               referencePitchRef.current,
               targetStringRef.current,
-            );
-            if (reading && mountedRef.current) setTunerReading(reading);
-          } else if (modeRef.current === "key") {
+            )
+            : null;
+          updateTunerConfirmation(reading);
+          if (mountedRef.current) setTunerReading(reading);
+        } else if (pitch && modeRef.current === "key") {
             const midi = Math.round(12 * Math.log2(pitch.frequency / 440) + 69);
             const slot = PC_TO_FIFTHS[((midi % 12) + 12) % 12];
             setLiveIndex((prev) => (prev === slot ? prev : slot));
-          }
         }
       }
     }
@@ -350,6 +392,34 @@ export default function IdentifyKeyPage() {
     setLiveIndex(-1);
   }
 
+  function playInTuneChime() {
+    const ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === "closed") return;
+
+    const playTone = () => {
+      if (audioCtxRef.current !== ctx || ctx.state === "closed") return;
+      const now = ctx.currentTime;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(784, now);
+      oscillator.frequency.exponentialRampToValueAtTime(988, now + 0.13);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.09, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.19);
+    };
+
+    if (ctx.state === "suspended") {
+      ctx.resume().then(playTone).catch(() => {});
+    } else {
+      playTone();
+    }
+  }
+
   async function startTuner() {
     if (tunerStartPendingRef.current || tunerListeningRef.current) return;
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -359,6 +429,7 @@ export default function IdentifyKeyPage() {
 
     const session = ++tunerSessionRef.current;
     tunerStartPendingRef.current = true;
+    resetTunerConfirmation();
     setTunerStarting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -399,6 +470,7 @@ export default function IdentifyKeyPage() {
     tunerSessionRef.current += 1;
     tunerStartPendingRef.current = false;
     tunerListeningRef.current = false;
+    resetTunerConfirmation();
     setTunerListening(false);
     setTunerStarting(false);
     setTunerReading(null);
@@ -426,6 +498,7 @@ export default function IdentifyKeyPage() {
     setTuningId(nextId);
     setTargetStringId(null);
     setTunerReading(null);
+    resetTunerConfirmation();
   }
 
   function changeInstrument(nextInstrument: TunerInstrument) {
@@ -435,6 +508,7 @@ export default function IdentifyKeyPage() {
     setTuningId(firstTuning.id);
     setTargetStringId(null);
     setTunerReading(null);
+    resetTunerConfirmation();
   }
 
   async function analyze(data: ArrayBuffer, label: string) {
@@ -518,6 +592,14 @@ export default function IdentifyKeyPage() {
   const tunerTheme = TUNER_THEMES[instrumentId];
   const currentInstrumentLabel = TUNER_INSTRUMENTS.find((instrument) => instrument.id === instrumentId)?.label ?? "Instrument";
   const tunerNeedleRotation = Math.max(-42, Math.min(42, tunerCents)) * 1.15;
+  const tunerRailPosition = 50 + (Math.max(-42, Math.min(42, tunerCents)) / 42) * 39;
+  const tunerDirectionLabel = tunerReading?.status === "flat"
+    ? "Tune up"
+    : tunerReading?.status === "sharp"
+      ? "Tune down"
+      : tunerConfirmed
+        ? "Hold it"
+        : "Find the center";
 
   return (
     <div className="min-h-screen bg-background pb-16 pt-16 sm:pt-20">
@@ -756,24 +838,9 @@ export default function IdentifyKeyPage() {
               </div>
 
               <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] select-none">
-                {CIRCLE_OF_FIFTHS.map((s, i) => {
-                  const hot = tunerReading
-                    ? s.names.map(normalizeNote).includes(normalizeNote(tunerReading.note))
-                    : false;
-                  return (
-                    <span
-                      key={s.label}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 font-display tabular-nums transition-all duration-300 ${
-                        hot
-                          ? `${tunerTheme.status} font-bold scale-[1.6] text-lg sm:text-xl drop-shadow`
-                          : "text-muted-foreground/55 text-sm sm:text-base"
-                      }`}
-                      style={{ left: `${POSITIONS[i].left}%`, top: `${POSITIONS[i].top}%` }}
-                    >
-                      {s.label}
-                    </span>
-                  );
-                })}
+                <span className="absolute left-[8%] top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-[0.16em] font-medium text-muted-foreground/75" data-testid="tuner-direction-flat">Flat</span>
+                <span className="absolute left-1/2 top-[2%] -translate-x-1/2 text-[10px] uppercase tracking-[0.16em] font-medium text-emerald-700" data-testid="tuner-direction-center">In tune</span>
+                <span className="absolute right-[7%] top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-[0.16em] font-medium text-muted-foreground/75" data-testid="tuner-direction-sharp">Sharp</span>
 
                 {tunerReading?.status === "in-tune" && (
                   <>
@@ -790,15 +857,10 @@ export default function IdentifyKeyPage() {
                   />
                 ))}
 
-                <svg viewBox="0 0 100 100" className="absolute inset-[11%] w-[78%] h-[78%] -rotate-90 pointer-events-none">
+                <svg viewBox="0 0 100 100" className="absolute inset-[11%] w-[78%] h-[78%] pointer-events-none">
                   <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--foreground) / 0.12)" strokeWidth="1.5" />
-                  {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
-                    <circle
-                      cx="50" cy="50" r={RING_R} fill="none" stroke={tunerTheme.stroke} strokeWidth="2.5" strokeLinecap="round"
-                      strokeDasharray={`${RING_C * 0.2} ${RING_C * 0.8}`}
-                      strokeDashoffset={-RING_C * 0.5}
-                    />
-                  )}
+                  <line x1="50" y1="3" x2="50" y2="11" stroke="hsl(145 55% 42% / 0.8)" strokeWidth="2.2" strokeLinecap="round" />
+                  <circle cx="50" cy="7" r="1.8" fill="hsl(145 55% 42%)" />
                   {tunerReading?.status === "in-tune" && (
                     <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(145 55% 42% / 0.8)" strokeWidth="2.5" />
                   )}
@@ -826,7 +888,7 @@ export default function IdentifyKeyPage() {
                   onClick={tunerListening || tunerStarting ? stopTuner : startTuner}
                   data-testid="button-tuner-listen"
                   aria-label={tunerListening || tunerStarting ? "Stop tuner" : "Start tuner"}
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerReading?.status === "in-tune" ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerConfirmed ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
                 >
                   {tunerStarting ? (
                     <>
@@ -840,8 +902,8 @@ export default function IdentifyKeyPage() {
                         {tunerReading.cents === null ? "—" : `${tunerReading.cents > 0 ? "+" : ""}${Math.round(tunerReading.cents)}¢`}
                       </span>
                       <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.13em] opacity-90 mt-1" data-testid="tuner-status">
-                        {tunerReading.status === "in-tune" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        {tunerStatusLabel}
+                          {tunerConfirmed && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {tunerConfirmed ? "Locked in" : tunerStatusLabel}
                       </span>
                     </>
                   ) : tunerListening ? (
@@ -858,11 +920,32 @@ export default function IdentifyKeyPage() {
                 </button>
               </div>
 
-              <div className="mt-7 text-center min-h-[3.5rem]">
+              <div className="mt-5 w-full max-w-sm" data-testid="tuner-direction-meter">
+                <div className="relative h-8">
+                  <div className="absolute left-[6%] right-[6%] top-1/2 h-1 -translate-y-1/2 rounded-full bg-muted" />
+                  <div className="absolute left-1/2 top-1/2 h-5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-600 shadow-sm" aria-hidden="true" />
+                  <span className="absolute left-[6%] top-1/2 h-2 w-px -translate-y-1/2 bg-foreground/25" aria-hidden="true" />
+                  <span className="absolute right-[6%] top-1/2 h-2 w-px -translate-y-1/2 bg-foreground/25" aria-hidden="true" />
+                  {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
+                    <span
+                      className={`absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-md transition-[left,background-color,transform] duration-200 ${tunerConfirmed || tunerReading.status === "in-tune" ? "scale-125 bg-emerald-500" : tunerReading.status === "flat" ? "bg-amber-500" : "bg-rose-500"}`}
+                      style={{ left: `${tunerRailPosition}%` }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                <div className="flex justify-between px-[4%] text-[9px] uppercase tracking-[0.15em] font-medium text-muted-foreground">
+                  <span>Flat · tune up</span>
+                  <span className="text-emerald-700">center</span>
+                  <span>Sharp · tune down</span>
+                </div>
+              </div>
+
+              <div className="mt-5 text-center min-h-[3.5rem]">
                 {tunerReading ? (
                   <div className="tv-pop">
-                    <p className={`font-display text-xl ${tunerReading.status === "in-tune" ? "text-emerald-700" : tunerTheme.status}`}>
-                      {tunerReading.status === "in-tune" ? "That’s it." : tunerStatusLabel}
+                    <p className={`font-display text-xl ${tunerConfirmed ? "text-emerald-700" : tunerTheme.status}`}>
+                      {tunerConfirmed ? "That’s it." : tunerDirectionLabel}
                       <span className="text-muted-foreground"> · {tunerReading.cents !== null ? `${Math.abs(Math.round(tunerReading.cents))}¢ ${tunerReading.cents < 0 ? "flat" : tunerReading.cents > 0 ? "sharp" : "centered"}` : "no target"}</span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">Target: {tunerReading.target?.label ?? "nearest string"}</p>
@@ -930,6 +1013,7 @@ export default function IdentifyKeyPage() {
                       onClick={() => {
                         setTargetStringId(selected ? null : string.id);
                         setTunerReading(null);
+                        resetTunerConfirmation();
                       }}
                       data-testid={`tuner-string-${string.id}`}
                       className={`min-h-20 border px-2 py-3 text-center transition-colors ${selected ? `${tunerTheme.status} border-current bg-card` : matched ? "border-emerald-600 bg-emerald-50 text-emerald-950" : "border-border bg-card text-foreground hover:border-foreground"}`}
@@ -954,22 +1038,37 @@ export default function IdentifyKeyPage() {
                 <SlidersHorizontal className="w-3.5 h-3.5" /> Tuning settings
               </button>
               {showTunerSettings && (
-                <div className="mt-3 flex items-center justify-between gap-4 border border-border bg-card p-4">
-                  <div>
-                    <p className="font-display text-base font-semibold">Reference pitch</p>
-                    <p className="font-serif text-xs text-muted-foreground mt-0.5">Most old-time sessions use A = 440 Hz.</p>
+                <div className="mt-3 border border-border bg-card p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-display text-base font-semibold">Reference pitch</p>
+                      <p className="font-serif text-xs text-muted-foreground mt-0.5">Most old-time sessions use A = 440 Hz.</p>
+                    </div>
+                    <select
+                      value={referencePitch}
+                      onChange={(event) => setReferencePitch(Number(event.target.value))}
+                      data-testid="tuner-reference-pitch"
+                      className="border border-border bg-background px-3 py-2 text-sm text-foreground"
+                      aria-label="Reference pitch"
+                    >
+                      <option value={432}>A = 432</option>
+                      <option value={440}>A = 440</option>
+                      <option value={442}>A = 442</option>
+                    </select>
                   </div>
-                  <select
-                    value={referencePitch}
-                    onChange={(event) => setReferencePitch(Number(event.target.value))}
-                    data-testid="tuner-reference-pitch"
-                    className="border border-border bg-background px-3 py-2 text-sm text-foreground"
-                    aria-label="Reference pitch"
-                  >
-                    <option value={432}>A = 432</option>
-                    <option value={440}>A = 440</option>
-                    <option value={442}>A = 442</option>
-                  </select>
+                  <label className="mt-4 flex cursor-pointer items-start gap-3 border-t border-border pt-4">
+                    <input
+                      type="checkbox"
+                      checked={inTuneSoundEnabled}
+                      onChange={(event) => setInTuneSoundEnabled(event.target.checked)}
+                      data-testid="tuner-in-tune-sound"
+                      className="mt-0.5 h-4 w-4 accent-emerald-600"
+                    />
+                    <span>
+                      <span className="block font-display text-base font-semibold">In-tune sound</span>
+                      <span className="block font-serif text-xs text-muted-foreground mt-0.5">Play one short tone when a string settles in tune. Off by default.</span>
+                    </span>
+                  </label>
                 </div>
               )}
             </div>
