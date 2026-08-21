@@ -15,6 +15,7 @@ import {
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { apiRequest } from "@/lib/queryClient";
+import instructorPortrait from "@assets/0_IMG_6259_1787327184148.jpeg";
 
 const INSTRUMENTS = [
   {
@@ -139,6 +140,46 @@ export default function BookALessonPage() {
             online at all skill levels.
           </p>
         </div>
+
+        {/* Instructor */}
+        <section
+          aria-labelledby="instructor-heading"
+          className="grid grid-cols-1 gap-6 border-y border-border py-8 sm:grid-cols-[9.5rem_1fr] sm:items-start sm:gap-8"
+          data-testid="section-instructor-bio"
+        >
+          <img
+            src={instructorPortrait}
+            alt="Jason Chinchen singing and playing upright bass"
+            className="h-36 w-36 justify-self-center rounded-2xl object-cover shadow-sm sm:justify-self-start"
+          />
+          <div>
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              About your instructor
+            </p>
+            <h2
+              id="instructor-heading"
+              className="font-display text-3xl font-semibold tracking-tight text-foreground"
+            >
+              Jason Chinchen
+            </h2>
+            <div className="mt-3 space-y-3 font-serif text-[15px] leading-relaxed text-muted-foreground">
+              <p>
+                Jason Chinchen is a lifelong learner and musician with a
+                background steeped in traditional music and decades of playing
+                and performing. He teaches lutherie and engineering at Sisters
+                High School in Oregon and offers online music lessons.
+              </p>
+              <p>
+                Jason focuses on intermediate-to-advanced clawhammer banjo,
+                beginner fiddle, rhythm guitar, and upright bass. He
+                specializes in groove and feel, as well as melodic, supportive
+                playing. Using tunes from the TuneVault catalog—or suggestions
+                from students—he crafts a lesson plan to help each player take
+                their playing to the next level.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* Instruments */}
         <div>
