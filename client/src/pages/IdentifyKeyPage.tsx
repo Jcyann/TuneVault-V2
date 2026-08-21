@@ -111,7 +111,7 @@ function tunerStatusLabelFor(status: TunerStatus): string {
 
 export default function IdentifyKeyPage() {
   usePageMeta(
-    "Free Old-Time Fiddle Tuner & Key Finder",
+    "Tune — Free Old-Time Fiddle Tuner & Key Finder",
     "Free browser tools for old-time musicians: tune fiddle, banjo, or guitar in standard and cross-tunings, including Calico, Open C, Open D, and Open A, or identify the key of a recording.",
   );
   const { toast } = useToast();
@@ -609,7 +609,7 @@ export default function IdentifyKeyPage() {
         <header className="border-t border-foreground pt-6 pb-8 text-center sm:text-left">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Tool</div>
           <h1 className="font-display text-[40px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">
-            {mode === "tuner" ? `Tune your ${currentInstrumentLabel.toLowerCase()}.` : "What key is this?"}
+            {mode === "tuner" ? `Tune your ${currentInstrumentLabel.toLowerCase()}.` : "Tune."}
           </h1>
           <p className="font-display italic text-lg sm:text-xl text-muted-foreground mt-3 max-w-lg mx-auto sm:mx-0">
             {mode === "tuner"
@@ -1081,7 +1081,7 @@ export default function IdentifyKeyPage() {
           <p className="font-serif text-[15px] text-muted-foreground leading-relaxed">
             {mode === "tuner"
               ? `The tuner listens for one sustained string at a time and compares it with the selected ${currentInstrumentLabel.toLowerCase()} tuning. It works right in your browser — your microphone audio never leaves your device.`
-              : "Pitch Detective listens to a few seconds of sound and works out the musical key — the home note and whether it's major or minor — using a pitch-analysis engine that runs entirely inside your browser. Nothing is uploaded; your audio never leaves your device."}
+              : "Tune listens to a few seconds of sound and works out the musical key — the home note and whether it's major or minor — using a pitch-analysis engine that runs entirely inside your browser. Nothing is uploaded; your audio never leaves your device."}
           </p>
 
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mt-8 mb-4">

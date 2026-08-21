@@ -75,7 +75,7 @@ export default function AboutPage() {
                     data-testid="link-identify-key-about"
                     className="inline-flex items-center gap-2 bg-background text-foreground px-5 py-2.5 text-[11px] uppercase tracking-[0.16em] font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
-                    <Mic className="w-3.5 h-3.5" /> Open the tuner & key finder
+                    <Mic className="w-3.5 h-3.5" /> Open Tune
                   </Link>
                 </div>
               </div>

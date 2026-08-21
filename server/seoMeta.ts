@@ -163,7 +163,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     },
   },
   "/identify-key": {
-    title: "Free Old-Time Fiddle Tuner & Key Finder | TuneVault",
+    title: "Tune — Free Old-Time Fiddle Tuner & Key Finder | TuneVault",
     description:
       "Tune an Old-Time fiddle, banjo, or guitar in standard and cross-tunings including Calico, Open C, Open D, and Open A — or identify a recording’s key. Free, browser-based tools for musicians.",
     url: `${BASE}/identify-key`,
@@ -172,7 +172,7 @@ export const STATIC_PAGE_META: Record<string, PageConfig> = {
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      name: "TuneVault Old-Time Fiddle Tuner & Key Finder",
+      name: "Tune — TuneVault Old-Time Fiddle Tuner & Key Finder",
       url: `${BASE}/identify-key`,
       applicationCategory: "MultimediaApplication",
       operatingSystem: "Web",
