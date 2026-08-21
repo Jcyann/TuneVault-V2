@@ -484,10 +484,10 @@ export default function IdentifyKeyPage() {
   }
 
   function switchMode(nextMode: ToolMode) {
-    if (mode === nextMode) return;
+    if (mode === nextMode) return true;
     if (recording || analyzing || tunerListening || tunerStarting || tunerStartPendingRef.current) {
       toast({ title: "Stop listening first", description: "Finish the current audio session before changing tools." });
-      return;
+      return false;
     }
     modeRef.current = nextMode;
     setMode(nextMode);
@@ -496,6 +496,20 @@ export default function IdentifyKeyPage() {
     setTunerReading(null);
     setSourceLabel("");
     setLiveIndex(-1);
+    return true;
+  }
+
+  function handleModeSliderKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    const nextMode = event.key === "ArrowLeft" || event.key === "Home"
+      ? "tuner"
+      : event.key === "ArrowRight" || event.key === "End"
+        ? "key"
+        : null;
+    if (!nextMode) return;
+    event.preventDefault();
+    if (switchMode(nextMode)) {
+      document.getElementById(`tool-mode-${nextMode}`)?.focus();
+    }
   }
 
   function changeTuning(nextId: string) {
@@ -595,11 +609,9 @@ export default function IdentifyKeyPage() {
 
   const tunerCents = tunerReading?.cents ?? 0;
   const tunerNeedleRotation = getTunerNeedleAngle(tunerReading?.cents);
-  const tunerIndicatorFraction = tunerNeedleRotation === null ? 0 : tunerNeedleRotation / 90;
   const tunerStatusLabel = tunerStatusLabelFor(tunerReading?.status ?? "no-target");
   const tunerTheme = TUNER_THEMES[instrumentId];
   const currentInstrumentLabel = TUNER_INSTRUMENTS.find((instrument) => instrument.id === instrumentId)?.label ?? "Instrument";
-  const tunerRailPosition = 50 + tunerIndicatorFraction * 39;
   const tunerNeedleAngleRadians = ((tunerNeedleRotation ?? 0) - 90) * Math.PI / 180;
   const tunerNeedleInner = {
     x: 50 + Math.cos(tunerNeedleAngleRadians) * 30,
@@ -634,33 +646,43 @@ export default function IdentifyKeyPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-2 gap-1 p-1 border border-border bg-card max-w-xl mx-auto" role="tablist" aria-label="Choose an audio tool">
+        <div className="relative grid grid-cols-2 rounded-full border border-foreground/15 bg-muted/70 p-1.5 shadow-inner max-w-sm mx-auto" role="tablist" aria-label="Choose an audio tool">
+          <span
+            className={`absolute inset-y-1.5 left-1.5 w-[calc(50%-0.375rem)] rounded-full bg-foreground shadow-[0_3px_10px_hsl(var(--foreground)/0.18),inset_0_1px_0_hsl(var(--background)/0.2)] transition-transform duration-300 ease-out ${mode === "key" ? "translate-x-full" : "translate-x-0"}`}
+            aria-hidden="true"
+          />
           <button
+            id="tool-mode-tuner"
             type="button"
             role="tab"
             aria-selected={mode === "tuner"}
+            aria-controls="tuner-mode-panel"
+            tabIndex={mode === "tuner" ? 0 : -1}
             onClick={() => switchMode("tuner")}
+            onKeyDown={handleModeSliderKeyDown}
             data-testid="tool-mode-tuner"
-            className={`min-h-16 px-3 text-left transition-colors ${mode === "tuner" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            className={`relative z-10 min-h-11 rounded-full px-4 text-center text-[11px] uppercase tracking-[0.16em] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 ${mode === "tuner" ? "text-background" : "text-muted-foreground hover:text-foreground"}`}
           >
-            <span className="block text-[10px] uppercase tracking-[0.16em] font-medium mb-1">Tune an instrument</span>
-            <span className="block font-serif text-xs leading-snug opacity-80">Tune one fiddle string at a time.</span>
+            Tune
           </button>
           <button
+            id="tool-mode-key"
             type="button"
             role="tab"
             aria-selected={mode === "key"}
+            aria-controls="key-mode-panel"
+            tabIndex={mode === "key" ? 0 : -1}
             onClick={() => switchMode("key")}
+            onKeyDown={handleModeSliderKeyDown}
             data-testid="tool-mode-key"
-            className={`min-h-16 px-3 text-left transition-colors ${mode === "key" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            className={`relative z-10 min-h-11 rounded-full px-4 text-center text-[11px] uppercase tracking-[0.16em] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 ${mode === "key" ? "text-background" : "text-muted-foreground hover:text-foreground"}`}
           >
-            <span className="block text-[10px] uppercase tracking-[0.16em] font-medium mb-1">Identify a tune’s key</span>
-            <span className="block font-serif text-xs leading-snug opacity-80">Analyze a recording or audio clip.</span>
+            Find key
           </button>
         </div>
 
         {mode === "key" ? (
-        <div className="flex flex-col items-center pt-7 pb-6">
+        <div id="key-mode-panel" role="tabpanel" aria-labelledby="tool-mode-key" className="flex flex-col items-center pt-7 pb-6">
           <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] select-none">
 
             {/* Circle of fifths labels */}
@@ -843,7 +865,7 @@ export default function IdentifyKeyPage() {
           </button>
         </div>
         ) : (
-          <section className="pt-7 pb-6 max-w-xl mx-auto" data-testid="tuner-panel">
+          <section id="tuner-mode-panel" role="tabpanel" aria-labelledby="tool-mode-tuner" className="pt-7 pb-6 max-w-xl mx-auto" data-testid="tuner-panel">
             <div className="flex flex-col items-center">
               <div className="self-stretch flex items-center justify-between gap-4 mb-2">
                 <div>
@@ -943,27 +965,6 @@ export default function IdentifyKeyPage() {
                     </>
                   )}
                 </button>
-              </div>
-
-              <div className="mt-5 w-full max-w-sm" data-testid="tuner-direction-meter">
-                <div className="relative h-8">
-                  <div className="absolute left-[6%] right-[6%] top-1/2 h-1 -translate-y-1/2 rounded-full bg-muted" />
-                  <div className="absolute left-1/2 top-1/2 h-5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-600 shadow-sm" aria-hidden="true" />
-                  <span className="absolute left-[6%] top-1/2 h-2 w-px -translate-y-1/2 bg-foreground/25" aria-hidden="true" />
-                  <span className="absolute right-[6%] top-1/2 h-2 w-px -translate-y-1/2 bg-foreground/25" aria-hidden="true" />
-                  {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
-                    <span
-                      className={`absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-md transition-[left,background-color,transform] duration-200 ${tunerConfirmed || tunerReading.status === "in-tune" ? "scale-125 bg-emerald-500" : tunerReading.status === "flat" ? "bg-amber-500" : "bg-rose-500"}`}
-                      style={{ left: `${tunerRailPosition}%` }}
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-                <div className="flex justify-between px-[4%] text-[9px] uppercase tracking-[0.15em] font-medium text-muted-foreground">
-                  <span>Flat · tune up</span>
-                  <span className="text-emerald-700">center</span>
-                  <span>Sharp · tune down</span>
-                </div>
               </div>
 
               <div className="mt-5 text-center min-h-[3.5rem]">
