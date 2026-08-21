@@ -12,6 +12,7 @@ import {
   TUNER_INSTRUMENTS,
   TUNING_PRESETS,
   detectMonophonicPitch,
+  getTunerNeedleAngle,
   getPitchReading,
   type PitchReading,
   type TunerInstrument,
@@ -320,10 +321,10 @@ export default function IdentifyKeyPage() {
         const usable = Math.floor(freq.length * 0.5);
         const reading = tunerReadingRef.current;
         const p = isTuner ? instrumentHueRef.current : (primaryRef.current || "25 70% 45%");
-        const needleCents = reading?.cents;
-        const peakAngle = needleCents === null || needleCents === undefined
+        const needleAngle = getTunerNeedleAngle(reading?.cents);
+        const peakAngle = needleAngle === null
           ? null
-          : -Math.PI / 2 + Math.max(-42, Math.min(42, needleCents)) / 42 * (Math.PI / 3);
+          : -Math.PI / 2 + (needleAngle * Math.PI) / 180;
         c.lineWidth = 1.8;
         c.lineCap = "round";
         for (let i = 0; i < N; i++) {
@@ -367,6 +368,7 @@ export default function IdentifyKeyPage() {
               targetStringRef.current,
             )
             : null;
+          tunerReadingRef.current = reading;
           updateTunerConfirmation(reading);
           if (mountedRef.current) setTunerReading(reading);
         } else if (pitch && modeRef.current === "key") {
@@ -473,6 +475,7 @@ export default function IdentifyKeyPage() {
     resetTunerConfirmation();
     setTunerListening(false);
     setTunerStarting(false);
+    tunerReadingRef.current = null;
     setTunerReading(null);
     setTunerAnnouncement("Tuner stopped.");
     stopViz();
@@ -489,6 +492,7 @@ export default function IdentifyKeyPage() {
     modeRef.current = nextMode;
     setMode(nextMode);
     setResult(null);
+    tunerReadingRef.current = null;
     setTunerReading(null);
     setSourceLabel("");
     setLiveIndex(-1);
@@ -497,6 +501,7 @@ export default function IdentifyKeyPage() {
   function changeTuning(nextId: string) {
     setTuningId(nextId);
     setTargetStringId(null);
+    tunerReadingRef.current = null;
     setTunerReading(null);
     resetTunerConfirmation();
   }
@@ -507,6 +512,7 @@ export default function IdentifyKeyPage() {
     setInstrumentId(nextInstrument);
     setTuningId(firstTuning.id);
     setTargetStringId(null);
+    tunerReadingRef.current = null;
     setTunerReading(null);
     resetTunerConfirmation();
   }
@@ -588,11 +594,21 @@ export default function IdentifyKeyPage() {
     : -1;
 
   const tunerCents = tunerReading?.cents ?? 0;
+  const tunerNeedleRotation = getTunerNeedleAngle(tunerReading?.cents);
+  const tunerIndicatorFraction = tunerNeedleRotation === null ? 0 : tunerNeedleRotation / 90;
   const tunerStatusLabel = tunerStatusLabelFor(tunerReading?.status ?? "no-target");
   const tunerTheme = TUNER_THEMES[instrumentId];
   const currentInstrumentLabel = TUNER_INSTRUMENTS.find((instrument) => instrument.id === instrumentId)?.label ?? "Instrument";
-  const tunerNeedleRotation = Math.max(-42, Math.min(42, tunerCents)) * 1.15;
-  const tunerRailPosition = 50 + (Math.max(-42, Math.min(42, tunerCents)) / 42) * 39;
+  const tunerRailPosition = 50 + tunerIndicatorFraction * 39;
+  const tunerNeedleAngleRadians = ((tunerNeedleRotation ?? 0) - 90) * Math.PI / 180;
+  const tunerNeedleInner = {
+    x: 50 + Math.cos(tunerNeedleAngleRadians) * 30,
+    y: 50 + Math.sin(tunerNeedleAngleRadians) * 30,
+  };
+  const tunerNeedleTip = {
+    x: 50 + Math.cos(tunerNeedleAngleRadians) * 46,
+    y: 50 + Math.sin(tunerNeedleAngleRadians) * 46,
+  };
   const tunerDirectionLabel = tunerReading?.status === "flat"
     ? "Tune up"
     : tunerReading?.status === "sharp"
@@ -873,13 +889,22 @@ export default function IdentifyKeyPage() {
                 />
 
                 {tunerReading?.cents !== null && tunerReading?.cents !== undefined && (
-                  <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full pointer-events-none" data-testid="tuner-needle" aria-label={tunerReading.status === "in-tune" ? "Needle centered: in tune" : `${tunerStatusLabel} by ${Math.round(Math.abs(tunerCents))} cents`}>
-                    <line x1="50" y1="11" x2="50" y2="18" stroke={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : "hsl(var(--foreground) / 0.3)"} strokeWidth="1.2" strokeLinecap="round" />
-                    <g transform={`rotate(${tunerNeedleRotation} 50 50)`} className="transition-transform duration-200 ease-out">
-                      <path d="M50 12 L46.8 22 L50 19.5 L53.2 22 Z" fill={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} />
-                      <line x1="50" y1="19" x2="50" y2="50" stroke={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} strokeWidth={tunerReading.status === "in-tune" ? "2.4" : "1.9"} strokeLinecap="round" />
-                      <circle cx="50" cy="50" r="2.4" fill={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke} />
-                    </g>
+                  <svg viewBox="0 0 100 100" className="absolute inset-0 z-10 h-full w-full pointer-events-none" data-testid="tuner-needle" aria-label={tunerReading.status === "in-tune" ? "Needle centered: in tune" : `${tunerStatusLabel} by ${Math.round(Math.abs(tunerCents))} cents`}>
+                    <line
+                      x1={tunerNeedleInner.x}
+                      y1={tunerNeedleInner.y}
+                      x2={tunerNeedleTip.x}
+                      y2={tunerNeedleTip.y}
+                      stroke={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke}
+                      strokeWidth={tunerReading.status === "in-tune" ? "3.8" : "3.2"}
+                      strokeLinecap="round"
+                    />
+                    <circle
+                      cx={tunerNeedleTip.x}
+                      cy={tunerNeedleTip.y}
+                      r={tunerReading.status === "in-tune" ? "3.8" : "3.3"}
+                      fill={tunerReading.status === "in-tune" ? "hsl(145 55% 42%)" : tunerTheme.stroke}
+                    />
                   </svg>
                 )}
 
@@ -888,7 +913,7 @@ export default function IdentifyKeyPage() {
                   onClick={tunerListening || tunerStarting ? stopTuner : startTuner}
                   data-testid="button-tuner-listen"
                   aria-label={tunerListening || tunerStarting ? "Stop tuner" : "Start tuner"}
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerConfirmed ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
+                  className={`absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 w-[58%] h-[58%] rounded-full flex flex-col items-center justify-center text-center gap-1 px-4 text-primary-foreground shadow-2xl ring-1 ring-black/10 transition-transform duration-300 hover:scale-[1.03] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:hover:scale-100 disabled:cursor-wait ${tunerConfirmed ? "bg-gradient-to-br from-emerald-700 to-emerald-500" : `bg-gradient-to-br ${tunerTheme.button}`}`}
                 >
                   {tunerStarting ? (
                     <>

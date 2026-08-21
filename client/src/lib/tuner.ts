@@ -207,6 +207,20 @@ export const TUNER_INSTRUMENTS: { id: TunerInstrument; label: string }[] = [
   { id: "guitar", label: "Guitar" },
 ];
 
+export const TUNER_INDICATOR_CENTS_RANGE = 50;
+export const TUNER_INDICATOR_MAX_ANGLE = 90;
+
+/**
+ * Maps a pitch error to the tuner dial. Zero is straight up, negative cents
+ * sweep left, and positive cents sweep right. Large errors stay legible at
+ * the dial's endpoints instead of wrapping around.
+ */
+export function getTunerNeedleAngle(cents: number | null | undefined): number | null {
+  if (typeof cents !== "number" || !Number.isFinite(cents)) return null;
+  const limitedCents = Math.max(-TUNER_INDICATOR_CENTS_RANGE, Math.min(TUNER_INDICATOR_CENTS_RANGE, cents));
+  return (limitedCents / TUNER_INDICATOR_CENTS_RANGE) * TUNER_INDICATOR_MAX_ANGLE;
+}
+
 const NOTE_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 
 export function midiToFrequency(midi: number, referencePitch = 440): number {

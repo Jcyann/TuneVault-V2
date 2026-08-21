@@ -6,6 +6,7 @@ import {
   TUNING_PRESETS,
   detectMonophonicPitch,
   frequencyToPitch,
+  getTunerNeedleAngle,
   getPitchReading,
   midiToFrequency,
 } from "../../client/src/lib/tuner";
@@ -31,6 +32,12 @@ const aString = standard.strings.find((string) => string.id === "a")!;
 assert.equal(getPitchReading(440, standard, 440, aString.id)?.status, "in-tune");
 assert.equal(getPitchReading(430, standard, 440, aString.id)?.status, "flat");
 assert.equal(getPitchReading(450, standard, 440, aString.id)?.status, "sharp");
+assert.equal(getTunerNeedleAngle(null), null);
+assert.equal(getTunerNeedleAngle(0), 0, "An in-tune string must point due north");
+assert.equal(getTunerNeedleAngle(-25), -45, "Flat readings must sweep left");
+assert.equal(getTunerNeedleAngle(25), 45, "Sharp readings must sweep right");
+assert.equal(getTunerNeedleAngle(-100), -90, "Very flat readings must stop at the left dial limit");
+assert.equal(getTunerNeedleAngle(100), 90, "Very sharp readings must stop at the right dial limit");
 
 const sampleRate = 44_100;
 const createSine = (frequency: number, length = 2048) => {
