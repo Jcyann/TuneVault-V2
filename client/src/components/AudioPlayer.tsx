@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Headphones, Loader2, Mic2, Play, Music2, ExternalLink } from "lucide-react";
-import type { Tune } from "@shared/schema";
-import { usePlaylist } from "@/context/PlaylistContext";
+import { usePlaylist, type PlaylistItem } from "@/context/PlaylistContext";
 
 interface AudioPlayerProps {
-  tune: Tune;
+  tune: PlaylistItem;
 }
 
 export default function AudioPlayer({ tune }: AudioPlayerProps) {

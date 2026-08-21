@@ -4,6 +4,7 @@ import { SkipBack, SkipForward, Play, Pause, Shuffle, X, Music2, ListOrdered, Ro
 import ShareButton from "@/components/ShareButton";
 import { Link } from "wouter";
 import { useSwipe } from "@/hooks/useSwipe";
+import { getPlaybackKeyDetails } from "@/lib/playbackKey";
 
 const TUNE_TYPE_COLORS: Record<string, string> = {
   breakdown: "#F59E0B",
@@ -21,20 +22,6 @@ const TUNE_TYPE_COLORS: Record<string, string> = {
 const SPEED_OPTIONS = [0.5, 0.75, 1.0] as const;
 type SpeedOption = typeof SPEED_OPTIONS[number];
 const SPEED_LABELS: Record<number, string> = { 0.5: "½×", 0.75: "¾×", 1.0: "1×" };
-
-const NOTE_NAMES = ["A","A#/Bb","B","C","C#/Db","D","D#/Eb","E","F","F#/Gb","G","G#/Ab"];
-
-function transposeKey(key: string, semitones: number): string {
-  if (!semitones) return key;
-  const minorSuffix = key.endsWith("m") ? "m" : "";
-  const root = minorSuffix ? key.slice(0, -1) : key;
-  const idx = NOTE_NAMES.findIndex(
-    (n) => n === root || n.includes(root) || n.split("/").includes(root)
-  );
-  if (idx === -1) return key;
-  const newIdx = ((idx + semitones) % 12 + 12) % 12;
-  return NOTE_NAMES[newIdx].split("/")[0] + minorSuffix;
-}
 
 const fmt = (s: number) => {
   if (!s || isNaN(s)) return "0:00";
@@ -168,14 +155,22 @@ export default function MiniPlayer() {
   const credit = current.sourceFiddler ?? current.audioSource ?? null;
   const transposeActive = semitones !== 0 && speed === 1;
   const pitchLocked = speed !== 1;
-  const displayedKey = transposeKey(current.key ?? "", semitones);
-  const keyDisplay = transposeActive
-    ? `${semitones > 0 ? "+" : ""}${semitones} · ${displayedKey}`
-    : (current.key ?? "—");
+  const playbackKey = getPlaybackKeyDetails({
+    sourceKey: current.key,
+    catalogKey: current.catalogKey,
+    source: current.playbackKeySource,
+    semitones: transposeActive ? semitones : 0,
+  });
 
   const metaLine = skipping
     ? "Loading…"
-    : [credit, current.tuneType, `${currentIndex + 1} / ${playlist.length}`].filter(Boolean).join(" · ");
+    : [
+        credit,
+        current.tuneType,
+        `${playbackKey.label} ${playbackKey.sourceKey}`,
+        playbackKey.catalogKey ? `Tune key ${playbackKey.catalogKey}` : null,
+        `${currentIndex + 1} / ${playlist.length}`,
+      ].filter(Boolean).join(" · ");
 
   return (
     <div
@@ -292,15 +287,16 @@ export default function MiniPlayer() {
             </div>
             <div className="rounded-xl bg-muted/40 px-4 py-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Pitch</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{playbackKey.label}</p>
                 {semitones !== 0 && !pitchLocked && <button onClick={() => setSemitones(0)} className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2" data-testid="sheet-pitch-reset">reset</button>}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6 || pitchLocked} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch down" data-testid="sheet-pitch-down">−</button>
-                <span className={`flex-1 text-sm font-semibold tabular-nums text-center py-2 rounded-lg transition-colors ${transposeActive ? "text-white" : "bg-background text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}} data-testid="sheet-pitch-display">{keyDisplay}</span>
+                <span className={`flex-1 text-sm font-semibold tabular-nums text-center py-2 rounded-lg transition-colors ${transposeActive ? "text-white" : "bg-background text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}} data-testid="sheet-pitch-display">{playbackKey.display}</span>
                 <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6 || pitchLocked} className="w-9 h-9 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground disabled:opacity-30 text-lg font-bold transition-colors shrink-0" aria-label="Pitch up" data-testid="sheet-pitch-up">+</button>
               </div>
               {pitchLocked && <p className="text-[10px] text-muted-foreground mt-2" data-testid="sheet-pitch-locked-note">Pitch shift is available at 1× speed</p>}
+              {playbackKey.catalogKey && <p className="text-[10px] text-muted-foreground mt-2" data-testid="sheet-catalog-key">Tune catalog key: {playbackKey.catalogKey}</p>}
             </div>
           </div>
         </div>
@@ -416,7 +412,7 @@ export default function MiniPlayer() {
 
               {/* Pitch */}
               <div className="flex items-center gap-2" title={pitchLocked ? "Pitch shift is available at 1× speed" : undefined}>
-                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Pitch</span>
+                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{playbackKey.label}</span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setSemitones((n) => Math.max(-6, n - 1))}
@@ -430,7 +426,7 @@ export default function MiniPlayer() {
                     style={transposeActive ? { background: typeColor } : {}}
                     data-testid="pitch-display"
                   >
-                    {keyDisplay}
+                    {playbackKey.display}
                   </span>
                   <button
                     onClick={() => setSemitones((n) => Math.min(6, n + 1))}
@@ -442,6 +438,7 @@ export default function MiniPlayer() {
                   {semitones !== 0 && !pitchLocked && (
                     <button onClick={() => setSemitones(0)} data-testid="pitch-reset" className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1">reset</button>
                   )}
+                  {playbackKey.catalogKey && <span className="text-[10px] text-muted-foreground whitespace-nowrap" data-testid="catalog-key-display">Tune: {playbackKey.catalogKey}</span>}
                 </div>
               </div>
 
@@ -516,7 +513,7 @@ export default function MiniPlayer() {
 
           <div className="flex items-center gap-1 shrink-0" title={pitchLocked ? "Pitch shift is available at 1× speed" : undefined}>
             <button onClick={() => setSemitones((n) => Math.max(-6, n - 1))} disabled={semitones <= -6 || pitchLocked} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch down">−</button>
-            <span className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${transposeActive ? "text-white" : "bg-muted text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}}>{keyDisplay}</span>
+            <span className={`text-xs font-semibold tabular-nums min-w-[2.75rem] text-center px-1.5 py-0.5 rounded transition-colors ${transposeActive ? "text-white" : "bg-muted text-muted-foreground"}`} style={transposeActive ? { background: typeColor } : {}}>{playbackKey.display}</span>
             <button onClick={() => setSemitones((n) => Math.min(6, n + 1))} disabled={semitones >= 6 || pitchLocked} className="w-5 h-5 flex items-center justify-center rounded bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm font-bold transition-colors" aria-label="Pitch up">+</button>
             {semitones !== 0 && !pitchLocked && (
               <button onClick={() => setSemitones(0)} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">reset</button>

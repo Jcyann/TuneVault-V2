@@ -13,7 +13,7 @@ import TipJar from "@/components/TipJar";
 import SuggestChangesForm from "@/components/SuggestChangesForm";
 import { useFavorites } from "@/hooks/useFavorites";
 import { trackEvent } from "@/lib/analytics";
-import { usePlaylist } from "@/context/PlaylistContext";
+import { usePlaylist, type PlaylistItem } from "@/context/PlaylistContext";
 
 const DIFFICULTY_DOT: Record<string, string> = {
   beginner: "bg-emerald-700",
@@ -201,10 +201,14 @@ export default function TuneDetailPage() {
 
   const currentRecording = allRecordings[recordingIndex] ?? null;
 
-  function patchedTuneForRecording(rec: typeof allRecordings[0]): Tune {
+  function patchedTuneForRecording(rec: typeof allRecordings[0]): PlaylistItem {
     if (!tune) throw new Error("no tune");
+    const recordingKey = rec.key?.trim() || null;
     return {
       ...tune,
+      key: recordingKey ?? tune.key,
+      catalogKey: tune.key,
+      playbackKeySource: recordingKey ? "recording" : "tune",
       audioUrl: rec.audioUrl ?? null,
       locItemId: rec.locItemId ?? null,
       audioSource: rec.audioSource ?? null,
@@ -320,14 +324,7 @@ export default function TuneDetailPage() {
           {/* Inline player when only one recording */}
           {allRecordings.length === 1 && currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
             <div className="mt-7 border-t border-border pt-5">
-              <AudioPlayer tune={{
-                ...tune,
-                audioUrl: currentRecording.audioUrl ?? null,
-                locItemId: currentRecording.locItemId ?? null,
-                audioSource: currentRecording.audioSource ?? null,
-                sourceFiddler: currentRecording.sourceFiddler ?? null,
-                audioAttribution: currentRecording.audioAttribution ?? (tune as any).audioAttribution ?? null,
-              }} />
+              <AudioPlayer tune={patchedTuneForRecording(currentRecording)} />
             </div>
           )}
         </header>

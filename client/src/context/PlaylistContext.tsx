@@ -1,16 +1,21 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { Tune } from "@shared/schema";
+import type { PlaybackKeySource } from "@/lib/playbackKey";
 
 export type PlayMode = "shuffle" | "chronological";
+export type PlaylistItem = Tune & {
+  playbackKeySource?: PlaybackKeySource;
+  catalogKey?: string | null;
+};
 
 interface PlaylistContextValue {
-  playlist: Tune[];
-  originalOrder: Tune[];
+  playlist: PlaylistItem[];
+  originalOrder: PlaylistItem[];
   currentIndex: number;
   isActive: boolean;
   playMode: PlayMode;
-  startPlaylist: (tunes: Tune[], mode?: PlayMode) => void;
-  enqueue: (tunes: Tune[]) => number;
+  startPlaylist: (tunes: PlaylistItem[], mode?: PlayMode) => void;
+  enqueue: (tunes: PlaylistItem[]) => number;
   next: () => void;
   prev: () => void;
   setIndex: (i: number) => void;
@@ -31,12 +36,12 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function PlaylistProvider({ children }: { children: ReactNode }) {
-  const [playlist, setPlaylist] = useState<Tune[]>([]);
-  const [originalOrder, setOriginalOrder] = useState<Tune[]>([]);
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
+  const [originalOrder, setOriginalOrder] = useState<PlaylistItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playMode, setPlayModeState] = useState<PlayMode>("shuffle");
 
-  const startPlaylist = useCallback((tunes: Tune[], mode: PlayMode = "shuffle") => {
+  const startPlaylist = useCallback((tunes: PlaylistItem[], mode: PlayMode = "shuffle") => {
     const withAudio = tunes.filter((t) => t.audioUrl || t.locItemId);
     if (withAudio.length === 0) return;
     setOriginalOrder(withAudio);
@@ -45,7 +50,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(0);
   }, []);
 
-  const enqueue = useCallback((tunes: Tune[]) => {
+  const enqueue = useCallback((tunes: PlaylistItem[]) => {
     const withAudio = tunes.filter((t) => t.audioUrl || t.locItemId);
     if (withAudio.length === 0) return 0;
     let added = 0;
