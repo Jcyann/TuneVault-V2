@@ -9,6 +9,11 @@ const SWEETWATER_ID = "";
 const SMP_ID = "";
 
 const bookshop = (isbn: string) => `https://bookshop.org/a/${BOOKSHOP_ID}/${isbn}`;
+const withAffiliate = (url: string, parameter: string, id: string) =>
+  id ? `${url}${url.includes("?") ? "&" : "?"}${parameter}=${encodeURIComponent(id)}` : url;
+const sweetwater = (url: string) => withAffiliate(url, "affil", SWEETWATER_ID);
+const sheetMusicPlus = (query: string) =>
+  withAffiliate(`https://www.sheetmusicplus.com/search?Ntt=${encodeURIComponent(query)}`, "aff_id", SMP_ID);
 const olCover  = (isbn: string) => `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
@@ -28,7 +33,7 @@ const BOOKS = [
     author: "Stacy Phillips",
     desc: "Over 100 tunes in notation and tab with regional style notes. A working player's reference.",
     price: "$20",
-    url: `https://www.sheetmusicplus.com/search?Ntt=stacy+phillips+fiddle&aff_id=${SMP_ID}`,
+    url: sheetMusicPlus("stacy phillips fiddle"),
     image: "https://opensheetmusic.com/cdn/shop/products/cover-large_file_8214bdf1-d477-4c6e-a5f7-5d64756edbe7_compact.jpg?v=1596611216",
     tag: "Reference",
   },
@@ -119,7 +124,7 @@ const GEAR = [
     brand: "D'Addario",
     desc: "The workhorse string for old-time: warm, durable, and affordable. Medium tension for most open-back tunings.",
     price: "$30",
-    url: `https://www.sweetwater.com/store/detail/H310--daddario-helicore-violin-string-set-medium?affil=${SWEETWATER_ID}`,
+    url: sweetwater("https://www.sweetwater.com/store/detail/H310--daddario-helicore-violin-string-set-medium"),
     image: "https://www.kcstrings.com/cdn/shop/files/helicore_vn_med_530x@2x.jpg",
     tag: "Strings",
   },
@@ -128,7 +133,7 @@ const GEAR = [
     brand: "W.E. Hill & Sons",
     desc: "The classic choice for old-time and folk fiddlers — grips the string without sticking. Made in England since 1890.",
     price: "$12",
-    url: `https://www.sweetwater.com/store/search/query/hill+dark+rosin?affil=${SWEETWATER_ID}`,
+    url: sweetwater("https://www.sweetwater.com/store/search/query/hill+dark+rosin"),
     image: "https://thumbs.static-thomann.de/thumb/padthumb600x600/pics/bdb/_56/562692/18125447_800.jpg",
     tag: "Rosin",
   },
@@ -137,7 +142,7 @@ const GEAR = [
     brand: "Snark",
     desc: "Fast, bright, and cheap. Clips to the peghead — works in noisy jam environments. Replace the battery once a year.",
     price: "$12",
-    url: `https://www.sweetwater.com/store/detail/SN1--snark-sn-1-clip-on-chromatic-tuner?affil=${SWEETWATER_ID}`,
+    url: sweetwater("https://www.sweetwater.com/store/detail/SN1--snark-sn-1-clip-on-chromatic-tuner"),
     image: "https://m.media-amazon.com/images/I/410CjULLnZL.jpg",
     tag: "Tuner",
   },
@@ -146,7 +151,7 @@ const GEAR = [
     brand: "Kun",
     desc: "Adjustable, foldable, and the standard choice for players who use one. Fits most 4/4 fiddles.",
     price: "$30",
-    url: `https://www.sweetwater.com/store/detail/KunOriginal?affil=${SWEETWATER_ID}`,
+    url: sweetwater("https://www.sweetwater.com/store/detail/KunOriginal"),
     image: "https://www.stringersmusic.com/cdn/shop/products/Kun_collapsible_4_a389fe83-9a96-4d25-8fbd-a2873f4eb5f3.png",
     tag: "Comfort",
   },
@@ -155,7 +160,7 @@ const GEAR = [
     brand: "Generic",
     desc: "For apartment players and hotel-room practicers. Cuts volume to near-nothing without changing feel.",
     price: "$8",
-    url: `https://www.sweetwater.com/store/search/query/violin+practice+mute?affil=${SWEETWATER_ID}`,
+    url: sweetwater("https://www.sweetwater.com/store/search/query/violin+practice+mute"),
     image: "https://i.ebayimg.com/images/g/05YAAOSwkdZjv24O/s-l500.jpg",
     tag: "Practice",
   },
@@ -321,8 +326,8 @@ function SectionHeader({ icon: Icon, eyebrow, title, border = false }: {
 
 export default function GearPage() {
   usePageMeta(
-    "Recommended Books, Recordings & Gear",
-    "Curated old-time fiddle essentials: method books, classic recordings, strings, and gear — handpicked for serious learners."
+    "Recommended Gear, Books & Recordings",
+    "Curated old-time fiddle essentials: strings, gear, method books, and classic recordings — handpicked for serious learners."
   );
 
   return (
@@ -331,7 +336,7 @@ export default function GearPage() {
 
         <header className="border-t border-foreground pt-6 pb-10">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">Curated</div>
-          <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">Books, Recordings & Gear</h1>
+          <h1 className="font-display text-[44px] sm:text-6xl font-semibold tracking-tight leading-[0.95] text-foreground">Gear, Books & Recordings</h1>
           <p className="font-display italic text-xl text-muted-foreground mt-3">What serious old-time players actually use.</p>
         </header>
 
@@ -341,9 +346,17 @@ export default function GearPage() {
           <p><span className="font-semibold text-foreground">Affiliate disclosure:</span> Some links earn TuneVault a small commission at no extra cost to you. We only recommend what we genuinely use and believe in.</p>
         </div>
 
+        {/* ── Gear ── */}
+        <section className="mb-14">
+          <SectionHeader icon={Package} eyebrow="Equip" title="Strings & Gear" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {GEAR.map((g) => <GearCard key={g.title} {...g} />)}
+          </div>
+        </section>
+
         {/* ── Books ── */}
         <section className="mb-14">
-          <SectionHeader icon={BookOpen} eyebrow="Learn" title="Books & Method Guides" />
+          <SectionHeader icon={BookOpen} eyebrow="Learn" title="Books & Method Guides" border />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {BOOKS.map((b) => <BookCard key={b.title} {...b} />)}
           </div>
@@ -354,14 +367,6 @@ export default function GearPage() {
           <SectionHeader icon={Music2} eyebrow="Listen" title="Essential Recordings" border />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {RECORDINGS.map((r) => <RecordingCard key={r.title} {...r} />)}
-          </div>
-        </section>
-
-        {/* ── Gear ── */}
-        <section className="mb-14">
-          <SectionHeader icon={Package} eyebrow="Equip" title="Strings & Gear" border />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {GEAR.map((g) => <GearCard key={g.title} {...g} />)}
           </div>
         </section>
 
