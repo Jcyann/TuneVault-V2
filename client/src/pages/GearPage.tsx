@@ -172,7 +172,7 @@ const GEAR = [
     desc: "A practical light-gauge set for five-string banjo, with a clear starting point for clawhammer or three-finger players.",
     price: "$8",
     url: sweetwaterSearch("daddario j60 banjo strings"),
-    image: null,
+    image: "/images/gear/daddario-ej60-banjo-strings.jpg",
     tag: "Banjo Strings",
   },
   {
@@ -181,7 +181,7 @@ const GEAR = [
     desc: "Phosphor-bronze banjo strings with a warm, focused response for players who want a little more body from the instrument.",
     price: "$8",
     url: sweetwaterSearch("GHS PF150 banjo strings"),
-    image: null,
+    image: "/images/gear/ghs-pf150-banjo-strings.jpg",
     tag: "Banjo Strings",
   },
   {
@@ -190,7 +190,7 @@ const GEAR = [
     desc: "A five-string synthetic-gut-style set made for minstrel banjo players seeking a lower-tension, period-informed feel.",
     price: "$17",
     url: "https://www.sagamusic.com/shop/fretted-instrument-accessories/aquila/aquila-new-nylgut-aq-7b-minstrel-banjo-strings-medium-tension-dgdfa-set-of-5/",
-    image: null,
+    image: "/images/gear/aquila-aq7b-minstrel-banjo-strings.jpg",
     tag: "Minstrel Banjo",
   },
   {
@@ -199,7 +199,7 @@ const GEAR = [
     desc: "Light-gauge acoustic guitar strings with a familiar phosphor-bronze balance for rhythm guitar and flatpicking.",
     price: "$12",
     url: sweetwaterSearch("D'Addario EJ16 guitar strings"),
-    image: null,
+    image: "/images/gear/daddario-ej16-guitar-strings.jpg",
     tag: "Guitar Strings",
   },
   {
@@ -208,7 +208,7 @@ const GEAR = [
     desc: "Coated acoustic-guitar strings designed to keep their feel and brightness longer between changes.",
     price: "$18",
     url: sweetwaterSearch("Elixir 80 20 bronze Nanoweb guitar strings"),
-    image: null,
+    image: "/images/gear/elixir-nanoweb-8020-guitar-strings.jpg",
     tag: "Guitar Strings",
   },
   {
@@ -217,7 +217,7 @@ const GEAR = [
     desc: "A coated phosphor-bronze acoustic guitar set for players who want longer-lasting strings for regular jam and gig use.",
     price: "$18",
     url: sweetwaterSearch("Martin Lifespan 2.0 guitar strings"),
-    image: null,
+    image: "/images/gear/martin-lifespan-guitar-strings.jpg",
     tag: "Guitar Strings",
   },
   {
@@ -226,7 +226,7 @@ const GEAR = [
     desc: "A dependable student-friendly fiddle string option for trying alternate tunings without spending heavily on a full set.",
     price: "$25",
     url: sweetwaterSearch("D'Addario Prelude violin strings"),
-    image: null,
+    image: "/images/gear/daddario-prelude-violin-strings.jpg",
     tag: "Fiddle Strings",
   },
   {
@@ -235,7 +235,7 @@ const GEAR = [
     desc: "A low-profile thumb pick for clawhammer banjo and fingerstyle guitar players who want a consistent picking edge.",
     price: "$40",
     url: sweetwaterSearch("BlueChip TPR-S thumb pick"),
-    image: null,
+    image: "/images/gear/bluechip-tpr-thumb-pick.jpg",
     tag: "Picks",
   },
   {
@@ -244,7 +244,7 @@ const GEAR = [
     desc: "Lightweight metal fingerpicks for three-finger banjo and fingerstyle guitar, with adjustable fit around the fingertip.",
     price: "$6",
     url: sweetwaterSearch("Dunlop brass fingerpicks"),
-    image: null,
+    image: "/images/gear/dunlop-brass-fingerpicks.jpg",
     tag: "Picks",
   },
   {
@@ -253,7 +253,7 @@ const GEAR = [
     desc: "A compact guitar capo with adjustable pressure for quick key changes while keeping the strings settled.",
     price: "$25",
     url: sweetwaterSearch("Shubb C1 capo"),
-    image: null,
+    image: "/images/gear/shubb-c1-capo.jpg",
     tag: "Capos",
   },
   {
@@ -262,7 +262,7 @@ const GEAR = [
     desc: "A dedicated banjo capo for changing keys while keeping the fifth-string setup in view.",
     price: "$20",
     url: sweetwaterSearch("D'Addario NS banjo capo"),
-    image: null,
+    image: "/images/gear/daddario-ns-banjo-capo.jpg",
     tag: "Capos",
   },
   {
@@ -271,7 +271,7 @@ const GEAR = [
     desc: "A pocket metronome for tightening bowing, clawhammer drop-thumb patterns, and guitar rhythm before the jam.",
     price: "$20",
     url: sweetwaterSearch("Korg MA-2 metronome"),
-    image: null,
+    image: "/images/gear/korg-ma2-metronome.jpg",
     tag: "Practice",
   },
   {
@@ -280,7 +280,7 @@ const GEAR = [
     desc: "A compact rhythm trainer with a clear display for slow practice, speed building, and working through crooked phrases.",
     price: "$30",
     url: sweetwaterSearch("Boss DB-30 metronome"),
-    image: null,
+    image: "/images/gear/boss-db30-metronome.jpg",
     tag: "Practice",
   },
   {
@@ -289,7 +289,7 @@ const GEAR = [
     desc: "A high-resolution clip-on tuner for players who want more precise setup checks across fiddle, banjo, and guitar.",
     price: "$60",
     url: sweetwaterSearch("Peterson StroboClip HD tuner"),
-    image: null,
+    image: "/images/gear/peterson-stroboclip-hd-tuner.jpg",
     tag: "Tuner",
   },
   {
@@ -298,7 +298,7 @@ const GEAR = [
     desc: "A stable stand that keeps a fiddle easy to reach between tunes instead of resting it on a chair or amp.",
     price: "$40",
     url: sweetwaterSearch("Hercules violin stand"),
-    image: null,
+    image: "/images/gear/hercules-violin-stand.jpg",
     tag: "Setup",
   },
   {
@@ -307,7 +307,7 @@ const GEAR = [
     desc: "A portable stand for sheet music, chord charts, and set lists at home, rehearsals, or outdoor sessions.",
     price: "$35",
     url: sweetwaterSearch("K&M folding music stand"),
-    image: null,
+    image: "/images/gear/km-folding-music-stand.jpg",
     tag: "Setup",
   },
   {
@@ -316,7 +316,7 @@ const GEAR = [
     desc: "A small handheld recorder for capturing lessons, jam ideas, and room sound without setting up a full microphone rig.",
     price: "$100",
     url: sweetwaterSearch("Zoom H1essential recorder"),
-    image: null,
+    image: "/images/gear/zoom-h1essential-recorder.jpg",
     tag: "Recording",
   },
   {
@@ -325,7 +325,7 @@ const GEAR = [
     desc: "Reusable musician earplugs that reduce volume while keeping the balance of a live jam more natural.",
     price: "$25",
     url: sweetwaterSearch("Etymotic ER20XS earplugs"),
-    image: null,
+    image: "/images/gear/etymotic-er20xs-earplugs.jpg",
     tag: "Hearing",
   },
   {
@@ -334,7 +334,7 @@ const GEAR = [
     desc: "A case humidification system for helping protect wooden instruments through dry indoor seasons and travel.",
     price: "$30",
     url: sweetwaterSearch("D'Addario Humidipak"),
-    image: null,
+    image: "/images/gear/daddario-humidipak.jpg",
     tag: "Care",
   },
   {
@@ -343,7 +343,7 @@ const GEAR = [
     desc: "A simple care set for wiping rosin from the instrument and keeping strings, finish, and case routine under control.",
     price: "$15",
     url: sweetwaterSearch("D'Addario violin cleaning care kit"),
-    image: null,
+    image: "/images/gear/daddario-instrument-care-kit.jpg",
     tag: "Care",
   },
 ];
