@@ -53,6 +53,7 @@ async function main() {
   let skippedUnavailable = 0;
   let rejected = 0;
   let variationsSaved = 0;
+  let failed = 0;
 
   try {
     for (const entry of entries.slice(0, LIMIT)) {
@@ -99,29 +100,44 @@ async function main() {
         continue;
       }
 
-      await client.query(
-        `UPDATE tunes
-         SET audio_url = $1, audio_source = $2, audio_attribution = $3,
-             source_fiddler = COALESCE(source_fiddler, $4)
-         WHERE id = $5 AND audio_url IS NULL`,
-        [primary.audioUrl, primary.audioSource, primary.audioAttribution, primary.sourceFiddler || null, tune.id],
-      );
-      for (const variation of additional) {
-        await client.query(
-          `INSERT INTO recordings
-             (tune_id, audio_url, audio_source, audio_attribution, source_fiddler,
-              collection, era, key, tuning, notes)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [
-            tune.id, variation.audioUrl, variation.audioSource, variation.audioAttribution,
-            variation.sourceFiddler || null, variation.collection || null, variation.era || null,
-            variation.key || null, variation.tuning || null, variation.notes || null,
-          ],
+      try {
+        await client.query("BEGIN");
+        const update = await client.query(
+          `UPDATE tunes
+           SET audio_url = $1, audio_source = $2, audio_attribution = $3,
+               source_fiddler = COALESCE(source_fiddler, $4)
+           WHERE id = $5 AND audio_url IS NULL
+           RETURNING id`,
+          [primary.audioUrl, primary.audioSource, primary.audioAttribution, primary.sourceFiddler || null, tune.id],
         );
-        variationsSaved++;
+        if (update.rowCount === 0) {
+          await client.query("ROLLBACK");
+          skippedExistingAudio++;
+          console.log("skipped (trusted primary audio was added concurrently)");
+          continue;
+        }
+        for (const variation of additional) {
+          await client.query(
+            `INSERT INTO recordings
+               (tune_id, audio_url, audio_source, audio_attribution, source_fiddler,
+                collection, era, key, tuning, notes)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+            [
+              tune.id, variation.audioUrl, variation.audioSource, variation.audioAttribution,
+              variation.sourceFiddler || null, variation.collection || null, variation.era || null,
+              variation.key || null, variation.tuning || null, variation.notes || null,
+            ],
+          );
+        }
+        await client.query("COMMIT");
+        variationsSaved += additional.length;
+        applied++;
+        console.log(`✓ backfilled (${verification.accepted.length} recording${verification.accepted.length === 1 ? "" : "s"})`);
+      } catch (error: any) {
+        await client.query("ROLLBACK").catch(() => {});
+        failed++;
+        console.log(`✗ backfill failed: ${error?.message || "unknown error"}`);
       }
-      applied++;
-      console.log(`✓ backfilled (${verification.accepted.length} recording${verification.accepted.length === 1 ? "" : "s"})`);
     }
   } finally {
     client.release();
@@ -137,6 +153,7 @@ Audio-first backfill complete
   Title mismatch held  : ${skippedNameMismatch}
   Audio unavailable    : ${skippedUnavailable}
   Candidates rejected  : ${rejected}
+  Transaction failures  : ${failed}
   Dry-run mode         : ${DRY_RUN}
 `);
 }

@@ -40,20 +40,36 @@ function exactTitleMatch(title: string, aliases: string, candidate: unknown): bo
   return names.includes(normalizeTuneTitle(candidate));
 }
 
-function audioFileUrl(identifier: string, files: unknown): string | null {
+function audioFileUrl(
+  identifier: string,
+  files: unknown,
+  tuneTitle: string,
+  aliases: string,
+): { url: string; fileName: string; fileTitle: string | null } | null {
   if (!Array.isArray(files)) return null;
+  const tuneNames = [tuneTitle, ...aliases.split(",")]
+    .map(normalizeTuneTitle)
+    .filter((name) => name.length >= 4);
   const file = files.find((value) => {
     if (!value || typeof value !== "object") return false;
     const item = value as Record<string, unknown>;
     const name = typeof item.name === "string" ? item.name : "";
     const format = typeof item.format === "string" ? item.format : "";
+    const fileTitle = typeof item.title === "string" ? item.title : "";
+    const titleEvidence = normalizeTuneTitle(`${name} ${fileTitle}`);
+    const matchesTune = tuneNames.some((tuneName) => titleEvidence.includes(tuneName));
     return /\.(mp3|m4a|ogg|opus|wav|flac)$/i.test(name)
       && /(mp3|mpeg|m4a|ogg|opus|wave|flac)/i.test(format || name)
-      && !/(spectrogram|_vbr_)/i.test(name);
+      && !/(spectrogram|_vbr_)/i.test(name)
+      && matchesTune;
   }) as Record<string, unknown> | undefined;
   if (!file || typeof file.name !== "string") return null;
   const encodedName = file.name.split("/").map(encodeURIComponent).join("/");
-  return `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`;
+  return {
+    url: `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`,
+    fileName: file.name,
+    fileTitle: typeof file.title === "string" ? file.title : null,
+  };
 }
 
 async function main() {
@@ -120,8 +136,8 @@ async function main() {
         const metadata = await fetchJson(`https://archive.org/metadata/${encodeURIComponent(item.identifier)}`);
         const itemTitle = metadata?.metadata?.title;
         if (!exactTitleMatch(tune.title, tune.alternative_titles || "", itemTitle)) continue;
-        const url = audioFileUrl(item.identifier, metadata.files);
-        if (!url) {
+        const file = audioFileUrl(item.identifier, metadata.files, tune.title, tune.alternative_titles || "");
+        if (!file) {
           noPlayableFile++;
           continue;
         }
@@ -132,13 +148,15 @@ async function main() {
             theSessionId: tune.the_session_id,
           },
           recording: {
-            audioUrl: url,
+            audioUrl: file.url,
             audioSource: "Internet Archive",
             audioAttribution: attribution,
             rights: rights || null,
             licenseUrl: licenseUrl || null,
             collectionIdentifier: item.identifier,
             verifiedExactTitle: itemTitle,
+            verifiedFileName: file.fileName,
+            verifiedFileTitle: file.fileTitle,
           },
           status: "review required before manifest/apply",
         });

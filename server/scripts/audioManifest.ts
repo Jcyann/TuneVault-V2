@@ -147,6 +147,47 @@ export function hasExactManifestTitleMatch(entry: AudioManifestEntry, tuneNames:
     .some((name) => name === manifestTitle);
 }
 
+export function hasAudioSignature(data: Uint8Array): boolean {
+  if (data.length < 4) return false;
+  const hasText = (offset: number, text: string) =>
+    text.split("").every((char, index) => data[offset + index] === char.charCodeAt(0));
+  const isMp3Frame = data[0] === 0xff && (data[1] & 0xe0) === 0xe0;
+
+  return hasText(0, "ID3")
+    || isMp3Frame
+    || hasText(0, "OggS")
+    || (hasText(0, "RIFF") && hasText(8, "WAVE"))
+    || hasText(0, "fLaC")
+    || hasText(4, "ftyp");
+}
+
+async function readAudioPrefix(response: Response, maxBytes = 16): Promise<Uint8Array | null> {
+  if (!response.body) return null;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (length < maxBytes) {
+      const { value, done } = await reader.read();
+      if (done || !value) break;
+      const remaining = maxBytes - length;
+      chunks.push(value.slice(0, remaining));
+      length += Math.min(value.length, remaining);
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+  if (length === 0) return null;
+  const prefix = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    prefix.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return prefix;
+}
+
 export async function verifyPlayableAudio(variation: AudioVariation): Promise<{ ok: true; contentType: string | null } | { ok: false; reason: string }> {
   try {
     const response = await fetch(variation.audioUrl, {
@@ -161,10 +202,22 @@ export async function verifyPlayableAudio(variation: AudioVariation): Promise<{ 
     }
 
     const contentType = response.headers.get("content-type");
-    const path = new URL(variation.audioUrl).pathname.toLowerCase();
-    const extensionLooksAudio = /\.(mp3|m4a|aac|ogg|opus|wav|flac)$/i.test(path);
-    if (!contentType?.startsWith("audio/") && !extensionLooksAudio) {
+    if (!response.url.startsWith("https://")) {
+      return { ok: false, reason: "redirected to a non-HTTPS URL" };
+    }
+    if (!contentType?.toLowerCase().startsWith("audio/")) {
       return { ok: false, reason: `unexpected content type ${contentType || "unknown"}` };
+    }
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (response.status === 200 && contentLength > 1_000_000) {
+      return { ok: false, reason: "server ignored range request for an oversized audio file" };
+    }
+    const sample = await readAudioPrefix(response);
+    if (!sample) {
+      return { ok: false, reason: "audio response has no readable content" };
+    }
+    if (!hasAudioSignature(sample)) {
+      return { ok: false, reason: "response is not a recognizable audio file" };
     }
     return { ok: true, contentType };
   } catch (error: any) {

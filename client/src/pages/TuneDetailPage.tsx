@@ -200,6 +200,7 @@ export default function TuneDetailPage() {
   }, [tune, recordings]);
 
   const currentRecording = allRecordings[recordingIndex] ?? null;
+  const hasPlayableRecording = allRecordings.some((recording) => recording.audioUrl || recording.locItemId);
 
   function patchedTuneForRecording(rec: typeof allRecordings[0]): PlaylistItem {
     if (!tune) throw new Error("no tune");
@@ -325,6 +326,15 @@ export default function TuneDetailPage() {
           {allRecordings.length === 1 && currentRecording && (currentRecording.audioUrl || currentRecording.locItemId) && (
             <div className="mt-7 border-t border-border pt-5">
               <AudioPlayer tune={patchedTuneForRecording(currentRecording)} />
+            </div>
+          )}
+          {!hasPlayableRecording && (
+            <div
+              className="mt-7 border-t border-border pt-5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground"
+              data-testid="audio-needed-state"
+            >
+              <Music2 className="w-4 h-4 text-primary/70" />
+              <span>Audio recording needed — this tune is queued for sourcing</span>
             </div>
           )}
         </header>

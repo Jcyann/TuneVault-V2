@@ -1,19 +1,24 @@
 /**
- * Imports only audio-ready, high-demand tunes from TheSession.org.
+ * Imports useful, high-demand tunes from TheSession.org in two ordered lanes:
  *
- * A tune is not eligible until it appears in an audio manifest with a direct,
- * attributed recording. The recording is verified before any secondary
- * enrichment is processed, so the audio player remains the foundation of a
- * new tune page.
+ *   1. Audio-ready manifest entries first. Direct audio is verified before any
+ *      secondary enrichment and multiple verified versions are preserved.
+ *   2. High-demand tunes without audio next. These are still useful additions,
+ *      but receive an "audio-needed" tag so the gap is visible and can be
+ *      prioritized in the next sourcing pass.
+ *
+ * No-audio tunes are not given synthetic or guessed recordings. A manifest is
+ * optional because audio is a priority, not an absolute admission gate.
  *
  * Usage:
+ *   npx tsx server/scripts/importFromTheSession.ts --dry-run
  *   npx tsx server/scripts/importFromTheSession.ts \
- *     --audio-manifest=server/seedData/audio-first-manifest.json --dry-run
+ *     --audio-manifest=server/seedData/audio-first-manifest.json --limit=20
  *
  * Options:
- *   --audio-manifest=PATH  Required curated manifest of exact source matches.
+ *   --audio-manifest=PATH  Optional reviewed manifest of exact audio matches.
  *   --dry-run              Preview inserts; write nothing.
- *   --limit=N              Stop after N ready tunes.
+ *   --limit=N              Stop after inserting N new tunes.
  *   --min-settings=N       TheSession setting count used as a popularity proxy
  *                          (default 10).
  */
@@ -36,10 +41,17 @@ const MIN_SETTINGS = MIN_SETTINGS_ARG ? parseInt(MIN_SETTINGS_ARG.split("=")[1],
 const MANIFEST_ARG = process.argv.find((arg) => arg.startsWith("--audio-manifest="));
 const MANIFEST_PATH = MANIFEST_ARG?.split("=").slice(1).join("=");
 
-const UA = { "User-Agent": "TuneVault/1.0 (tunevault.org; audio-first tune import)" };
+const UA = { "User-Agent": "TuneVault/1.0 (tune import; audio-priority)" };
 const DELAY_MS = 900;
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Broad enough to discover useful tunes, while the setting-count gate keeps
+// obscure one-off entries out of the catalog. Manifest IDs always run first.
+const SEARCH_QUERIES = [
+  "reel", "jig", "polka", "hornpipe", "waltz", "march", "breakdown",
+  "the", "old", "little", "lady", "irish", "scotch", "mountain", "river",
+  "creek", "road", "fiddle", "barn", "green", "black", "white",
+];
 
 const METER_BY_TYPE: Record<string, string> = {
   reel: "4/4", breakdown: "4/4", hornpipe: "4/4", march: "4/4",
@@ -70,39 +82,41 @@ function sessionKeyToAbcKey(key: string): string {
   return match ? `${match[1]}${(match[2] || "major").toLowerCase().slice(0, 3)}` : key;
 }
 
-function popularityFromSettings(settingCount: number): number {
-  return Math.min(9, Math.max(6, 3 + Math.floor(Math.log2(settingCount))));
+function popularityFromSettings(settingCount: number, audioReady: boolean): number {
+  const base = Math.min(9, Math.max(5, 3 + Math.floor(Math.log2(settingCount))));
+  return Math.min(9, base + (audioReady ? 1 : 0));
 }
 
-function buildAbc(detail: any, sessionId: string, firstSetting: any, tuneType: string): string | null {
-  const body = String(firstSetting.abc || "")
+function buildAbc(detail: any, sessionId: string, setting: any, tuneType: string): string | null {
+  const body = String(setting.abc || "")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .replace(/! ?/g, "\n")
     .trim();
   const meter = METER_BY_TYPE[tuneType];
   if (body.length <= 20 || !meter) return null;
-
   return [
     "X:1",
     `T:${detail.name}`,
     `R:${detail.type || tuneType}`,
     `M:${meter}`,
     "L:1/8",
-    `K:${sessionKeyToAbcKey(firstSetting.key || "Dmajor")}`,
+    `K:${sessionKeyToAbcKey(setting.key || "Dmajor")}`,
     body,
     `% Source: TheSession.org tune #${sessionId} (CC BY-SA)`,
   ].join("\n");
 }
 
-async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{ variations: AudioVariation[]; rejected: number }> {
+async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{
+  variations: AudioVariation[];
+  rejected: number;
+}> {
   const verified: AudioVariation[] = [];
   let rejected = 0;
   for (const variation of [entry, ...(entry.variations || [])]) {
     const result = await verifyPlayableAudio(variation);
-    if (result.ok) {
-      verified.push(variation);
-    } else {
+    if (result.ok) verified.push(variation);
+    else {
       rejected++;
       console.warn(`  ⚠ audio rejected (${variation.audioUrl}): ${result.reason}`);
     }
@@ -111,26 +125,29 @@ async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{ variations
 }
 
 async function main() {
-  if (!MANIFEST_PATH) {
-    throw new Error("Refusing import: --audio-manifest=PATH is required. See server/seedData/audio-first-manifest.example.json.");
+  if (!Number.isFinite(INSERT_LIMIT) || INSERT_LIMIT < 1) {
+    throw new Error("--limit must be a positive integer");
   }
   if (!Number.isInteger(MIN_SETTINGS) || MIN_SETTINGS < 1) {
     throw new Error("--min-settings must be a positive integer");
   }
-  if (!Number.isFinite(INSERT_LIMIT) || INSERT_LIMIT < 1) {
-    throw new Error("--limit must be a positive integer");
-  }
 
-  const manifest = loadAudioManifest(MANIFEST_PATH);
+  const manifest = MANIFEST_PATH ? loadAudioManifest(MANIFEST_PATH) : [];
+  const manifestById = new Map(manifest.map((entry) => [entry.theSessionId, entry]));
   const client = await pool.connect();
-  let inserted = 0;
-  let skippedExisting = 0;
-  let skippedNoData = 0;
-  let skippedUnpopular = 0;
-  let skippedNameMismatch = 0;
-  let skippedAudioUnavailable = 0;
-  let audioRejected = 0;
-  let variationsSaved = 0;
+  const stats = {
+    inserted: 0,
+    audioBacked: 0,
+    audioNeeded: 0,
+    extraVariations: 0,
+    skippedExisting: 0,
+    skippedNoData: 0,
+    skippedUnpopular: 0,
+    skippedNameMismatch: 0,
+    audioUnavailable: 0,
+    audioRejected: 0,
+    searched: 0,
+  };
 
   try {
     const { rows: existing } = await client.query(
@@ -146,33 +163,34 @@ async function main() {
       }
     }
 
-    console.log(`\nAudio-first TheSession import — ${manifest.length} manifest entries, min settings: ${MIN_SETTINGS}, dry-run: ${DRY_RUN}\n`);
+    console.log(`\nAudio-priority TheSession import — manifest: ${manifest.length}, min settings: ${MIN_SETTINGS}, dry-run: ${DRY_RUN}\n`);
 
-    for (const entry of manifest) {
-      if (inserted >= INSERT_LIMIT) break;
-      const sessionId = entry.theSessionId;
-      process.stdout.write(`[TS#${sessionId}] ${entry.title} … `);
+    const processCandidate = async (sessionId: string, manifestEntry?: AudioManifestEntry) => {
+      if (stats.inserted >= INSERT_LIMIT || existingIds.has(sessionId)) {
+        if (existingIds.has(sessionId)) stats.skippedExisting++;
+        return;
+      }
+      stats.searched++;
+      process.stdout.write(`[TS#${sessionId}] ${manifestEntry?.title || "candidate"} … `);
 
-      if (existingIds.has(sessionId)) {
-        skippedExisting++;
-        console.log("skipped (already imported)");
-        continue;
+      let audioVariations: AudioVariation[] = [];
+      if (manifestEntry) {
+        const audio = await verifyEntryAudio(manifestEntry);
+        stats.audioRejected += audio.rejected;
+        audioVariations = audio.variations;
+        if (audioVariations.length === 0) {
+          stats.audioUnavailable++;
+          console.log("held (reviewed audio was not playable)");
+          return;
+        }
       }
 
-      // Audio is verified before TheSession metadata or notation is processed.
-      const audio = await verifyEntryAudio(entry);
-      audioRejected += audio.rejected;
-      if (audio.variations.length === 0) {
-        skippedAudioUnavailable++;
-        console.log("held (no playable verified audio)");
-        continue;
-      }
       const detail = await fetchJson(`https://thesession.org/tunes/${sessionId}?format=json`);
       await sleep(DELAY_MS);
       if (!detail?.name) {
-        skippedNoData++;
+        stats.skippedNoData++;
         console.log("held (no TheSession detail)");
-        continue;
+        return;
       }
 
       const aliases = (Array.isArray(detail.aliases) ? detail.aliases : [])
@@ -180,55 +198,61 @@ async function main() {
         .filter((alias: string) => normalizeTuneTitle(alias) !== normalizeTuneTitle(detail.name))
         .slice(0, 8);
       const allNames = [detail.name, ...aliases];
-      if (!hasExactManifestTitleMatch(entry, allNames)) {
-        skippedNameMismatch++;
+      if (manifestEntry && !hasExactManifestTitleMatch(manifestEntry, allNames)) {
+        stats.skippedNameMismatch++;
         console.log(`held (manifest title does not exactly match "${detail.name}")`);
-        continue;
+        return;
       }
       if (allNames.some((name) => existingNames.has(normalizeTuneTitle(name)))) {
-        skippedExisting++;
+        stats.skippedExisting++;
         console.log("skipped (matching title already exists)");
-        continue;
+        return;
       }
 
       const settings = Array.isArray(detail.settings) ? detail.settings : [];
       if (settings.length < MIN_SETTINGS) {
-        skippedUnpopular++;
+        stats.skippedUnpopular++;
         console.log(`held (${settings.length} settings; needs ${MIN_SETTINGS})`);
-        continue;
+        return;
       }
 
-      const firstSetting = settings[0];
-      const keyRaw: string = firstSetting.key || "Dmajor";
+      const setting = settings[0];
+      const keyRaw: string = setting.key || "Dmajor";
       const tuneType = String(detail.type || "").toLowerCase();
-      const abcNotation = buildAbc(detail, sessionId, firstSetting, tuneType);
+      const abcNotation = buildAbc(detail, sessionId, setting, tuneType);
       const alternativeTitles = aliases.length > 0 ? aliases.join(", ") : null;
-      const [primary, ...additionalVariations] = audio.variations;
+      const [primary, ...additionalVariations] = audioVariations;
+      const audioReady = Boolean(primary);
+      const tags = audioReady ? null : "audio-needed";
+      const description = manifestEntry?.description
+        ? `${manifestEntry.description}${manifestEntry.descriptionSource ? `\n\nSource: ${manifestEntry.descriptionSource}` : ""}`
+        : null;
       const key = sessionKeyToSimple(keyRaw);
 
       if (DRY_RUN) {
-        console.log(`DRY ready (${audio.variations.length} verified recording${audio.variations.length === 1 ? "" : "s"}, ${settings.length} settings${abcNotation ? ", +notation" : ""})`);
-        inserted++;
-        continue;
+        stats.inserted++;
+        if (audioReady) stats.audioBacked++;
+        else stats.audioNeeded++;
+        console.log(`DRY ${audioReady ? "audio-ready" : "audio-needed"} (${settings.length} settings${abcNotation ? ", +notation" : ""})`);
+        return;
       }
 
       try {
+        await client.query("BEGIN");
         const result = await client.query<{ id: number }>(
           `INSERT INTO tunes
              (title, alternative_titles, key, tune_type, region, difficulty, description,
               source_fiddler, youtube_url, youtube_video_id, audio_url, abc_notation,
-              the_session_id, popularity, notes, audio_source, audio_attribution)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+              the_session_id, popularity, tags, notes, audio_source, audio_attribution)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
            RETURNING id`,
           [
-            detail.name, alternativeTitles, key, tuneType || null, "Unknown", null,
-            entry.description
-              ? `${entry.description}${entry.descriptionSource ? `\n\nSource: ${entry.descriptionSource}` : ""}`
-              : null,
-            primary.sourceFiddler || null, entry.video?.youtubeUrl || null,
-            entry.video?.youtubeVideoId || null, primary.audioUrl, abcNotation, sessionId,
-            popularityFromSettings(settings.length), entry.playingNotes || null,
-            primary.audioSource, primary.audioAttribution,
+            detail.name, alternativeTitles, key, tuneType || null, "Unknown", null, description,
+            primary?.sourceFiddler || null, manifestEntry?.video?.youtubeUrl || null,
+            manifestEntry?.video?.youtubeVideoId || null, primary?.audioUrl || null,
+            abcNotation, sessionId, popularityFromSettings(settings.length, audioReady), tags,
+            manifestEntry?.playingNotes || null, primary?.audioSource || null,
+            primary?.audioAttribution || null,
           ],
         );
         const tuneId = result.rows[0].id;
@@ -244,14 +268,45 @@ async function main() {
               variation.key || null, variation.tuning || null, variation.notes || null,
             ],
           );
-          variationsSaved++;
         }
+        await client.query("COMMIT");
         existingIds.add(sessionId);
         for (const name of allNames) existingNames.add(normalizeTuneTitle(name));
-        inserted++;
-        console.log(`✓ inserted (${audio.variations.length} recording${audio.variations.length === 1 ? "" : "s"})`);
+        stats.inserted++;
+        if (audioReady) stats.audioBacked++;
+        else stats.audioNeeded++;
+        stats.extraVariations += additionalVariations.length;
+        console.log(`✓ inserted (${audioReady ? "audio-ready" : "audio-needed"}${additionalVariations.length ? `, ${additionalVariations.length + 1} recordings` : ""})`);
       } catch (error: any) {
+        await client.query("ROLLBACK").catch(() => {});
         console.log(`✗ insert failed: ${error?.message || "unknown error"}`);
+      }
+    };
+
+    // Priority lane: process every reviewed audio candidate before searching
+    // TheSession. This ordering is intentional even when a no-audio candidate
+    // would otherwise appear earlier in a search result.
+    for (const entry of manifest) {
+      if (stats.inserted >= INSERT_LIMIT) break;
+      await processCandidate(entry.theSessionId, entry);
+    }
+
+    // Coverage lane: useful high-demand tunes can still enter without audio.
+    // Search results are deduped and filtered by the setting-count gate.
+    const seenSearchIds = new Set<string>(manifest.map((entry) => entry.theSessionId));
+    for (const query of SEARCH_QUERIES) {
+      if (stats.inserted >= INSERT_LIMIT) break;
+      const search = await fetchJson(
+        `https://thesession.org/tunes/search?q=${encodeURIComponent(query)}&format=json&perpage=50&page=1`,
+      );
+      await sleep(DELAY_MS);
+      if (!Array.isArray(search?.tunes)) continue;
+      for (const result of search.tunes) {
+        if (stats.inserted >= INSERT_LIMIT) break;
+        const sessionId = String(result.id);
+        if (seenSearchIds.has(sessionId)) continue;
+        seenSearchIds.add(sessionId);
+        await processCandidate(sessionId, manifestById.get(sessionId));
       }
     }
   } finally {
@@ -260,16 +315,19 @@ async function main() {
   }
 
   console.log(`
-Audio-first import complete
-  Ready tunes inserted : ${inserted}
-  Extra variations saved: ${variationsSaved}
-  Already in catalog   : ${skippedExisting}
-  No source detail     : ${skippedNoData}
-  Below popularity gate: ${skippedUnpopular}
-  Title mismatch held  : ${skippedNameMismatch}
-  Audio unavailable    : ${skippedAudioUnavailable}
-  Audio candidates rejected: ${audioRejected}
-  Dry-run mode         : ${DRY_RUN}
+Audio-priority import complete
+  New tunes inserted       : ${stats.inserted}
+    Audio-ready             : ${stats.audioBacked}
+    Audio needed             : ${stats.audioNeeded}
+  Extra variations saved   : ${stats.extraVariations}
+  Already in catalog       : ${stats.skippedExisting}
+  No source detail         : ${stats.skippedNoData}
+  Below popularity gate    : ${stats.skippedUnpopular}
+  Title mismatch held      : ${stats.skippedNameMismatch}
+  Audio unavailable        : ${stats.audioUnavailable}
+  Audio candidates rejected: ${stats.audioRejected}
+  Candidates inspected     : ${stats.searched}
+  Dry-run mode             : ${DRY_RUN}
 `);
 }
 
