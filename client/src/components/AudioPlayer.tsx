@@ -6,6 +6,12 @@ interface AudioPlayerProps {
   tune: PlaylistItem;
 }
 
+function sourceLink(value: string | null): string | null {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return /^[a-z0-9.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(value) ? `https://${value}` : null;
+}
+
 export default function AudioPlayer({ tune }: AudioPlayerProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(tune.audioUrl ?? null);
   const [loading, setLoading] = useState(false);
@@ -39,8 +45,9 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
   const isCurrentlyPlaying = isActive && playlist[currentIndex]?.id === tune.id;
 
   const performer = tune.sourceFiddler ?? null;
-  const archiveDomain = tune.audioAttribution ?? null;
+  const attribution = tune.audioAttribution ?? null;
   const archiveName = tune.audioSource ?? null;
+  const attributionLink = sourceLink(attribution);
 
   return (
     <div className="mt-4 space-y-1.5" data-testid="audio-player">
@@ -77,16 +84,16 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
         )}
       </div>
 
-      {(performer || archiveDomain || archiveName) && !loading && (
+      {(performer || attribution || archiveName) && !loading && (
         <div className="flex items-start gap-2 px-1" data-testid="audio-credits">
           <Mic2 className="w-3.5 h-3.5 mt-0.5 text-primary-foreground/40 shrink-0" />
           <div className="text-xs text-primary-foreground/55 leading-snug space-y-0.5">
             {performer && (
               <div data-testid="audio-performer-credit">
                 Performed by{" "}
-                {archiveDomain && archiveName === performer ? (
+                {attributionLink && archiveName === performer ? (
                   <a
-                    href={`https://${archiveDomain}`}
+                    href={attributionLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold text-primary-foreground/80 inline-flex items-center gap-0.5 hover:text-primary-foreground transition-colors"
@@ -100,21 +107,23 @@ export default function AudioPlayer({ tune }: AudioPlayerProps) {
                 )}
               </div>
             )}
-            {(archiveDomain || archiveName) && archiveName !== performer && (
+            {(attribution || archiveName) && archiveName !== performer && (
               <div className="text-primary-foreground/40" data-testid="audio-source-credit">
-                {archiveDomain ? (
+                {attributionLink ? (
                   <a
-                    href={`https://${archiveDomain}`}
+                    href={attributionLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:text-primary-foreground/60 transition-colors"
                     data-testid="audio-source-link"
                   >
-                    Via {archiveName ?? archiveDomain}
+                    Via {archiveName ?? attribution}
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
                 ) : (
-                  <span>Via {archiveName}</span>
+                  <span>
+                    {archiveName ? `Via ${archiveName}` : "Recording credit"}{attribution ? ` · ${attribution}` : ""}
+                  </span>
                 )}
               </div>
             )}

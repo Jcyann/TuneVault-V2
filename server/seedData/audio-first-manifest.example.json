@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "theSessionId": "12345",
+      "title": "Exact Tune Title",
+      "audioUrl": "https://archive.example.org/collection/exact-tune-title.mp3",
+      "audioSource": "Source collection or archive",
+      "audioAttribution": "Performer or rights statement",
+      "description": "A concise, source-grounded tune description written for players.",
+      "descriptionSource": "Named publication, collection, or archive record",
+      "playingNotes": "Practical bowing, phrasing, rhythm, or fingering guidance.",
+      "sourceFiddler": "Performer name when known",
+      "collection": "Collection name when known",
+      "era": "Recording year or era when stated",
+      "key": "D",
+      "tuning": "GDAE",
+      "notes": "Why this exact tune and recording were verified",
+      "video": {
+        "youtubeUrl": "https://www.youtube.com/watch?v=ABCDEFGHIJK",
+        "youtubeVideoId": "ABCDEFGHIJK"
+      },
+      "variations": [
+        {
+          "audioUrl": "https://archive.example.org/collection/exact-tune-title-variation.mp3",
+          "audioSource": "Source collection or archive",
+          "audioAttribution": "Second performer or rights statement",
+          "sourceFiddler": "Second performer name when known"
+        }
+      ]
+    }
+  ]
+}

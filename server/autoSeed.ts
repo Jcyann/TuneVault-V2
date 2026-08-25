@@ -232,6 +232,7 @@ export async function autoSeed(): Promise<void> {
                description = EXCLUDED.description,
                source_fiddler = EXCLUDED.source_fiddler,
                era = EXCLUDED.era,
+                youtube_url = EXCLUDED.youtube_url,
                youtube_video_id = EXCLUDED.youtube_video_id,
                audio_url = EXCLUDED.audio_url,
                abc_notation = EXCLUDED.abc_notation,
@@ -262,6 +263,34 @@ export async function autoSeed(): Promise<void> {
       }
 
       await client.query("SELECT setval('tunes_id_seq', (SELECT MAX(id) FROM tunes))");
+      for (const r of recordings) {
+        await client.query(
+          `INSERT INTO recordings
+            (id,tune_id,audio_url,loc_item_id,youtube_video_id,audio_source,audio_attribution,
+             source_fiddler,collection,era,key,tuning,notes,slippery_hill_slug,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+           ON CONFLICT (id) DO UPDATE SET
+             tune_id = EXCLUDED.tune_id,
+             audio_url = EXCLUDED.audio_url,
+             loc_item_id = EXCLUDED.loc_item_id,
+             youtube_video_id = EXCLUDED.youtube_video_id,
+             audio_source = EXCLUDED.audio_source,
+             audio_attribution = EXCLUDED.audio_attribution,
+             source_fiddler = EXCLUDED.source_fiddler,
+             collection = EXCLUDED.collection,
+             era = EXCLUDED.era,
+             key = EXCLUDED.key,
+             tuning = EXCLUDED.tuning,
+             notes = EXCLUDED.notes,
+             slippery_hill_slug = EXCLUDED.slippery_hill_slug`,
+          [
+            r.id, r.tune_id, r.audio_url, r.loc_item_id, r.youtube_video_id,
+            r.audio_source, r.audio_attribution, r.source_fiddler, r.collection,
+            r.era, r.key, r.tuning, r.notes, r.slippery_hill_slug, r.created_at,
+          ],
+        );
+      }
+      await client.query("SELECT setval('recordings_id_seq', (SELECT MAX(id) FROM recordings))");
       await client.query(
         `INSERT INTO seed_meta (key, value) VALUES ('tunes_hash', $1)
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,

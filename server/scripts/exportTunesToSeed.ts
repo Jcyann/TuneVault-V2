@@ -19,6 +19,7 @@ import { pool } from "../db";
 const DRY_RUN = process.argv.includes("--dry-run");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_PATH = join(__dirname, "..", "seedData", "tunes.json");
+const RECORDINGS_PATH = join(__dirname, "..", "seedData", "recordings.json");
 
 // Exact column order autoSeed reads (is_embeddable is intentionally excluded —
 // it is DB-only and never part of the seed).
@@ -31,6 +32,12 @@ const FIELDS = [
   "audio_attribution", "created_at",
 ] as const;
 
+const RECORDING_FIELDS = [
+  "id", "tune_id", "audio_url", "loc_item_id", "youtube_video_id", "audio_source",
+  "audio_attribution", "source_fiddler", "collection", "era", "key", "tuning",
+  "notes", "slippery_hill_slug", "created_at",
+] as const;
+
 // Validation gate: refuse to export descriptions containing AI/web-research
 // meta-language — that content violates the site's zero-invented-facts policy
 // and must be cleaned (see cleanDescriptionArtifacts.ts) before export.
@@ -39,6 +46,9 @@ const META_LANGUAGE_RE =
 
 async function main() {
   const { rows } = await pool.query(`SELECT ${FIELDS.join(", ")} FROM tunes ORDER BY id ASC`);
+  const { rows: recordingRows } = await pool.query(
+    `SELECT ${RECORDING_FIELDS.join(", ")} FROM recordings ORDER BY id ASC`,
+  );
 
   const contaminated = rows.filter((r: any) => r.description && META_LANGUAGE_RE.test(r.description));
   if (contaminated.length > 0) {
@@ -54,18 +64,34 @@ async function main() {
     }
     return o;
   });
+  const recordingsOut = recordingRows.map((recording: any) => {
+    const out: Record<string, unknown> = {};
+    for (const field of RECORDING_FIELDS) {
+      out[field] = field === "created_at" && recording[field] instanceof Date
+        ? recording[field].toISOString()
+        : recording[field];
+    }
+    return out;
+  });
 
   const prev = JSON.parse(readFileSync(SEED_PATH, "utf8"));
+  const previousRecordings = JSON.parse(readFileSync(RECORDINGS_PATH, "utf8"));
   console.log(`DB tunes: ${out.length}, current seed JSON: ${prev.length}`);
+  console.log(`DB recordings: ${recordingsOut.length}, current recording seed JSON: ${previousRecordings.length}`);
 
   if (DRY_RUN) {
     console.log("Dry run — not writing.");
   } else {
     const backup = SEED_PATH.replace(/\.json$/, `.backup-${new Date().toISOString().slice(0, 10)}.json`);
+    const recordingsBackup = RECORDINGS_PATH.replace(/\.json$/, `.backup-${new Date().toISOString().slice(0, 10)}.json`);
     copyFileSync(SEED_PATH, backup);
+    copyFileSync(RECORDINGS_PATH, recordingsBackup);
     writeFileSync(SEED_PATH, JSON.stringify(out, null, 2) + "\n");
+    writeFileSync(RECORDINGS_PATH, JSON.stringify(recordingsOut, null, 2) + "\n");
     console.log(`Wrote ${out.length} tunes to ${SEED_PATH}`);
+    console.log(`Wrote ${recordingsOut.length} recordings to ${RECORDINGS_PATH}`);
     console.log(`Backup of previous seed at ${backup}`);
+    console.log(`Backup of previous recording seed at ${recordingsBackup}`);
     console.log("Note: seed hash will change; next restart re-syncs once (values identical to DB, so it's a no-op sync).");
   }
   await pool.end();

@@ -1,74 +1,44 @@
 /**
- * importFromTheSession.ts
+ * Imports only audio-ready, high-demand tunes from TheSession.org.
  *
- * Imports tunes that exist on TheSession.org but are not yet in TuneVault.
- * Uses the search API with broad queries to discover tunes, checks each
- * against our database (by theSessionId or normalized title), then fetches
- * full details and inserts new records.
- *
- * Safeguards:
- *   - Never overwrites existing tunes — insert only, never update.
- *   - Strict title-match required before trusting TheSession data.
- *   - Respects TheSession rate limits (800ms between requests).
- *   - Skips tunes whose key/ABC data is absent (required fields must be valid).
+ * A tune is not eligible until it appears in an audio manifest with a direct,
+ * attributed recording. The recording is verified before any notation is
+ * constructed, so the audio player remains the foundation of a new tune page.
  *
  * Usage:
- *   npx tsx server/scripts/importFromTheSession.ts --dry-run
- *   npx tsx server/scripts/importFromTheSession.ts --dry-run --limit=20
- *   npx tsx server/scripts/importFromTheSession.ts --limit=200
- *   npx tsx server/scripts/importFromTheSession.ts   # full run (slow — hours)
+ *   npx tsx server/scripts/importFromTheSession.ts \
+ *     --audio-manifest=server/seedData/audio-first-manifest.json --dry-run
  *
  * Options:
- *   --dry-run      Preview inserts; write nothing.
- *   --limit=N      Stop after inserting N new tunes.
+ *   --audio-manifest=PATH  Required curated manifest of exact source matches.
+ *   --dry-run              Preview inserts; write nothing.
+ *   --limit=N              Stop after N ready tunes.
+ *   --min-settings=N       TheSession setting count used as a popularity proxy
+ *                          (default 10).
  */
 
 import { pool } from "../db";
+import {
+  hasExactManifestTitleMatch,
+  loadAudioManifest,
+  normalizeTuneTitle,
+  verifyPlayableAudio,
+  type AudioManifestEntry,
+  type AudioVariation,
+} from "./audioManifest";
 
 const DRY_RUN = process.argv.includes("--dry-run");
-const LIMIT_ARG = process.argv.find((a) => a.startsWith("--limit="));
-const INSERT_LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1]) : Infinity;
+const LIMIT_ARG = process.argv.find((arg) => arg.startsWith("--limit="));
+const INSERT_LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : Infinity;
+const MIN_SETTINGS_ARG = process.argv.find((arg) => arg.startsWith("--min-settings="));
+const MIN_SETTINGS = MIN_SETTINGS_ARG ? parseInt(MIN_SETTINGS_ARG.split("=")[1], 10) : 10;
+const MANIFEST_ARG = process.argv.find((arg) => arg.startsWith("--audio-manifest="));
+const MANIFEST_PATH = MANIFEST_ARG?.split("=").slice(1).join("=");
 
-const UA = { "User-Agent": "TuneVault/1.0 (tunevault.org; tune import bot; contact@tunevault.org)" };
-const DELAY_MS = 900; // > 1 req/sec, respectful of TheSession's wishes
+const UA = { "User-Agent": "TuneVault/1.0 (tunevault.org; audio-first tune import)" };
+const DELAY_MS = 900;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-async function fetchJson(url: string): Promise<any | null> {
-  try {
-    const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (err: any) {
-    console.warn(`  ⚠ fetch failed ${url}: ${err.message}`);
-    return null;
-  }
-}
-
-/** Normalize a tune title for deduplication: lowercase, strip punctuation,
- *  remove common leading articles, collapse whitespace. */
-function normTitle(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/^(the|a|an|ye|old|ol')\s+/g, "")
-    .replace(/[''`".,!?()\-–—]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Convert TheSession key strings (e.g. "Dmajor", "Eminor", "Gmixolydian")
- *  to the simplified format used in TuneVault ("D", "Em", "G"). */
-function sessionKeyToSimple(k: string): string {
-  const m = k.match(/^([A-G][b#]?)(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|ionian)?$/i);
-  if (!m) return k.charAt(0).toUpperCase() + k.slice(1, 3); // graceful fallback
-  const root = m[1];
-  const mode = (m[2] || "major").toLowerCase();
-  // Minor-family modes map to "{root}m" which is how TuneVault stores minor keys
-  if (["minor", "dorian", "phrygian", "aeolian"].includes(mode)) return `${root}m`;
-  return root;
-}
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const METER_BY_TYPE: Record<string, string> = {
   reel: "4/4", breakdown: "4/4", hornpipe: "4/4", march: "4/4",
@@ -76,211 +46,262 @@ const METER_BY_TYPE: Record<string, string> = {
   barndance: "4/4", strathspey: "4/4", "three-two": "3/2", mazurka: "3/4",
 };
 
-function sessionKeyToAbcKey(k: string): string {
-  const m = k.match(/^([A-G][b#]?)(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|ionian)?$/i);
-  if (!m) return k;
-  const mode = (m[2] || "major").toLowerCase().slice(0, 3);
-  return `${m[1]}${mode}`;
+async function fetchJson(url: string): Promise<any | null> {
+  try {
+    const response = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
+    return response.ok ? await response.json() : null;
+  } catch (error: any) {
+    console.warn(`  ⚠ fetch failed ${url}: ${error?.message || "unknown error"}`);
+    return null;
+  }
 }
 
-// ── Search strategies ─────────────────────────────────────────────────────────
-// We cast a wide net using multiple search queries. Duplicates are caught by
-// the seen-session-IDs set in memory. The list is ordered: most fruitful
-// queries first so even a --limit run captures the most relevant tunes.
+function sessionKeyToSimple(key: string): string {
+  const match = key.match(/^([A-G][b#]?)(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|ionian)?$/i);
+  if (!match) return key.charAt(0).toUpperCase() + key.slice(1, 3);
+  return ["minor", "dorian", "phrygian", "aeolian"].includes((match[2] || "major").toLowerCase())
+    ? `${match[1]}m`
+    : match[1];
+}
 
-const SEARCH_QUERIES = [
-  // Tune-type words (appear in many traditional tune names)
-  "reel", "jig", "polka", "hornpipe", "waltz", "march", "strathspey", "mazurka",
-  // Very common words in old-time / Celtic tune names
-  "the", "old", "new", "little", "big", "mr", "miss", "lady", "lord",
-  "irish", "scotch", "highland", "mountain", "river", "creek", "road",
-  "fiddle", "barn", "grey", "green", "red", "black", "white",
-  // Letter-sweep — each covers a slice of the alphabet
-  "an", "be", "ca", "co", "de", "do", "el", "fa", "fi", "gl",
-  "go", "ha", "he", "ho", "in", "ki", "la", "le", "li", "lo",
-  "ma", "me", "mi", "mo", "mu", "na", "ni", "no", "pa", "pi",
-  "pl", "po", "pr", "ra", "re", "ri", "ro", "ru", "sa", "se",
-  "sh", "si", "sl", "sm", "sn", "sp", "st", "sw", "ta", "te",
-  "ti", "to", "tr", "tu", "tw", "un", "up", "vi", "wa", "we",
-  "wh", "wi", "wo", "ye", "yo",
-];
+function sessionKeyToAbcKey(key: string): string {
+  const match = key.match(/^([A-G][b#]?)(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|ionian)?$/i);
+  return match ? `${match[1]}${(match[2] || "major").toLowerCase().slice(0, 3)}` : key;
+}
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+function popularityFromSettings(settingCount: number): number {
+  return Math.min(9, Math.max(6, 3 + Math.floor(Math.log2(settingCount))));
+}
 
-async function main() {
-  const client = await pool.connect();
-  console.log(`\nTheSession import — dry-run: ${DRY_RUN}, limit: ${INSERT_LIMIT}\n`);
+function buildAbc(detail: any, sessionId: string, firstSetting: any, tuneType: string): string | null {
+  const body = String(firstSetting.abc || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/! ?/g, "\n")
+    .trim();
+  const meter = METER_BY_TYPE[tuneType];
+  if (body.length <= 20 || !meter) return null;
 
-  // ── 1. Load existing tunes into memory for fast duplicate detection ──────
-  const { rows: existing } = await client.query(
-    "SELECT title, alternative_titles, the_session_id FROM tunes",
-  );
-  const existingSessionIds = new Set<string>();
-  const existingTitles = new Set<string>();
+  return [
+    "X:1",
+    `T:${detail.name}`,
+    `R:${detail.type || tuneType}`,
+    `M:${meter}`,
+    "L:1/8",
+    `K:${sessionKeyToAbcKey(firstSetting.key || "Dmajor")}`,
+    body,
+    `% Source: TheSession.org tune #${sessionId} (CC BY-SA)`,
+  ].join("\n");
+}
 
-  for (const row of existing) {
-    if (row.the_session_id) existingSessionIds.add(String(row.the_session_id));
-    existingTitles.add(normTitle(row.title || ""));
-    for (const alt of (row.alternative_titles || "").split(",")) {
-      const n = normTitle(alt.trim());
-      if (n) existingTitles.add(n);
+async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{ variations: AudioVariation[]; rejected: number }> {
+  const verified: AudioVariation[] = [];
+  let rejected = 0;
+  for (const variation of [entry, ...(entry.variations || [])]) {
+    const result = await verifyPlayableAudio(variation);
+    if (result.ok) {
+      verified.push(variation);
+    } else {
+      rejected++;
+      console.warn(`  ⚠ audio rejected (${variation.audioUrl}): ${result.reason}`);
     }
   }
+  return { variations: verified, rejected };
+}
 
-  console.log(`Loaded ${existing.length} existing tunes (${existingSessionIds.size} with session IDs)\n`);
+async function verifyEmbeddableVideo(entry: AudioManifestEntry): Promise<boolean> {
+  if (!entry.video) return true;
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?${new URLSearchParams({
+        url: entry.video.youtubeUrl,
+        format: "json",
+      })}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
-  // ── 2. Search TheSession and collect candidate IDs ───────────────────────
-  const seenInThisRun = new Set<string>(); // avoid re-fetching duplicates from overlapping searches
+async function main() {
+  if (!MANIFEST_PATH) {
+    throw new Error("Refusing import: --audio-manifest=PATH is required. See server/seedData/audio-first-manifest.example.json.");
+  }
+  if (!Number.isInteger(MIN_SETTINGS) || MIN_SETTINGS < 1) {
+    throw new Error("--min-settings must be a positive integer");
+  }
+  if (!Number.isFinite(INSERT_LIMIT) || INSERT_LIMIT < 1) {
+    throw new Error("--limit must be a positive integer");
+  }
+
+  const manifest = loadAudioManifest(MANIFEST_PATH);
+  const client = await pool.connect();
   let inserted = 0;
   let skippedExisting = 0;
   let skippedNoData = 0;
-  let skippedNoKey = 0;
+  let skippedUnpopular = 0;
+  let skippedNameMismatch = 0;
+  let skippedAudioUnavailable = 0;
+  let skippedNoTranscription = 0;
+  let skippedVideoUnverified = 0;
+  let audioRejected = 0;
+  let variationsSaved = 0;
 
-  for (const query of SEARCH_QUERIES) {
-    if (inserted >= INSERT_LIMIT) break;
+  try {
+    const { rows: existing } = await client.query(
+      "SELECT title, alternative_titles, the_session_id FROM tunes",
+    );
+    const existingIds = new Set(existing.map((row) => String(row.the_session_id || "")).filter(Boolean));
+    const existingNames = new Set<string>();
+    for (const row of existing) {
+      existingNames.add(normalizeTuneTitle(row.title || ""));
+      for (const alias of String(row.alternative_titles || "").split(",")) {
+        const normalized = normalizeTuneTitle(alias);
+        if (normalized) existingNames.add(normalized);
+      }
+    }
 
-    // Paginate through all pages of this query
-    let page = 1;
-    let totalPages = 1;
+    console.log(`\nAudio-first TheSession import — ${manifest.length} manifest entries, min settings: ${MIN_SETTINGS}, dry-run: ${DRY_RUN}\n`);
 
-    do {
+    for (const entry of manifest) {
       if (inserted >= INSERT_LIMIT) break;
+      const sessionId = entry.theSessionId;
+      process.stdout.write(`[TS#${sessionId}] ${entry.title} … `);
 
-      const url = `https://thesession.org/tunes/search?q=${encodeURIComponent(query)}&format=json&perpage=50&page=${page}`;
-      const data = await fetchJson(url);
-      await sleep(DELAY_MS);
-
-      if (!data || !Array.isArray(data.tunes)) break;
-      totalPages = data.pages || 1;
-
-      for (const searchResult of data.tunes) {
-        if (inserted >= INSERT_LIMIT) break;
-
-        const sessionId = String(searchResult.id);
-
-        // Skip if already known
-        if (seenInThisRun.has(sessionId)) continue;
-        seenInThisRun.add(sessionId);
-
-        if (existingSessionIds.has(sessionId)) { skippedExisting++; continue; }
-
-        // Quick title pre-check before hitting the detail endpoint
-        const nameNorm = normTitle(searchResult.name || "");
-        if (existingTitles.has(nameNorm)) {
-          skippedExisting++;
-          // Tag it with the session ID in the DB so future enrichment can use it
-          if (!DRY_RUN) {
-            await client.query(
-              "UPDATE tunes SET the_session_id = $1 WHERE the_session_id IS NULL AND $2 = ANY(ARRAY[title, alternative_titles])",
-              [sessionId, searchResult.name]
-            ).catch(() => {});
-          }
-          continue;
-        }
-
-        // ── Fetch full details ──────────────────────────────────────────────
-        const detail = await fetchJson(
-          `https://thesession.org/tunes/${sessionId}?format=json`,
-        );
-        await sleep(DELAY_MS);
-
-        if (!detail || !detail.name) { skippedNoData++; continue; }
-
-        // Re-check name match after getting detail (aliases may match existing)
-        const allDetailNames = [detail.name, ...(Array.isArray(detail.aliases) ? detail.aliases : [])];
-        const matchesExisting = allDetailNames.some(n => existingTitles.has(normTitle(n)));
-        if (matchesExisting) { skippedExisting++; continue; }
-
-        // ── Build key ───────────────────────────────────────────────────────
-        const settings = Array.isArray(detail.settings) ? detail.settings : [];
-        if (settings.length === 0) { skippedNoKey++; continue; }
-
-        const firstSetting = settings[0];
-        const keyRaw: string = firstSetting.key || "Dmajor";
-        const key = sessionKeyToSimple(keyRaw);
-
-        // ── Build ABC notation ──────────────────────────────────────────────
-        let abcNotation: string | null = null;
-        const tuneType = (detail.type || "").toLowerCase();
-        const meter = METER_BY_TYPE[tuneType];
-        const abcBody = String(firstSetting.abc || "")
-          .replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/! ?/g, "\n").trim();
-
-        if (abcBody.length > 20 && meter) {
-          abcNotation = [
-            "X:1",
-            `T:${detail.name}`,
-            `R:${detail.type || tuneType}`,
-            `M:${meter}`,
-            "L:1/8",
-            `K:${sessionKeyToAbcKey(keyRaw)}`,
-            abcBody,
-            `% Source: TheSession.org tune #${sessionId} (CC BY-SA)`,
-          ].join("\n");
-        }
-
-        // ── Build alternate titles ──────────────────────────────────────────
-        const aliases: string[] = (Array.isArray(detail.aliases) ? detail.aliases : [])
-          .filter((a: string) => normTitle(a) !== normTitle(detail.name))
-          .slice(0, 8);
-        const alternativeTitles = aliases.length > 0 ? aliases.join(", ") : null;
-
-        // ── Insert ──────────────────────────────────────────────────────────
-        process.stdout.write(
-          `[TS#${sessionId}] ${detail.name} (${tuneType}, ${key})${abcNotation ? " +abc" : ""} … `,
-        );
-
-        if (DRY_RUN) {
-          console.log("DRY");
-        } else {
-          try {
-            await client.query(
-              `INSERT INTO tunes
-                (title, alternative_titles, key, tune_type, region, difficulty,
-                 description, abc_notation, the_session_id, popularity, audio_source)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-              [
-                detail.name,
-                alternativeTitles,
-                key,
-                tuneType || null,
-                "Unknown",      // TheSession doesn't carry regional provenance for old-time
-                null,           // difficulty: leave blank for hand-curation
-                null,           // description: leave blank for hand-curation
-                abcNotation,
-                sessionId,
-                3,              // lower than hand-curated tunes (default 5)
-                null,
-              ],
-            );
-            console.log("✓ inserted");
-            // Register all names for collision avoidance in this same run
-            existingSessionIds.add(sessionId);
-            existingTitles.add(normTitle(detail.name));
-            for (const a of aliases) existingTitles.add(normTitle(a));
-          } catch (err: any) {
-            console.log(`✗ insert failed: ${err.message}`);
-          }
-        }
-
-        inserted++;
+      if (existingIds.has(sessionId)) {
+        skippedExisting++;
+        console.log("skipped (already imported)");
+        continue;
       }
 
-      page++;
-    } while (page <= totalPages);
+      // Audio is verified before TheSession metadata or notation is processed.
+      const audio = await verifyEntryAudio(entry);
+      audioRejected += audio.rejected;
+      if (audio.variations.length === 0) {
+        skippedAudioUnavailable++;
+        console.log("held (no playable verified audio)");
+        continue;
+      }
+      if (!(await verifyEmbeddableVideo(entry))) {
+        skippedVideoUnverified++;
+        console.log("held (optional video is not embeddable)");
+        continue;
+      }
+
+      const detail = await fetchJson(`https://thesession.org/tunes/${sessionId}?format=json`);
+      await sleep(DELAY_MS);
+      if (!detail?.name) {
+        skippedNoData++;
+        console.log("held (no TheSession detail)");
+        continue;
+      }
+
+      const aliases = (Array.isArray(detail.aliases) ? detail.aliases : [])
+        .filter((alias: unknown): alias is string => typeof alias === "string")
+        .filter((alias: string) => normalizeTuneTitle(alias) !== normalizeTuneTitle(detail.name))
+        .slice(0, 8);
+      const allNames = [detail.name, ...aliases];
+      if (!hasExactManifestTitleMatch(entry, allNames)) {
+        skippedNameMismatch++;
+        console.log(`held (manifest title does not exactly match "${detail.name}")`);
+        continue;
+      }
+      if (allNames.some((name) => existingNames.has(normalizeTuneTitle(name)))) {
+        skippedExisting++;
+        console.log("skipped (matching title already exists)");
+        continue;
+      }
+
+      const settings = Array.isArray(detail.settings) ? detail.settings : [];
+      if (settings.length < MIN_SETTINGS) {
+        skippedUnpopular++;
+        console.log(`held (${settings.length} settings; needs ${MIN_SETTINGS})`);
+        continue;
+      }
+
+      const firstSetting = settings[0];
+      const keyRaw: string = firstSetting.key || "Dmajor";
+      const tuneType = String(detail.type || "").toLowerCase();
+      const abcNotation = buildAbc(detail, sessionId, firstSetting, tuneType);
+      if (!abcNotation) {
+        skippedNoTranscription++;
+        console.log("held (no usable transcription)");
+        continue;
+      }
+      const alternativeTitles = aliases.length > 0 ? aliases.join(", ") : null;
+      const [primary, ...additionalVariations] = audio.variations;
+      const key = sessionKeyToSimple(keyRaw);
+
+      if (DRY_RUN) {
+        console.log(`DRY ready (${audio.variations.length} verified recording${audio.variations.length === 1 ? "" : "s"}, ${settings.length} settings${abcNotation ? ", +notation" : ""})`);
+        inserted++;
+        continue;
+      }
+
+      try {
+        const result = await client.query<{ id: number }>(
+          `INSERT INTO tunes
+             (title, alternative_titles, key, tune_type, region, difficulty, description,
+              source_fiddler, youtube_url, youtube_video_id, audio_url, abc_notation,
+              the_session_id, popularity, notes, audio_source, audio_attribution)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+           RETURNING id`,
+          [
+            detail.name, alternativeTitles, key, tuneType || null, "Unknown", null,
+            `${entry.description}\n\nSource: ${entry.descriptionSource}`,
+            primary.sourceFiddler || null, entry.video?.youtubeUrl || null,
+            entry.video?.youtubeVideoId || null, primary.audioUrl, abcNotation, sessionId,
+            popularityFromSettings(settings.length), entry.playingNotes,
+            primary.audioSource, primary.audioAttribution,
+          ],
+        );
+        const tuneId = result.rows[0].id;
+        for (const variation of additionalVariations) {
+          await client.query(
+            `INSERT INTO recordings
+              (tune_id, audio_url, audio_source, audio_attribution, source_fiddler,
+               collection, era, key, tuning, notes)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+            [
+              tuneId, variation.audioUrl, variation.audioSource, variation.audioAttribution,
+              variation.sourceFiddler || null, variation.collection || null, variation.era || null,
+              variation.key || null, variation.tuning || null, variation.notes || null,
+            ],
+          );
+          variationsSaved++;
+        }
+        existingIds.add(sessionId);
+        for (const name of allNames) existingNames.add(normalizeTuneTitle(name));
+        inserted++;
+        console.log(`✓ inserted (${audio.variations.length} recording${audio.variations.length === 1 ? "" : "s"})`);
+      } catch (error: any) {
+        console.log(`✗ insert failed: ${error?.message || "unknown error"}`);
+      }
+    }
+  } finally {
+    client.release();
+    await pool.end();
   }
 
-  client.release();
-  await pool.end();
-
   console.log(`
-Import complete
-  New tunes inserted : ${inserted}
-  Already in DB      : ${skippedExisting}
-  No detail data     : ${skippedNoData}
-  No key/settings    : ${skippedNoKey}
-  Dry-run mode       : ${DRY_RUN}
+Audio-first import complete
+  Ready tunes inserted : ${inserted}
+  Extra variations saved: ${variationsSaved}
+  Already in catalog   : ${skippedExisting}
+  No source detail     : ${skippedNoData}
+  Below popularity gate: ${skippedUnpopular}
+  Title mismatch held  : ${skippedNameMismatch}
+  Audio unavailable    : ${skippedAudioUnavailable}
+  No usable transcription: ${skippedNoTranscription}
+  Video not embeddable : ${skippedVideoUnverified}
+  Audio candidates rejected: ${audioRejected}
+  Dry-run mode         : ${DRY_RUN}
 `);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
