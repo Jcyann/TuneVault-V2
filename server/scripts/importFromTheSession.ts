@@ -125,7 +125,7 @@ async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{
 }
 
 async function main() {
-  if (!Number.isFinite(INSERT_LIMIT) || INSERT_LIMIT < 1) {
+  if (!(INSERT_LIMIT === Infinity || (Number.isInteger(INSERT_LIMIT) && INSERT_LIMIT >= 1))) {
     throw new Error("--limit must be a positive integer");
   }
   if (!Number.isInteger(MIN_SETTINGS) || MIN_SETTINGS < 1) {

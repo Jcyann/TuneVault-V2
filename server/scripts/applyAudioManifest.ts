@@ -40,7 +40,7 @@ async function main() {
   if (!MANIFEST_PATH) {
     throw new Error("Refusing backfill: --audio-manifest=PATH is required.");
   }
-  if (!Number.isInteger(LIMIT) || LIMIT < 1) {
+  if (!(LIMIT === Infinity || (Number.isInteger(LIMIT) && LIMIT >= 1))) {
     throw new Error("--limit must be a positive integer");
   }
 

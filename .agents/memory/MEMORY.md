@@ -4,5 +4,6 @@
 - [Tune descriptions can carry AI meta-language from old sessions](description-contamination.md) — cleanup script + export gate block "search results" prose; honest gap beats hedge narrative.
 - [Audio player pitch vs. speed](audio-player-pitch-speed.md) — slowdown must always preserve pitch; transpose only at 1×; Web Audio pitch-shift blocked by missing CORS on external MP3s.
 - [Audio-priority tune admission](audio-priority-tune-admission.md) — favor verified recordings, but useful high-demand tunes may enter without audio when visibly queued for sourcing.
+- [Slippery Hill audio sourcing](slippery-hill-audio-sourcing.md) — directory pages reject automated access; use exact filename evidence plus direct playable-file verification in small batches.
 - [Lamancusa key verification](lamancusa-key-verification.md) — exact matched collection sheets are authoritative; tuning labels alone are not a key.
 - [Tuner pitch regression coverage](tuner-pitch-regression.md) — validate pitch detection with the live 2048-sample buffer across low strings; A4-only tests mask harmonic errors.

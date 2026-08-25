@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-08-25T04:32:06.945Z",
+  "from": "2026-03-13",
+  "searched": 25,
+  "checkedFiles": 138,
+  "reviewCandidates": 4,
+  "noFilenameMatch": 0,
+  "unavailable": 21,
+  "rejected": 0,
+  "candidates": [
+    {
+      "tune": {
+        "id": 1054,
+        "title": "Eighth of January",
+        "theSessionId": null,
+        "popularity": 8,
+        "createdAt": "2026-04-24T15:38:30.740Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/eighthofjanuary.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "eighth of january",
+        "filenameEvidence": "eighthofjanuary.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1045,
+        "title": "Brushy Fork of John's Creek",
+        "theSessionId": null,
+        "popularity": 5,
+        "createdAt": "2026-04-24T15:37:56.660Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/brushy_fork_of_johns_creek.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "brushy fork of johns creek",
+        "filenameEvidence": "brushy_fork_of_johns_creek.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1042,
+        "title": "Policeman",
+        "theSessionId": null,
+        "popularity": 5,
+        "createdAt": "2026-04-24T15:37:44.873Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/policeman.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "policeman",
+        "filenameEvidence": "policeman.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1040,
+        "title": "Last Chance",
+        "theSessionId": null,
+        "popularity": 5,
+        "createdAt": "2026-04-24T15:37:37.256Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/last_chance.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "last chance",
+        "filenameEvidence": "last_chance.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-08-25T04:02:57.048Z",
+  "generatedAt": "2026-08-25T04:33:00.872Z",
   "from": "2026-03-13",
   "totalRecentTunes": 818,
-  "audioPlayerReady": 0,
-  "heldForVerifiedAudio": 818,
+  "audioPlayerReady": 4,
+  "heldForVerifiedAudio": 814,
   "heldByTuneType": {
-    "reel": 226,
+    "reel": 223,
     "jig": 148,
     "polka": 112,
     "march": 92,
@@ -17,7 +17,7 @@
     "slide": 14,
     "mazurka": 13,
     "strathspey": 9,
-    "breakdown": 7
+    "breakdown": 6
   },
   "heldTunes": [
     {
@@ -37,27 +37,11 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1040,
-      "title": "Last Chance",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:37.256Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1041,
       "title": "Dry and Dusty",
       "tuneType": "reel",
       "theSessionId": null,
       "createdAt": "2026-04-24T15:37:41.074Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1042,
-      "title": "Policeman",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:44.873Z",
       "status": "audio sought, none verified"
     },
     {
@@ -74,14 +58,6 @@
       "tuneType": "reel",
       "theSessionId": null,
       "createdAt": "2026-04-24T15:37:52.438Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1045,
-      "title": "Brushy Fork of John's Creek",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:56.660Z",
       "status": "audio sought, none verified"
     },
     {
@@ -146,14 +122,6 @@
       "tuneType": "reel",
       "theSessionId": null,
       "createdAt": "2026-04-24T15:38:26.925Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1054,
-      "title": "Eighth of January",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:30.740Z",
       "status": "audio sought, none verified"
     },
     {
