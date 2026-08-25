@@ -1,0 +1,50 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1043,
+        "title": "Elk River Blues"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/elkriverblues_erniecarpenter.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Elk River Blues",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/elk-river-blues",
+        "sourcePageTitle": "Elk River Blues",
+        "sourceFiddler": "Ernie Carpenter"
+      }
+    },
+    {
+      "tune": {
+        "id": 1044,
+        "title": "Ruffled Drawers"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/ruffled_drawers_br.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Ruffled Drawers",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/ruffled-drawers",
+        "sourcePageTitle": "Ruffled Drawers",
+        "sourceFiddler": "Bob Rogers"
+      }
+    },
+    {
+      "tune": {
+        "id": 1046,
+        "title": "Tennessee Breakdown"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/tennesseebreakdown_jonbekoff.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Tennessee Breakdown",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/tennessee-breakdown-0",
+        "sourcePageTitle": "Tennessee Breakdown",
+        "sourceFiddler": "Jon Bekoff"
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1047,
+        "title": "Fall on My Knees"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/fallonmyknees_tommyjarrell.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Fall On My Knees",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/fall-my-knees",
+        "sourcePageTitle": "Fall On My Knees",
+        "sourceFiddler": "Tommy Jarrell"
+      }
+    },
+    {
+      "tune": {
+        "id": 1048,
+        "title": "Benton's Dream"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/04_bentons_dream_0.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Benton's Dream",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/bentons-dream",
+        "sourcePageTitle": "Benton's Dream",
+        "sourceFiddler": "Benton Flippen"
+      }
+    }
+  ]
+}

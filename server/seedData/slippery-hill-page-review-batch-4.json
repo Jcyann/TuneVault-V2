@@ -1,0 +1,20 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1052,
+        "title": "Train on the Island"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/trainontheisland_normanedmonds.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Train On The Island",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/train-island-0",
+        "sourcePageTitle": "Train On The Island",
+        "sourceFiddler": "Norman Edmonds"
+      }
+    }
+  ]
+}

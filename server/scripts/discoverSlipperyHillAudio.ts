@@ -19,6 +19,8 @@ const FROM_ARG = process.argv.find((arg) => arg.startsWith("--from="));
 const FROM = FROM_ARG?.split("=").slice(1).join("=") || "2026-03-13";
 const LIMIT_ARG = process.argv.find((arg) => arg.startsWith("--limit="));
 const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 100;
+const SKIP_ARG = process.argv.find((arg) => arg.startsWith("--skip="));
+const SKIP = SKIP_ARG ? parseInt(SKIP_ARG.split("=")[1], 10) : 0;
 const WRITE_ARG = process.argv.find((arg) => arg.startsWith("--write-report="));
 const WRITE_PATH = WRITE_ARG?.split("=").slice(1).join("=");
 const BASE_URL = "https://www.slippery-hill.com/system/files/recordings/";
@@ -58,7 +60,7 @@ async function headExists(url: string): Promise<boolean> {
 }
 
 async function main() {
-  if (!Number.isInteger(LIMIT) || LIMIT < 1) {
+  if (!Number.isInteger(LIMIT) || LIMIT < 1 || !Number.isInteger(SKIP) || SKIP < 0) {
     throw new Error("--limit must be a positive integer");
   }
 
@@ -83,8 +85,8 @@ async function main() {
        FROM tunes
        WHERE created_at >= $1 AND audio_url IS NULL AND loc_item_id IS NULL
        ORDER BY popularity DESC NULLS LAST, created_at DESC, id DESC
-       LIMIT $2`,
-      [FROM, LIMIT],
+       LIMIT $2 OFFSET $3`,
+      [FROM, LIMIT, SKIP],
     );
 
     for (const tune of rows) {

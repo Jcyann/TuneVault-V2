@@ -14,7 +14,11 @@
 import { readFileSync } from "fs";
 import { pool } from "../db";
 import { normalizeTuneTitle, verifyPlayableAudio } from "./audioManifest";
-import { hasExactSlipperyHillFilenameEvidence, hasTrustedPrimaryAudio } from "./slipperyHillReview";
+import {
+  hasExactSlipperyHillFilenameEvidence,
+  hasTrustedPrimaryAudio,
+  verifySlipperyHillPageEvidence,
+} from "./slipperyHillReview";
 
 const REVIEW_ARG = process.argv.find((arg) => arg.startsWith("--review="));
 const REVIEW_PATH = REVIEW_ARG?.split("=").slice(1).join("=");
@@ -30,7 +34,10 @@ type ReviewCandidate = {
     audioSource: string;
     audioAttribution: string;
     matchedTitle: string;
-    filenameEvidence: string;
+    filenameEvidence?: string;
+    sourcePageUrl?: string;
+    sourcePageTitle?: string;
+    sourceFiddler?: string;
   };
 };
 
@@ -81,15 +88,32 @@ async function main() {
       const names = [tune?.title, ...(tune?.alternative_titles || "").split(",")]
         .filter(Boolean)
         .map((name) => normalizeTuneTitle(name));
+      const sourceNames = [tune?.title, ...(tune?.alternative_titles || "").split(",")]
+        .filter(Boolean);
+      const filenameEvidenceValid = typeof candidate.recording.filenameEvidence === "string"
+        && hasExactSlipperyHillFilenameEvidence(
+          candidate.recording.audioUrl,
+          sourceNames,
+          candidate.recording.filenameEvidence,
+        );
+      let pageEvidenceValid = false;
+      let pageEvidenceReason = "";
+      if (typeof candidate.recording.sourcePageUrl === "string"
+        && typeof candidate.recording.sourcePageTitle === "string") {
+        const pageEvidence = await verifySlipperyHillPageEvidence(
+          candidate.recording.sourcePageUrl,
+          candidate.recording.sourcePageTitle,
+          candidate.recording.audioUrl,
+          sourceNames,
+        );
+        pageEvidenceValid = pageEvidence.ok;
+        if (!pageEvidence.ok) pageEvidenceReason = pageEvidence.reason;
+      }
       if (!tune || !names.includes(normalizeTuneTitle(candidate.tune.title))
         || !names.includes(normalizeTuneTitle(candidate.recording.matchedTitle))
-        || !hasExactSlipperyHillFilenameEvidence(
-          candidate.recording.audioUrl,
-          [tune.title, ...(tune.alternative_titles || "").split(",")],
-          candidate.recording.filenameEvidence,
-        )) {
+        || !(filenameEvidenceValid || pageEvidenceValid)) {
         rejected++;
-        console.log("rejected (review title/alias or filename evidence no longer matches)");
+        console.log(`rejected (review title/alias, filename, or source-page evidence no longer matches${pageEvidenceReason ? `: ${pageEvidenceReason}` : ""})`);
         continue;
       }
       if (hasTrustedPrimaryAudio(tune.audio_url, tune.loc_item_id)) {
@@ -119,13 +143,15 @@ async function main() {
         const update = await client.query(
           `UPDATE tunes
            SET audio_url = $1, audio_source = $2, audio_attribution = $3,
+               source_fiddler = COALESCE(source_fiddler, $4),
                tags = CASE WHEN tags = 'audio-needed' THEN NULL ELSE tags END
-           WHERE id = $4 AND audio_url IS NULL AND loc_item_id IS NULL
+           WHERE id = $5 AND audio_url IS NULL AND loc_item_id IS NULL
            RETURNING id`,
           [
             candidate.recording.audioUrl,
             "Slippery Hill",
             "slippery-hill.com",
+            candidate.recording.sourceFiddler || null,
             tune.id,
           ],
         );

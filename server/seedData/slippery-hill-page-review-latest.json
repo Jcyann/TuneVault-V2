@@ -1,0 +1,50 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1038,
+        "title": "Falls of Richmond"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/07_falls_of_richmond.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Falls Of Richmond",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/falls-richmond-0",
+        "sourcePageTitle": "Falls Of Richmond",
+        "sourceFiddler": "Alan Jabbour"
+      }
+    },
+    {
+      "tune": {
+        "id": 1039,
+        "title": "Lazy John"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/lazyjohn_clydedavenport.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Lazy John",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/lazy-john",
+        "sourcePageTitle": "Lazy John",
+        "sourceFiddler": "Clyde Davenport"
+      }
+    },
+    {
+      "tune": {
+        "id": 1041,
+        "title": "Dry and Dusty"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/22_dry_and_dusty.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Dry And Dusty",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/dry-and-dusty",
+        "sourcePageTitle": "Dry And Dusty",
+        "sourceFiddler": "Lon Jordan"
+      }
+    }
+  ]
+}

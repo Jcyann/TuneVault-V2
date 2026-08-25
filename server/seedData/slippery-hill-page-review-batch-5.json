@@ -1,0 +1,50 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1053,
+        "title": "Dubuque"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/dubuque_ronhughey.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Dubuque",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/dubuque",
+        "sourcePageTitle": "Dubuque",
+        "sourceFiddler": "Ron Hughey"
+      }
+    },
+    {
+      "tune": {
+        "id": 1055,
+        "title": "Jack of Diamonds"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/jackofdiamonds_snakechapman.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Jack Of Diamonds",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/jack-diamonds",
+        "sourcePageTitle": "Jack Of Diamonds",
+        "sourceFiddler": "Owen \"Snake\" Chapman"
+      }
+    },
+    {
+      "tune": {
+        "id": 1056,
+        "title": "Jeff Sturgeon"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/jeffsturgeon_jonbekoff.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Jeff Sturgeon",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/jeff-sturgeon-0",
+        "sourcePageTitle": "Jeff Sturgeon",
+        "sourceFiddler": "Jon Bekoff"
+      }
+    }
+  ]
+}

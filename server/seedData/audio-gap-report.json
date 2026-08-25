@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-08-25T04:33:00.872Z",
+  "generatedAt": "2026-08-25T05:04:55.687Z",
   "from": "2026-03-13",
   "totalRecentTunes": 818,
-  "audioPlayerReady": 4,
-  "heldForVerifiedAudio": 814,
+  "audioPlayerReady": 16,
+  "heldForVerifiedAudio": 802,
   "heldByTuneType": {
-    "reel": 223,
+    "reel": 215,
     "jig": 148,
     "polka": 112,
     "march": 92,
-    "waltz": 68,
+    "waltz": 67,
     "hornpipe": 42,
     "barndance": 35,
     "slip jig": 34,
@@ -17,73 +17,9 @@
     "slide": 14,
     "mazurka": 13,
     "strathspey": 9,
-    "breakdown": 6
+    "breakdown": 3
   },
   "heldTunes": [
-    {
-      "id": 1038,
-      "title": "Falls of Richmond",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-03-13T15:59:37.690Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1039,
-      "title": "Lazy John",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:33.297Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1041,
-      "title": "Dry and Dusty",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:41.074Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1043,
-      "title": "Elk River Blues",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:48.541Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1044,
-      "title": "Ruffled Drawers",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:37:52.438Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1046,
-      "title": "Tennessee Breakdown",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:00.449Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1047,
-      "title": "Fall on My Knees",
-      "tuneType": "waltz",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:04.188Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1048,
-      "title": "Benton's Dream",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:07.865Z",
-      "status": "audio sought, none verified"
-    },
     {
       "id": 1049,
       "title": "Shove That Pig's Foot a Little Farther in the Fire",
@@ -106,38 +42,6 @@
       "tuneType": "waltz",
       "theSessionId": null,
       "createdAt": "2026-04-24T15:38:19.116Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1052,
-      "title": "Train on the Island",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:23.196Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1053,
-      "title": "Dubuque",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:26.925Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1055,
-      "title": "Jack of Diamonds",
-      "tuneType": "reel",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:34.445Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1056,
-      "title": "Jeff Sturgeon",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:38.339Z",
       "status": "audio sought, none verified"
     },
     {
