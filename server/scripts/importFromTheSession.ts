@@ -2,8 +2,9 @@
  * Imports only audio-ready, high-demand tunes from TheSession.org.
  *
  * A tune is not eligible until it appears in an audio manifest with a direct,
- * attributed recording. The recording is verified before any notation is
- * constructed, so the audio player remains the foundation of a new tune page.
+ * attributed recording. The recording is verified before any secondary
+ * enrichment is processed, so the audio player remains the foundation of a
+ * new tune page.
  *
  * Usage:
  *   npx tsx server/scripts/importFromTheSession.ts \
@@ -109,22 +110,6 @@ async function verifyEntryAudio(entry: AudioManifestEntry): Promise<{ variations
   return { variations: verified, rejected };
 }
 
-async function verifyEmbeddableVideo(entry: AudioManifestEntry): Promise<boolean> {
-  if (!entry.video) return true;
-  try {
-    const response = await fetch(
-      `https://www.youtube.com/oembed?${new URLSearchParams({
-        url: entry.video.youtubeUrl,
-        format: "json",
-      })}`,
-      { signal: AbortSignal.timeout(10000) },
-    );
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
 async function main() {
   if (!MANIFEST_PATH) {
     throw new Error("Refusing import: --audio-manifest=PATH is required. See server/seedData/audio-first-manifest.example.json.");
@@ -144,8 +129,6 @@ async function main() {
   let skippedUnpopular = 0;
   let skippedNameMismatch = 0;
   let skippedAudioUnavailable = 0;
-  let skippedNoTranscription = 0;
-  let skippedVideoUnverified = 0;
   let audioRejected = 0;
   let variationsSaved = 0;
 
@@ -184,12 +167,6 @@ async function main() {
         console.log("held (no playable verified audio)");
         continue;
       }
-      if (!(await verifyEmbeddableVideo(entry))) {
-        skippedVideoUnverified++;
-        console.log("held (optional video is not embeddable)");
-        continue;
-      }
-
       const detail = await fetchJson(`https://thesession.org/tunes/${sessionId}?format=json`);
       await sleep(DELAY_MS);
       if (!detail?.name) {
@@ -225,11 +202,6 @@ async function main() {
       const keyRaw: string = firstSetting.key || "Dmajor";
       const tuneType = String(detail.type || "").toLowerCase();
       const abcNotation = buildAbc(detail, sessionId, firstSetting, tuneType);
-      if (!abcNotation) {
-        skippedNoTranscription++;
-        console.log("held (no usable transcription)");
-        continue;
-      }
       const alternativeTitles = aliases.length > 0 ? aliases.join(", ") : null;
       const [primary, ...additionalVariations] = audio.variations;
       const key = sessionKeyToSimple(keyRaw);
@@ -250,10 +222,12 @@ async function main() {
            RETURNING id`,
           [
             detail.name, alternativeTitles, key, tuneType || null, "Unknown", null,
-            `${entry.description}\n\nSource: ${entry.descriptionSource}`,
+            entry.description
+              ? `${entry.description}${entry.descriptionSource ? `\n\nSource: ${entry.descriptionSource}` : ""}`
+              : null,
             primary.sourceFiddler || null, entry.video?.youtubeUrl || null,
             entry.video?.youtubeVideoId || null, primary.audioUrl, abcNotation, sessionId,
-            popularityFromSettings(settings.length), entry.playingNotes,
+            popularityFromSettings(settings.length), entry.playingNotes || null,
             primary.audioSource, primary.audioAttribution,
           ],
         );
@@ -294,8 +268,6 @@ Audio-first import complete
   Below popularity gate: ${skippedUnpopular}
   Title mismatch held  : ${skippedNameMismatch}
   Audio unavailable    : ${skippedAudioUnavailable}
-  No usable transcription: ${skippedNoTranscription}
-  Video not embeddable : ${skippedVideoUnverified}
   Audio candidates rejected: ${audioRejected}
   Dry-run mode         : ${DRY_RUN}
 `);
