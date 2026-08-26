@@ -1,70 +1,48 @@
 {
-  "generatedAt": "2026-08-26T05:33:36.619Z",
+  "generatedAt": "2026-08-26T20:33:09.008Z",
   "scope": "catalog-wide",
   "from": null,
   "totalTunes": 1848,
-  "audioPlayerReady": 990,
-  "directAudioReady": 990,
+  "audioPlayerReady": 1015,
+  "directAudioReady": 1015,
   "trustedArchivalReferences": 9,
-  "archivalReferenceReady": 997,
-  "heldForVerifiedAudio": 802,
+  "archivalReferenceReady": 1022,
+  "heldForVerifiedAudio": 786,
   "coverageByClass": {
     "loc_reference_only": 7,
-    "direct_playable_url": 988,
-    "youtube_only": 49,
+    "direct_playable_url": 1013,
+    "youtube_only": 40,
     "direct_url_and_loc_reference": 2,
-    "unresolved": 802
+    "unresolved": 786
   },
   "directAudioBySource": {
     "Mossyroof": 26,
-    "Internet Archive": 57,
-    "Slippery Hill": 17,
-    "other direct": 890
+    "Internet Archive": 66,
+    "Slippery Hill": 32,
+    "other direct": 890,
+    "Wikimedia Commons": 1
   },
   "pendingReview": {
-    "reviewCandidates": 3,
-    "bySource": {
-      "Internet Archive": 3
-    },
-    "reports": [
-      {
-        "report": "ia-audio-review-catalog-batch-1.json",
-        "candidates": 4,
-        "pending": 2
-      },
-      {
-        "report": "ia-audio-review-catalog-batch-2.json",
-        "candidates": 2,
-        "pending": 1
-      }
-    ]
+    "reviewCandidates": 0,
+    "bySource": {},
+    "reports": []
   },
   "heldByTuneType": {
-    "reel": 215,
-    "jig": 148,
-    "polka": 112,
-    "march": 92,
+    "reel": 210,
+    "jig": 147,
+    "polka": 110,
+    "march": 87,
     "waltz": 67,
-    "hornpipe": 42,
+    "hornpipe": 40,
     "barndance": 35,
     "slip jig": 34,
     "three-two": 18,
     "slide": 14,
     "mazurka": 13,
     "strathspey": 9,
-    "breakdown": 3
+    "breakdown": 2
   },
   "heldTunes": [
-    {
-      "id": 1037,
-      "title": "Pretty Polly",
-      "alternativeTitles": "The Gosport Tragedy, William and Polly",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "popularity": 7,
-      "createdAt": "2026-03-10T03:11:33.539Z",
-      "status": "audio sought, none verified"
-    },
     {
       "id": 1049,
       "title": "Shove That Pig's Foot a Little Farther in the Fire",
@@ -1926,16 +1904,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1241,
-      "title": "The Irish American",
-      "alternativeTitles": "Deirdre Shannon's, Irish-American, The Narrowback, Reel Des Moissonneurs",
-      "tuneType": "reel",
-      "theSessionId": "3675",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:44:17.778Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1242,
       "title": "The Dublin Fiddler",
       "alternativeTitles": "Reel Frå Landvik",
@@ -2016,16 +1984,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1250,
-      "title": "Quadrille Montcalm",
-      "alternativeTitles": "La Cuisiniere, Quadrille De Montcalm, Reel Dans La Cuisiniere, Reel Du Lac, Reel In 'La Cuisinière'",
-      "tuneType": "reel",
-      "theSessionId": "5184",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:44:28.559Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1251,
       "title": "The Deveron",
       "alternativeTitles": "The Ceilidh Band Reel, The Devron",
@@ -2056,16 +2014,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1254,
-      "title": "Pointe Au Pic",
-      "alternativeTitles": "Le Reel De Pointe-au Pic, Point Au Pic, Pointe A Pique, Pointe-Au-Pic, Reel A Pointe-Au-Pic, Reel De Pointe-au-Pic",
-      "tuneType": "reel",
-      "theSessionId": "6183",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:44:33.800Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1255,
       "title": "Jimmy Allen",
       "alternativeTitles": "Jamie Allen, Jamie Allen's Rant, The Reel Of Tullochgorum",
@@ -2083,16 +2031,6 @@
       "theSessionId": "6671",
       "popularity": 3,
       "createdAt": "2026-07-26T06:44:35.924Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1257,
-      "title": "La Toque Bleu",
-      "alternativeTitles": "Blue Cap, The Blue Cap, Blue Tuque, The Blue Tuque, La Reel De La Tuque Bleu, La Reel De La Tuque Bleue, La Torque Bleu, Reel De La Tuque Bleu",
-      "tuneType": "reel",
-      "theSessionId": "6845",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:44:36.973Z",
       "status": "audio sought, none verified"
     },
     {
@@ -5056,16 +4994,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1554,
-      "title": "The Saratoga",
-      "alternativeTitles": "The Saratoga Hornpipe",
-      "tuneType": "hornpipe",
-      "theSessionId": "8125",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:51:28.305Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1555,
       "title": "The Green Island",
       "alternativeTitles": "Babbit's, Myopia, OLd Hornpipe From Winner's",
@@ -5233,16 +5161,6 @@
       "theSessionId": "4847",
       "popularity": 3,
       "createdAt": "2026-07-26T06:53:00.661Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1572,
-      "title": "Batchelder's",
-      "alternativeTitles": "Atlanta Hornpipe, Quigley's",
-      "tuneType": "reel",
-      "theSessionId": "1182",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:53:02.995Z",
       "status": "audio sought, none verified"
     },
     {
@@ -6226,16 +6144,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1671,
-      "title": "British Grenadiers' March",
-      "alternativeTitles": "As I Cam Doon Through Glesga Toon, As I Came Down Through Glasgow Town, British Chartered Accountants, British Grenadiers, The British Grenadiers, The Donkey Ate The Coal-brick, The March Of The British Grenadiers, There Was A Bony Scotsman At The Battle Of Waterloo",
-      "tuneType": "polka",
-      "theSessionId": "6850",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:54:52.997Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1672,
       "title": "The Mermaid's Bridal March",
       "alternativeTitles": "The Mermaid Wife, The Mermaid's Slip",
@@ -6263,16 +6171,6 @@
       "theSessionId": "8373",
       "popularity": 3,
       "createdAt": "2026-07-26T06:54:56.150Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1675,
-      "title": "Brian Boru's March",
-      "alternativeTitles": "Brian Barou's, Brian Bohru's, Brian Boru, Brian Boru's, Tullinahaw",
-      "tuneType": "jig",
-      "theSessionId": "271",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:54:57.224Z",
       "status": "audio sought, none verified"
     },
     {
@@ -6906,16 +6804,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1739,
-      "title": "La Marseillaise",
-      "alternativeTitles": "La Marseillaise March",
-      "tuneType": "march",
-      "theSessionId": "9010",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:57:28.781Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1740,
       "title": "Phil The Fluter's Ball",
       "alternativeTitles": "The Fluter's Ball March, The Fluter's Ball, The Fluther's Ball, Phil The Fluter, Phil The Fluther, Phil The Fluther's Ball",
@@ -7156,16 +7044,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1764,
-      "title": "The Foggy Dew",
-      "alternativeTitles": "An T-Óglach, The Foggy Dew March, When I Was Young And In My Prime",
-      "tuneType": "march",
-      "theSessionId": "2516",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:57:56.601Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1765,
       "title": "Lewis Proudlock's",
       "alternativeTitles": "Belle Isle's March, The Bellisle March, Bellisle's March, The Bellisle's March, General Monck's March, General Monk's Goosestep, General Monk's March, Monck's March",
@@ -7286,16 +7164,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1777,
-      "title": "The Star Of The County Down",
-      "alternativeTitles": "Diversus And Lazarus, Diverus And Lazarus, Dives And Lazarus, Gilderoy, Kingsfold, The Star Of County Down, The Star Of The County Down March, When First I Left Old Ireland",
-      "tuneType": "march",
-      "theSessionId": "4320",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:58:10.450Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1778,
       "title": "Beauties Of Autumn",
       "alternativeTitles": "The Beauties Of Autumn March",
@@ -7343,16 +7211,6 @@
       "theSessionId": "4648",
       "popularity": 3,
       "createdAt": "2026-07-26T06:58:15.710Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1783,
-      "title": "The Meeting Of The Waters",
-      "alternativeTitles": "The Boys From Killibegs, The Boys Of Killybegs, The Meeting Of The Waters March",
-      "tuneType": "march",
-      "theSessionId": "4679",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:58:16.883Z",
       "status": "audio sought, none verified"
     },
     {
@@ -7503,16 +7361,6 @@
       "theSessionId": "5009",
       "popularity": 3,
       "createdAt": "2026-07-26T06:58:33.891Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1799,
-      "title": "The Grand Spy",
-      "alternativeTitles": "The Grand Spy March",
-      "tuneType": "hornpipe",
-      "theSessionId": "5011",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:58:34.938Z",
       "status": "audio sought, none verified"
     },
     {
@@ -7686,16 +7534,6 @@
       "status": "audio sought, none verified"
     },
     {
-      "id": 1817,
-      "title": "The Parting Glass",
-      "alternativeTitles": "An Gloine Slán, Burn's Farewell, Cleite Na Péacóige, The Cork, The March Of The Peacock, The Peacock, The Peacock's, Peacocks",
-      "tuneType": "march",
-      "theSessionId": "6275",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:58:55.230Z",
-      "status": "audio sought, none verified"
-    },
-    {
       "id": 1818,
       "title": "Oho! Oho! I've Found You Out",
       "alternativeTitles": "Asey's March, Asey's Piece, Ellis', Ellis's, Hunnell's Double Drag, Mason's Quickstep, O I Hae Seen The Roses Blaw, Port Ellis",
@@ -7763,16 +7601,6 @@
       "theSessionId": "6647",
       "popularity": 3,
       "createdAt": "2026-07-26T06:59:03.705Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1825,
-      "title": "Road To Boston",
-      "alternativeTitles": "A Trip To Boston, Around The House, Boston March, The Boston March, Branch Tune, The Branch Tune, Kentish Guard's March, The Kentish Guard's March",
-      "tuneType": "polka",
-      "theSessionId": "6651",
-      "popularity": 3,
-      "createdAt": "2026-07-26T06:59:04.761Z",
       "status": "audio sought, none verified"
     },
     {
@@ -8077,14 +7905,6 @@
     }
   ],
   "topUnresolved": [
-    {
-      "id": 1037,
-      "title": "Pretty Polly",
-      "alternativeTitles": "The Gosport Tragedy, William and Polly",
-      "popularity": 7,
-      "tuneType": "breakdown",
-      "createdAt": "2026-03-10T03:11:33.539Z"
-    },
     {
       "id": 1049,
       "title": "Shove That Pig's Foot a Little Farther in the Fire",
@@ -8876,6 +8696,14 @@
       "popularity": 3,
       "tuneType": "reel",
       "createdAt": "2026-07-26T06:42:16.768Z"
+    },
+    {
+      "id": 1154,
+      "title": "Reel Des Skieurs",
+      "alternativeTitles": "Indian, Indian Quadrille, Le Reel Des Skieurs, Quadrille Indien, Reel Indien, Reel Of The Skiers, Reel Skiers, Skiers",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:42:17.811Z"
     }
   ]
 }

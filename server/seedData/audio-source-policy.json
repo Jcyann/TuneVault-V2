@@ -1,6 +1,6 @@
 {
   "updatedAt": "2026-08-26",
-  "purpose": "Source approval rules for TuneVault audio discovery and review. A title match alone never approves a recording.",
+  "purpose": "Source approval rules for TuneVault audio discovery and review. A title match alone never approves a recording. There is no manual per-tune genre/style review — exact title/alias match plus rights/license and a verified playable file are the bar for auto-attaching.",
   "sources": [
     {
       "name": "Slippery Hill",
@@ -10,18 +10,29 @@
         "HTTPS, audio MIME type, bounded response, and recognizable audio signature verification immediately before apply",
         "No replacement of an existing trusted direct recording or Library of Congress reference"
       ],
-      "context": "Performer and edition details are retained when the source page provides them."
+      "context": "Performer and edition details are retained when the source page provides them. Discovery/apply run against the full unresolved backlog by default (no small fixed batch limit)."
     },
     {
       "name": "Internet Archive",
-      "status": "approved conditionally for direct audio",
+      "status": "approved for direct audio",
       "requirements": [
         "Exact title or stored-alias evidence on an individual audio file name or file title; collection titles alone are not sufficient",
         "Current collection metadata must provide a named creator and either rights or a license URL",
-        "A separate review entry must be marked approved and include concrete source-description evidence that this is a useful traditional or old-time edition",
-        "HTTPS, audio MIME type, bounded response, and recognizable audio signature verification immediately before apply"
+        "HTTPS, audio MIME type, bounded response, and recognizable audio signature verification immediately before apply",
+        "No replacement of an existing trusted direct recording or Library of Congress reference"
       ],
-      "context": "Review reports preserve the collection, file, rights/license, creator, performer when named, and source-page URL."
+      "context": "Review reports preserve the collection, file, rights/license, creator, performer when named, and source-page URL. There is no manual editorial 'is this a genuine old-time edition' gate — exact match, rights/license, attribution, and a verified playable file are sufficient to auto-attach. Discovery/apply run against the full unresolved backlog by default (no small fixed batch limit)."
+    },
+    {
+      "name": "Wikimedia Commons",
+      "status": "approved for direct audio",
+      "requirements": [
+        "Exact title or stored-alias match against the Commons file page title (e.g. File:<Tune Title>.ogg)",
+        "An explicit declared license or usage-terms string on the file page that does not read as restricted/fair-use, plus a named artist or credit line",
+        "HTTPS, audio (or application/ogg container) MIME type, bounded response, and recognizable audio signature verification immediately before apply",
+        "No replacement of an existing trusted direct recording or Library of Congress reference"
+      ],
+      "context": "Commons only hosts freely licensed or public-domain media, but individual files can still declare restricted terms, so the license line is rechecked live before every apply."
     },
     {
       "name": "Library of Congress",
@@ -31,7 +42,7 @@
         "A stable Library of Congress item reference",
         "Do not label a reference as a direct downloadable player URL until that playback path is separately verified"
       ],
-      "context": "LOC records remain distinct from direct-audio coverage in catalog audits."
+      "context": "LOC records remain distinct from direct-audio coverage in catalog audits. The loc.gov API/search endpoints were not reachable from the automated sourcing environment during the most recent large-scale pass, so no new direct-audio LOC lane was added; existing LOC references are unaffected."
     },
     {
       "name": "Southern Folklife Collection / Digital SFC",
@@ -39,7 +50,39 @@
       "requirements": [
         "Needs a source-specific, stable per-file playback and rights verification lane before use"
       ],
-      "context": "The collection contains relevant field recordings, but search discovery alone is not enough evidence for automatic attachment."
+      "context": "The collection contains relevant field recordings, but search discovery alone is not enough evidence for automatic attachment. No lawful, scriptable per-file audio+rights endpoint was found during evaluation."
+    },
+    {
+      "name": "Smithsonian Folkways / Learning Lab",
+      "status": "evaluated, not approved for automated direct imports",
+      "requirements": [
+        "Needs full-track (not preview-clip) audio under a clear open license before it can be auto-attached"
+      ],
+      "context": "The Smithsonian Open Access API returns rich catalog metadata for Folkways recordings but no downloadable audio file for them (they are physical/commercial recordings, not digitized open-access media). Folkways.si.edu track pages offer short promotional preview clips only, sold under standard commercial terms rather than a redistributable license, so they do not clear the rights bar."
+    },
+    {
+      "name": "Folkstreams / NCTA",
+      "status": "evaluated, not approved for automated direct imports",
+      "requirements": [
+        "Needs a documented public API or file listing that maps individual tune titles to a direct, rights-cleared audio/video file"
+      ],
+      "context": "Folkstreams publishes documentary films (not individual tune tracks), and the site exposes no discoverable API for scripted per-title lookup, so exact tune-title matching and rights verification are not currently possible here."
+    },
+    {
+      "name": "Digital Library of Appalachia",
+      "status": "evaluated, not approved for automated direct imports",
+      "requirements": [
+        "Needs a reachable, scriptable per-item metadata/rights endpoint before use"
+      ],
+      "context": "The site runs on CONTENTdm; its dmwebservices API endpoint returned 403/blocked responses to automated requests during evaluation, and per-item rights statements vary by collection, so this lane cannot be verified end-to-end from the automated sourcing environment."
+    },
+    {
+      "name": "Duke Digital Collections",
+      "status": "evaluated, not approved for automated direct imports",
+      "requirements": [
+        "Needs a reachable, scriptable per-item metadata/rights endpoint before use"
+      ],
+      "context": "repository.duke.edu is protected by an interactive bot challenge that blocks scripted access, so item-level title, rights, and audio-file verification cannot be automated from this environment."
     }
   ]
 }

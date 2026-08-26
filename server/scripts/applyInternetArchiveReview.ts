@@ -6,6 +6,12 @@
  * update. Existing primary audio and Library of Congress references are never
  * replaced.
  *
+ * There is no manual per-tune editorial gate: exact title/alias match, a
+ * declared rights/license, a named creator, and a verified playable audio
+ * file are the bar for auto-attaching. This intentionally does not judge
+ * whether a recording is a "genuine old-time edition" — only whether it is
+ * lawfully attributable, exactly matched, and technically playable.
+ *
  * Usage:
  *   npx tsx server/scripts/applyInternetArchiveReview.ts \
  *     --review=server/seedData/ia-audio-review-catalog.json --dry-run
@@ -14,6 +20,7 @@
 import { readFileSync } from "fs";
 import { pool } from "../db";
 import { verifyPlayableAudio } from "./audioManifest";
+import { disqualifyByGenre } from "./internetArchiveGenreGuard";
 
 const REVIEW_ARG = process.argv.find((arg) => arg.startsWith("--review="));
 const REVIEW_PATH = REVIEW_ARG?.split("=").slice(1).join("=");
@@ -40,11 +47,6 @@ type ReviewCandidate = {
     verifiedFileTitle?: string | null;
     rights?: string | null;
     licenseUrl?: string | null;
-  };
-  review?: {
-    approved: boolean;
-    editionEvidence: string;
-    reviewedAt?: string;
   };
 };
 
@@ -126,11 +128,6 @@ async function main() {
         console.log("rejected (incomplete review candidate)");
         continue;
       }
-      if (!candidate.review?.approved || candidate.review.editionEvidence.trim().length < 30) {
-        rejected++;
-        console.log("rejected (missing approved traditional-edition review evidence)");
-        continue;
-      }
       if (recording.audioSource !== "Internet Archive"
         || recording.audioUrl !== expectedAudioUrl(recording.collectionIdentifier, recording.verifiedFileName)) {
         rejected++;
@@ -206,6 +203,12 @@ async function main() {
         console.log("rejected (collection creator or exact file evidence changed)");
         continue;
       }
+      const genreDisqualification = disqualifyByGenre(itemMetadata);
+      if (genreDisqualification) {
+        rejected++;
+        console.log(`rejected (${genreDisqualification})`);
+        continue;
+      }
       if (recording.sourceFiddler && recording.sourceFiddler !== performer) {
         rejected++;
         console.log("rejected (named performer no longer matches the source description)");
@@ -253,7 +256,7 @@ async function main() {
         const update = await client.query(
           `UPDATE tunes
            SET audio_url = $1, audio_source = $2, audio_attribution = $3,
-               source_fiddler = CASE WHEN $4 IS NOT NULL THEN $4 ELSE source_fiddler END,
+               source_fiddler = COALESCE($4::text, source_fiddler),
                tags = CASE WHEN tags = 'audio-needed' THEN NULL ELSE tags END
            WHERE id = $5 AND audio_url IS NULL AND loc_item_id IS NULL
            RETURNING id`,

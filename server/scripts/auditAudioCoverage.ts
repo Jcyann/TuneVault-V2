@@ -44,6 +44,7 @@ function sourceFamily(audioUrl: string | null, locItemId: string | null): string
     if (hostname === "www.slippery-hill.com" || hostname.endsWith(".slippery-hill.com")) return "Slippery Hill";
     if (hostname === "www.loc.gov" || hostname.endsWith(".loc.gov")) return "Library of Congress";
     if (hostname === "www.stringband.mossyroof.com" || hostname.endsWith(".mossyroof.com")) return "Mossyroof";
+    if (hostname === "upload.wikimedia.org") return "Wikimedia Commons";
     return "other direct";
   } catch {
     return "other direct";

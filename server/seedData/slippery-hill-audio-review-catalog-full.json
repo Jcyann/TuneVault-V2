@@ -1,0 +1,301 @@
+{
+  "generatedAt": "2026-08-26T19:23:43.455827+00:00",
+  "scope": "catalog-wide",
+  "from": null,
+  "searched": 839,
+  "checkedFiles": 10065,
+  "reviewCandidates": 16,
+  "noFilenameMatch": 0,
+  "unavailable": 823,
+  "rejected": 0,
+  "candidates": [
+    {
+      "tune": {
+        "id": 11,
+        "title": "John Henry",
+        "theSessionId": null,
+        "popularity": 8,
+        "createdAt": "2026-03-06T04:20:57.843Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/JohnHenry.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "john henry",
+        "filenameEvidence": "JohnHenry.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1022,
+        "title": "Roving Gambler",
+        "theSessionId": null,
+        "popularity": 7,
+        "createdAt": "2026-03-10T00:21:24.409Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/RovingGambler.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "roving gambler",
+        "filenameEvidence": "RovingGambler.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1007,
+        "title": "Fox Chase",
+        "theSessionId": null,
+        "popularity": 7,
+        "createdAt": "2026-03-10T00:21:24.355Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/fox_chase.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "fox chase",
+        "filenameEvidence": "fox_chase.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1003,
+        "title": "East Tennessee Blues",
+        "theSessionId": null,
+        "popularity": 7,
+        "createdAt": "2026-03-10T00:21:24.339Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/east_tennessee_blues.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "east tennessee blues",
+        "filenameEvidence": "east_tennessee_blues.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1018,
+        "title": "Wake Up Susan",
+        "theSessionId": null,
+        "popularity": 6,
+        "createdAt": "2026-03-10T00:21:24.395Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/WakeUpSusan.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "wake up susan",
+        "filenameEvidence": "WakeUpSusan.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1014,
+        "title": "Jawbone",
+        "theSessionId": null,
+        "popularity": 6,
+        "createdAt": "2026-03-10T00:21:24.381Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/jawbone.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "jawbone",
+        "filenameEvidence": "jawbone.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 68,
+        "title": "New Five Cents",
+        "theSessionId": null,
+        "popularity": 6,
+        "createdAt": "2026-03-06T04:20:57.843Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/NewFiveCents.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "new five cents",
+        "filenameEvidence": "NewFiveCents.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 55,
+        "title": "Dallas Rag",
+        "theSessionId": null,
+        "popularity": 6,
+        "createdAt": "2026-03-06T04:20:57.843Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/DallasRag.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "dallas rag",
+        "filenameEvidence": "DallasRag.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1783,
+        "title": "The Meeting Of The Waters",
+        "theSessionId": "4679",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:58:16.883Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/meeting_of_the_waters.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "meeting of the waters",
+        "filenameEvidence": "meeting_of_the_waters.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1572,
+        "title": "Batchelder's",
+        "theSessionId": "1182",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:53:02.995Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/AtlantaHornpipe.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "atlanta hornpipe",
+        "filenameEvidence": "AtlantaHornpipe.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1554,
+        "title": "The Saratoga",
+        "theSessionId": "8125",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:51:28.305Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/SaratogaHornpipe.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "saratoga hornpipe",
+        "filenameEvidence": "SaratogaHornpipe.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1257,
+        "title": "La Toque Bleu",
+        "theSessionId": "6845",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:44:36.973Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/BlueCap.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "blue cap",
+        "filenameEvidence": "BlueCap.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1254,
+        "title": "Pointe Au Pic",
+        "theSessionId": "6183",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:44:33.800Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/PointeAuPic.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "pointe au pic",
+        "filenameEvidence": "PointeAuPic.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1250,
+        "title": "Quadrille Montcalm",
+        "theSessionId": "5184",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:44:28.559Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/QuadrilleMontcalm.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "quadrille montcalm",
+        "filenameEvidence": "QuadrilleMontcalm.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1241,
+        "title": "The Irish American",
+        "theSessionId": "3675",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:44:17.778Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/IrishAmerican.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "irish american",
+        "filenameEvidence": "IrishAmerican.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    },
+    {
+      "tune": {
+        "id": 1216,
+        "title": "The Old French",
+        "theSessionId": "1296",
+        "popularity": 3,
+        "createdAt": "2026-07-26T06:43:47.907Z"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/old_french.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "old french",
+        "filenameEvidence": "old_french.mp3",
+        "contentType": "audio/mpeg"
+      },
+      "status": "reviewed candidate; add to manifest before applying"
+    }
+  ]
+}

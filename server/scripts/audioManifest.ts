@@ -205,7 +205,11 @@ export async function verifyPlayableAudio(variation: AudioVariation): Promise<{ 
     if (!response.url.startsWith("https://")) {
       return { ok: false, reason: "redirected to a non-HTTPS URL" };
     }
-    if (!contentType?.toLowerCase().startsWith("audio/")) {
+    const normalizedContentType = contentType?.toLowerCase() || "";
+    const isAudioContentType = normalizedContentType.startsWith("audio/")
+      // Wikimedia Commons serves .ogg/.oga audio under this generic container type.
+      || normalizedContentType.startsWith("application/ogg");
+    if (!isAudioContentType) {
       return { ok: false, reason: `unexpected content type ${contentType || "unknown"}` };
     }
     const contentLength = Number(response.headers.get("content-length") || 0);

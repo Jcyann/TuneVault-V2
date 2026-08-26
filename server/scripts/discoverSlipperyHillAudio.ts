@@ -5,9 +5,12 @@
  * must use an exact title or stored alias as the filename evidence and must
  * pass the shared HTTPS/MIME/signature playback check.
  *
+ * By default this processes the full unresolved backlog in one pass. Pass
+ * --limit to cap a run, e.g. for a quick smoke test.
+ *
  * Usage:
  *   npx tsx server/scripts/discoverSlipperyHillAudio.ts \
- *     --from=2026-03-13 --limit=100 \
+ *     --from=2026-03-13 \
  *     --write-report=server/seedData/slippery-hill-audio-review-latest.json
  */
 
@@ -18,11 +21,13 @@ import { normalizeTuneTitle, verifyPlayableAudio } from "./audioManifest";
 const FROM_ARG = process.argv.find((arg) => arg.startsWith("--from="));
 const FROM = FROM_ARG?.split("=").slice(1).join("=") || "2026-03-13";
 const LIMIT_ARG = process.argv.find((arg) => arg.startsWith("--limit="));
-const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 100;
+// Default is large enough to cover the full unresolved backlog in one pass.
+const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 50000;
 const SKIP_ARG = process.argv.find((arg) => arg.startsWith("--skip="));
 const SKIP = SKIP_ARG ? parseInt(SKIP_ARG.split("=")[1], 10) : 0;
 const WRITE_ARG = process.argv.find((arg) => arg.startsWith("--write-report="));
 const WRITE_PATH = WRITE_ARG?.split("=").slice(1).join("=");
+const CATALOG_WIDE = process.argv.includes("--catalog-wide");
 const BASE_URL = "https://www.slippery-hill.com/system/files/recordings/";
 const UA = { "User-Agent": "TuneVault/1.0 (audio discovery; review only)" };
 
@@ -36,7 +41,7 @@ function filenameForms(title: string): string[] {
   const hyphen = words.join("-").toLowerCase();
   const underscore = words.join("_").toLowerCase();
   const pascal = words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join("");
-  return [...new Set([camel, lower, hyphen, underscore, pascal])];
+  return Array.from(new Set([camel, lower, hyphen, underscore, pascal]));
 }
 
 function exactFilenameEvidence(filename: string, tuneTitle: string, aliases: string): string | null {
@@ -81,28 +86,37 @@ async function main() {
       popularity: number | null;
       created_at: string;
     }>(
-      `SELECT id, title, alternative_titles, the_session_id, popularity, created_at
-       FROM tunes
-       WHERE created_at >= $1 AND audio_url IS NULL AND loc_item_id IS NULL
-       ORDER BY popularity DESC NULLS LAST, created_at DESC, id DESC
-       LIMIT $2 OFFSET $3`,
-      [FROM, LIMIT, SKIP],
+      CATALOG_WIDE
+        ? `SELECT id, title, alternative_titles, the_session_id, popularity, created_at
+           FROM tunes
+           WHERE audio_url IS NULL AND loc_item_id IS NULL
+           ORDER BY popularity DESC NULLS LAST, created_at DESC, id DESC
+           LIMIT $1 OFFSET $2`
+        : `SELECT id, title, alternative_titles, the_session_id, popularity, created_at
+           FROM tunes
+           WHERE created_at >= $1 AND audio_url IS NULL AND loc_item_id IS NULL
+           ORDER BY popularity DESC NULLS LAST, created_at DESC, id DESC
+           LIMIT $2 OFFSET $3`,
+      CATALOG_WIDE ? [LIMIT, SKIP] : [FROM, LIMIT, SKIP],
     );
 
     for (const tune of rows) {
       searched++;
       const aliases = tune.alternative_titles || "";
       const names = [tune.title, ...aliases.split(",")].map((name) => name.trim()).filter(Boolean);
-      const forms = [...new Set(names.flatMap(filenameForms))];
+      const forms = Array.from(new Set(names.flatMap(filenameForms)));
       let found = false;
 
-      for (const form of forms) {
+      // Filename forms for one tune are independent guesses against the same
+      // host; checking existence concurrently instead of one-by-one is what
+      // makes a full-backlog pass tractable.
+      checkedFiles += forms.length;
+      const existence = await Promise.all(forms.map((form) => headExists(`${BASE_URL}${encodeURIComponent(form)}.mp3`)));
+
+      for (let i = 0; i < forms.length; i++) {
+        if (!existence[i]) continue;
+        const form = forms[i];
         const url = `${BASE_URL}${encodeURIComponent(form)}.mp3`;
-        checkedFiles++;
-        if (!(await headExists(url))) {
-          await sleep(100);
-          continue;
-        }
 
         const matchedTitle = exactFilenameEvidence(`${form}.mp3`, tune.title, aliases);
         if (!matchedTitle) {
@@ -142,7 +156,7 @@ async function main() {
       }
 
       if (!found && forms.length > 0) unavailable++;
-      await sleep(200);
+      await sleep(80);
     }
   } finally {
     client.release();
@@ -151,7 +165,8 @@ async function main() {
 
   const report = {
     generatedAt: new Date().toISOString(),
-    from: FROM,
+    scope: CATALOG_WIDE ? "catalog-wide" : "recent additions",
+    from: CATALOG_WIDE ? null : FROM,
     searched,
     checkedFiles,
     reviewCandidates: candidates.length,

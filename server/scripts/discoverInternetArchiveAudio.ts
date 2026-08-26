@@ -8,21 +8,27 @@
  * a bounded playable-audio verification. Collection titles are context, not
  * title evidence: many lawful archival items contain multiple tunes.
  *
+ * By default this processes the full unresolved backlog (no manual editorial
+ * gate; exact match + rights/license + creator + playable audio are the
+ * bar). Pass --limit to cap a run, e.g. for a quick smoke test.
+ *
  * Usage:
  *   npx tsx server/scripts/discoverInternetArchiveAudio.ts --from=2026-03-13 \
- *     --limit=25 --write-report=server/seedData/ia-audio-review.json
+ *     --write-report=server/seedData/ia-audio-review.json
  *   npx tsx server/scripts/discoverInternetArchiveAudio.ts --catalog-wide \
- *     --limit=25 --write-report=server/seedData/ia-audio-review-catalog.json
+ *     --write-report=server/seedData/ia-audio-review-catalog.json
  */
 
 import { writeFileSync } from "fs";
 import { pool } from "../db";
 import { verifyPlayableAudio } from "./audioManifest";
+import { disqualifyByGenre } from "./internetArchiveGenreGuard";
 
 const FROM_ARG = process.argv.find((arg) => arg.startsWith("--from="));
 const FROM = FROM_ARG?.split("=").slice(1).join("=") || "2026-03-13";
 const LIMIT_ARG = process.argv.find((arg) => arg.startsWith("--limit="));
-const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 25;
+// Default is large enough to cover the full unresolved backlog in one pass.
+const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 50000;
 const SKIP_ARG = process.argv.find((arg) => arg.startsWith("--skip="));
 const SKIP = SKIP_ARG ? parseInt(SKIP_ARG.split("=")[1], 10) : 0;
 const WRITE_ARG = process.argv.find((arg) => arg.startsWith("--write-report="));
@@ -110,6 +116,7 @@ async function main() {
   let searched = 0;
   let noExactItem = 0;
   let withheldForRights = 0;
+  let withheldForGenre = 0;
   let noPlayableFile = 0;
 
   try {
@@ -153,6 +160,17 @@ async function main() {
       let found = false;
        for (const item of documents) {
          if (typeof item?.identifier !== "string") continue;
+         // The search index already carries rights/licenseurl for most items;
+         // skip the expensive per-item metadata fetch when neither is present
+         // instead of discovering that after the round trip.
+         const searchRights = typeof item.rights === "string" ? item.rights.trim()
+           : Array.isArray(item.rights) && typeof item.rights[0] === "string" ? item.rights[0].trim() : "";
+         const searchLicenseUrl = typeof item.licenseurl === "string" ? item.licenseurl.trim()
+           : Array.isArray(item.licenseurl) && typeof item.licenseurl[0] === "string" ? item.licenseurl[0].trim() : "";
+         if (!searchRights && !searchLicenseUrl) {
+           withheldForRights++;
+           continue;
+         }
          const metadata = await fetchJson(`https://archive.org/metadata/${encodeURIComponent(item.identifier)}`);
          const itemMetadata = metadata?.metadata || {};
          const rights = typeof itemMetadata.rights === "string" ? itemMetadata.rights.trim() : "";
@@ -168,6 +186,11 @@ async function main() {
            continue;
          }
          if (!attribution) continue;
+         const genreDisqualification = disqualifyByGenre(itemMetadata);
+         if (genreDisqualification) {
+           withheldForGenre++;
+           continue;
+         }
         const file = audioFileUrl(item.identifier, metadata.files, tune.title, tune.alternative_titles || "");
         if (!file) {
           noPlayableFile++;
@@ -224,6 +247,7 @@ async function main() {
     reviewCandidates: candidates.length,
     noExactItem,
     withheldForRights,
+    withheldForGenre,
     noPlayableFile,
     candidates,
   };
@@ -232,6 +256,7 @@ async function main() {
     reviewCandidates: candidates.length,
     noExactItem,
     withheldForRights,
+    withheldForGenre,
     noPlayableFile,
   }, null, 2));
   if (WRITE_PATH) {

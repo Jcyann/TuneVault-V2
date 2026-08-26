@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-08-26T20:14:12.115792+00:00",
+  "scope": "catalog-wide",
+  "from": null,
+  "searched": 826,
+  "reviewCandidates": 1,
+  "noExactItem": 663,
+  "withheldForRights": 736,
+  "withheldForGenre": 104,
+  "noPlayableFile": 66,
+  "candidates": [
+    {
+      "tune": {
+        "id": 1739,
+        "title": "La Marseillaise",
+        "theSessionId": "9010"
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/jamendo-423125/01-1364094-Almansor-La%20%20Marseillaise.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Almansor",
+        "rights": null,
+        "licenseUrl": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+        "collectionIdentifier": "jamendo-423125",
+        "collectionTitle": "Almansor - La Marseillaise",
+        "sourcePageUrl": "https://archive.org/details/jamendo-423125",
+        "sourceFiddler": null,
+        "collectionContext": "Almansor - La Marseillaise Jamendo Album #423125 Tracklisting: 01 - La Marseillaise Please read the Readme.txt and License.txt files for important origin and licensing information.",
+        "matchedTitle": "La Marseillaise",
+        "verifiedFileName": "01-1364094-Almansor-La  Marseillaise.mp3",
+        "verifiedFileTitle": "La Marseillaise",
+        "contentType": "audio/mpeg"
+      },
+      "status": "review required before apply"
+    }
+  ]
+}

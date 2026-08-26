@@ -9,4 +9,4 @@ Rule: do not rely on `nohup`/`setsid ... &` from the bash tool to keep long scri
 
 **Why:** Observed twice in one session: backgrounded enrichment scripts silently died with stalled logs while appearing "started".
 
-**How to apply:** Write batch scripts to be idempotent and resumable (skip already-done rows), then run them synchronously with `timeout 110 ...` inside the 120s bash cap, repeating the call until the "done" summary line appears.
+**How to apply:** Write batch scripts to be idempotent and resumable (skip already-done rows, support `--skip`/`--limit` chunking), then run them synchronously within the tool's execution-time cap, repeating the call until the "done" summary line appears.

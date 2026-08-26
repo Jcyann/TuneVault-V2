@@ -7,3 +7,6 @@
 - [Slippery Hill audio sourcing](slippery-hill-audio-sourcing.md) — directory pages reject automated access; use exact filename evidence plus direct playable-file verification in small batches.
 - [Lamancusa key verification](lamancusa-key-verification.md) — exact matched collection sheets are authoritative; tuning labels alone are not a key.
 - [Tuner pitch regression coverage](tuner-pitch-regression.md) — validate pitch detection with the live 2048-sample buffer across low strings; A4-only tests mask harmonic errors.
+- [Postgres null-param CASE WHEN bug](postgres-null-param-type.md) — bare `$n` in `CASE WHEN` with a null value throws "could not determine data type"; cast or COALESCE it.
+- [Wikimedia Commons audio source](wikimedia-commons-audio-source.md) — real CC/PD audio via batched imageinfo API; accept application/ogg; very low hit rate for niche tune backlogs.
+- [Open-corpus audio title-collision guard](audio-source-title-collision-guard.md) — exact title/alias match alone attached a LibriVox audiobook, an improv solo, wrong-genre tracks, and a Commons pronunciation clip; require positive genre/context evidence too.
