@@ -1,0 +1,108 @@
+{
+  "generatedAt": "2026-08-26T05:26:27.780Z",
+  "scope": "catalog-wide",
+  "from": null,
+  "searched": 25,
+  "reviewCandidates": 4,
+  "noExactItem": 11,
+  "withheldForRights": 68,
+  "noPlayableFile": 10,
+  "candidates": [
+    {
+      "tune": {
+        "id": 54,
+        "title": "Faded Love",
+        "theSessionId": null
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/jamendo-339187/01-1659256-DJMARTIN-Faded%20love.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "DJMARTIN",
+        "rights": null,
+        "licenseUrl": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+        "collectionIdentifier": "jamendo-339187",
+        "collectionTitle": "DJMARTIN - Faded love",
+        "sourcePageUrl": "https://archive.org/details/jamendo-339187",
+        "sourceFiddler": null,
+        "collectionContext": "DJMARTIN - Faded love Jamendo Album #339187 Tracklisting: 01 - Faded love Please read the Readme.txt and License.txt files for important origin and licensing information.",
+        "matchedTitle": "Faded love",
+        "verifiedFileName": "01-1659256-DJMARTIN-Faded love.mp3",
+        "verifiedFileTitle": "Faded love",
+        "contentType": "audio/mpeg"
+      },
+      "status": "review required before apply"
+    },
+    {
+      "tune": {
+        "id": 16,
+        "title": "Rye Whiskey",
+        "theSessionId": null
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/rye-whiskey/Rye%20Whiskey.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Adam Paulukaitis, Deborah Paulukaitis",
+        "rights": null,
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "collectionIdentifier": "rye-whiskey",
+        "collectionTitle": "Rye Whiskey",
+        "sourcePageUrl": "https://archive.org/details/rye-whiskey",
+        "sourceFiddler": "Deborah Paulukaitis",
+        "collectionContext": "Performed by Deborah Paulukaitis. Recorded on October 8, 2023 in Lilburn, Georgia (acquisition date: October 28, 2023). Learned from her grandfather, Virgil Matson (b. 1905). Recorded by Adam Paulukaitis on behalf of Derek Piotr.",
+        "matchedTitle": "Rye Whiskey",
+        "verifiedFileName": "Rye Whiskey.mp3",
+        "verifiedFileTitle": "Rye Whiskey",
+        "contentType": "audio/mpeg"
+      },
+      "status": "review required before apply"
+    },
+    {
+      "tune": {
+        "id": 1001,
+        "title": "Johnson Boys",
+        "theSessionId": null
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/johnson-boys/Johnson%20Boys.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Derek Piotr, Guy Wolff",
+        "rights": null,
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "collectionIdentifier": "johnson-boys",
+        "collectionTitle": "Johnson Boys",
+        "sourcePageUrl": "https://archive.org/details/johnson-boys",
+        "sourceFiddler": "Guy Wolff",
+        "collectionContext": "Performed by Guy Wolff. Recorded by Derek Piotr on January 8, 2023 in Bantam, Connecticut. Performed with banjo.",
+        "matchedTitle": "Johnson Boys.mp3",
+        "verifiedFileName": "Johnson Boys.mp3",
+        "verifiedFileTitle": null,
+        "contentType": "audio/mpeg"
+      },
+      "status": "review required before apply"
+    },
+    {
+      "tune": {
+        "id": 1037,
+        "title": "Pretty Polly",
+        "theSessionId": null
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/PrettyPollyByDaveyBobRamsey/PrettyPolly.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Trad, Arr. Ramsey",
+        "rights": null,
+        "licenseUrl": "http://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "collectionIdentifier": "PrettyPollyByDaveyBobRamsey",
+        "collectionTitle": "Pretty Polly by Davey Bob Ramsey",
+        "sourcePageUrl": "https://archive.org/details/PrettyPollyByDaveyBobRamsey",
+        "sourceFiddler": null,
+        "collectionContext": "A fired-up arrangement of the traditional mountain murder ballad with Davey Bob Ramsey on electric guitar and vocals and Matt Elliott on the drums (collectively known as D.R.A.M.). Recorded in 2005. Visit Davey Bob Ramsey's Live Music Archive Visit Davey Bob Ramsey's YouTube channel",
+        "matchedTitle": "pretty polly",
+        "verifiedFileName": "PrettyPolly.mp3",
+        "verifiedFileTitle": "pretty polly",
+        "contentType": "audio/mpeg"
+      },
+      "status": "review required before apply"
+    }
+  ]
+}

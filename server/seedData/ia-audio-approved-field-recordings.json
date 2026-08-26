@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-08-26T05:40:00.000Z",
+  "purpose": "Curator-approved Internet Archive field recordings. These entries may be passed to applyInternetArchiveReview.ts; raw discovery reports may not.",
+  "candidates": [
+    {
+      "tune": {
+        "id": 16,
+        "title": "Rye Whiskey"
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/rye-whiskey/Rye%20Whiskey.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Adam Paulukaitis, Deborah Paulukaitis",
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "collectionIdentifier": "rye-whiskey",
+        "collectionTitle": "Rye Whiskey",
+        "sourcePageUrl": "https://archive.org/details/rye-whiskey",
+        "sourceFiddler": "Deborah Paulukaitis",
+        "collectionContext": "Performed by Deborah Paulukaitis. Recorded on October 8, 2023 in Lilburn, Georgia. Learned from her grandfather, Virgil Matson (b. 1905). Recorded by Adam Paulukaitis on behalf of Derek Piotr.",
+        "matchedTitle": "Rye Whiskey",
+        "verifiedFileName": "Rye Whiskey.mp3",
+        "verifiedFileTitle": "Rye Whiskey",
+        "contentType": "audio/mpeg"
+      },
+      "review": {
+        "approved": true,
+        "reviewedAt": "2026-08-26",
+        "editionEvidence": "The source identifies this as a named oral-tradition performance learned from the performer's grandfather, providing a documented traditional rendition of the Appalachian song-tune rather than an unrelated same-title release."
+      }
+    },
+    {
+      "tune": {
+        "id": 1001,
+        "title": "Johnson Boys"
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/johnson-boys/Johnson%20Boys.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Derek Piotr, Guy Wolff",
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "collectionIdentifier": "johnson-boys",
+        "collectionTitle": "Johnson Boys",
+        "sourcePageUrl": "https://archive.org/details/johnson-boys",
+        "sourceFiddler": "Guy Wolff",
+        "collectionContext": "Performed by Guy Wolff. Recorded by Derek Piotr on January 8, 2023 in Bantam, Connecticut. Performed with banjo.",
+        "matchedTitle": "Johnson Boys.mp3",
+        "verifiedFileName": "Johnson Boys.mp3",
+        "verifiedFileTitle": null,
+        "contentType": "audio/mpeg"
+      },
+      "review": {
+        "approved": true,
+        "reviewedAt": "2026-08-26",
+        "editionEvidence": "Johnson Boys is a documented Southern Appalachian song-and-fiddle tune in the catalog, and this named banjo field performance is a real traditional-style edition rather than a title-only match."
+      }
+    },
+    {
+      "tune": {
+        "id": 102,
+        "title": "Whistle Daughter Whistle"
+      },
+      "recording": {
+        "audioUrl": "https://archive.org/download/whistle-daughter-whistle/Whistle%20Daughter%2C%20Whistle.mp3",
+        "audioSource": "Internet Archive",
+        "audioAttribution": "Derek Piotr, Kazuko Toelken",
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "collectionIdentifier": "whistle-daughter-whistle",
+        "collectionTitle": "Whistle Daughter, Whistle",
+        "sourcePageUrl": "https://archive.org/details/whistle-daughter-whistle",
+        "sourceFiddler": "Kazuko Toelken",
+        "collectionContext": "Performed by Kazuko Toelken. Recorded by Derek Piotr on March 25, 2026 in Skidmore, Texas. Fragment. Learned as a youth from her father, Barre Toelken.",
+        "matchedTitle": "Whistle Daughter, Whistle.mp3",
+        "verifiedFileName": "Whistle Daughter, Whistle.mp3",
+        "verifiedFileTitle": null,
+        "contentType": "audio/mpeg"
+      },
+      "review": {
+        "approved": true,
+        "reviewedAt": "2026-08-26",
+        "editionEvidence": "The collection documents a named family-transmitted performance of this catalog's traditional song-and-dance reel, so the fragment is a provenance-rich reference edition instead of an unrelated same-title song."
+      }
+    }
+  ]
+}

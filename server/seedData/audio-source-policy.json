@@ -1,0 +1,45 @@
+{
+  "updatedAt": "2026-08-26",
+  "purpose": "Source approval rules for TuneVault audio discovery and review. A title match alone never approves a recording.",
+  "sources": [
+    {
+      "name": "Slippery Hill",
+      "status": "approved for direct audio",
+      "requirements": [
+        "Exact title or stored-alias filename evidence, or a live canonical source page that proves both its heading and direct audio link",
+        "HTTPS, audio MIME type, bounded response, and recognizable audio signature verification immediately before apply",
+        "No replacement of an existing trusted direct recording or Library of Congress reference"
+      ],
+      "context": "Performer and edition details are retained when the source page provides them."
+    },
+    {
+      "name": "Internet Archive",
+      "status": "approved conditionally for direct audio",
+      "requirements": [
+        "Exact title or stored-alias evidence on an individual audio file name or file title; collection titles alone are not sufficient",
+        "Current collection metadata must provide a named creator and either rights or a license URL",
+        "A separate review entry must be marked approved and include concrete source-description evidence that this is a useful traditional or old-time edition",
+        "HTTPS, audio MIME type, bounded response, and recognizable audio signature verification immediately before apply"
+      ],
+      "context": "Review reports preserve the collection, file, rights/license, creator, performer when named, and source-page URL."
+    },
+    {
+      "name": "Library of Congress",
+      "status": "approved as a trusted archival reference",
+      "requirements": [
+        "Exact item-title or verified alias match in a named public collection",
+        "A stable Library of Congress item reference",
+        "Do not label a reference as a direct downloadable player URL until that playback path is separately verified"
+      ],
+      "context": "LOC records remain distinct from direct-audio coverage in catalog audits."
+    },
+    {
+      "name": "Southern Folklife Collection / Digital SFC",
+      "status": "evaluated, not approved for automated direct imports",
+      "requirements": [
+        "Needs a source-specific, stable per-file playback and rights verification lane before use"
+      ],
+      "context": "The collection contains relevant field recordings, but search discovery alone is not enough evidence for automatic attachment."
+    }
+  ]
+}
