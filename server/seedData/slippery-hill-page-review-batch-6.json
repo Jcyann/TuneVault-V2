@@ -1,0 +1,21 @@
+{
+  "source": "Manual review of exact Slippery Hill tune pages",
+  "candidates": [
+    {
+      "tune": {
+        "id": 1058,
+        "title": "Uncle Joe"
+      },
+      "recording": {
+        "audioUrl": "https://www.slippery-hill.com/system/files/recordings/05-uncle-joe-g.mp3",
+        "audioSource": "Slippery Hill",
+        "audioAttribution": "slippery-hill.com",
+        "matchedTitle": "Uncle Joe",
+        "sourcePageUrl": "https://www.slippery-hill.com/content/uncle-joe-3",
+        "sourcePageTitle": "Uncle Joe",
+        "sourceFiddler": "Lake Williamson",
+        "collection": "Jim Renner's Oklahoma Fiddle Archive"
+      }
+    }
+  ]
+}

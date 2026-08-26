@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-25T05:04:55.687Z",
+  "generatedAt": "2026-08-26T05:03:26.834Z",
   "from": "2026-03-13",
   "totalRecentTunes": 818,
-  "audioPlayerReady": 16,
-  "heldForVerifiedAudio": 802,
+  "audioPlayerReady": 17,
+  "heldForVerifiedAudio": 801,
   "heldByTuneType": {
     "reel": 215,
     "jig": 148,
@@ -17,7 +17,7 @@
     "slide": 14,
     "mazurka": 13,
     "strathspey": 9,
-    "breakdown": 3
+    "breakdown": 2
   },
   "heldTunes": [
     {
@@ -50,14 +50,6 @@
       "tuneType": "reel",
       "theSessionId": null,
       "createdAt": "2026-04-24T15:38:42.249Z",
-      "status": "audio sought, none verified"
-    },
-    {
-      "id": 1058,
-      "title": "Uncle Joe",
-      "tuneType": "breakdown",
-      "theSessionId": null,
-      "createdAt": "2026-04-24T15:38:46.137Z",
       "status": "audio sought, none verified"
     },
     {
