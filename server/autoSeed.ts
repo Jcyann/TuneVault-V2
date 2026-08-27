@@ -68,6 +68,126 @@ interface BlogPostRow {
   published_at: string | null;
 }
 
+interface CatalogCullExport {
+  tuneIds: number[];
+}
+
+const CATALOG_CULLS = [
+  {
+    filename: "removed-low-audio-tunes-2026-08-27.json",
+    marker: "catalog_cull_2026_08_27",
+    expectedCount: 500,
+  },
+] as const;
+
+export async function applyCatalogCulls(client: any): Promise<void> {
+  for (const cull of CATALOG_CULLS) {
+    const path = join(SEED_DIR, cull.filename);
+    if (!existsSync(path)) continue;
+
+    const marker = await client.query(
+      "SELECT value FROM seed_meta WHERE key = $1",
+      [cull.marker],
+    );
+    if (marker.rows[0]?.value === "applied") continue;
+
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as CatalogCullExport;
+    const tuneIds = parsed.tuneIds;
+    if (
+      !Array.isArray(tuneIds)
+      || tuneIds.length !== cull.expectedCount
+      || new Set(tuneIds).size !== cull.expectedCount
+      || tuneIds.some((id) => !Number.isInteger(id))
+    ) {
+      throw new Error(`${cull.filename} does not contain exactly ${cull.expectedCount} unique integer tune IDs`);
+    }
+
+    const { rows: present } = await client.query(
+      `SELECT id, audio_url, loc_item_id, loc_url, youtube_url, youtube_video_id
+       FROM tunes
+       WHERE id = ANY($1::int[])
+       ORDER BY id`,
+      [tuneIds],
+    );
+
+    if (present.length !== 0 && present.length !== cull.expectedCount) {
+      throw new Error(
+        `${cull.filename} is only partially applied (${present.length}/${cull.expectedCount} tunes remain)`,
+      );
+    }
+
+    if (present.length === cull.expectedCount) {
+      const protectedTunes = present.filter((tune: any) =>
+        tune.audio_url
+        || tune.loc_item_id
+        || tune.loc_url
+        || tune.youtube_url
+        || tune.youtube_video_id,
+      );
+      const protectedRecordings = await client.query(
+        `SELECT DISTINCT tune_id
+         FROM recordings
+         WHERE tune_id = ANY($1::int[])
+           AND (
+             NULLIF(btrim(audio_url), '') IS NOT NULL
+             OR NULLIF(btrim(loc_item_id), '') IS NOT NULL
+             OR NULLIF(btrim(youtube_video_id), '') IS NOT NULL
+           )`,
+        [tuneIds],
+      );
+      if (protectedTunes.length > 0 || protectedRecordings.rowCount > 0) {
+        throw new Error(
+          `Refusing ${cull.filename}: protected audio or archival references are present`,
+        );
+      }
+      const dependentRows = await client.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM key_reviews WHERE tune_id = ANY($1::int[])) AS key_reviews,
+           (SELECT COUNT(*)::int FROM recording_submissions WHERE tune_id = ANY($1::int[])) AS recording_submissions`,
+        [tuneIds],
+      );
+      if (
+        dependentRows.rows[0].key_reviews > 0
+        || dependentRows.rows[0].recording_submissions > 0
+      ) {
+        throw new Error(
+          `Refusing ${cull.filename}: selected tunes have key reviews or recording submissions`,
+        );
+      }
+    }
+
+    await client.query("BEGIN");
+    try {
+      if (present.length === cull.expectedCount) {
+        await client.query("DELETE FROM recordings WHERE tune_id = ANY($1::int[])", [tuneIds]);
+        await client.query("UPDATE suggestions SET tune_id = NULL WHERE tune_id = ANY($1::int[])", [tuneIds]);
+        const deleted = await client.query(
+          "DELETE FROM tunes WHERE id = ANY($1::int[])",
+          [tuneIds],
+        );
+        if (deleted.rowCount !== cull.expectedCount) {
+          throw new Error(`Expected to delete ${cull.expectedCount} tunes, deleted ${deleted.rowCount}`);
+        }
+      }
+      await client.query(
+        `INSERT INTO seed_meta (key, value) VALUES ($1, 'applied')
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [cull.marker],
+      );
+      await client.query("COMMIT");
+      log(
+        present.length === 0
+          ? `Catalog cull ${cull.filename} already reflected in database`
+          : `Applied catalog cull ${cull.filename}: removed ${cull.expectedCount} tunes`,
+        "autoSeed",
+      );
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+  }
+}
+
 export async function seedBlogPosts(): Promise<void> {
   const blogPath = join(SEED_DIR, "blog-posts.json");
   if (!existsSync(blogPath)) return;
@@ -139,6 +259,7 @@ export async function autoSeed(): Promise<void> {
 
     // Ensure seed_meta table exists
     await client.query(`CREATE TABLE IF NOT EXISTS seed_meta (key TEXT PRIMARY KEY, value TEXT)`);
+    await applyCatalogCulls(client);
 
     const countResult = await client.query("SELECT COUNT(*) FROM tunes");
     const count = parseInt(countResult.rows[0].count, 10);
