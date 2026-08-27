@@ -258,6 +258,7 @@ export async function ensureRuntimeTables(): Promise<void> {
         ON audio_ingestion_runs (source, status, updated_at DESC);
       CREATE TABLE IF NOT EXISTS audio_ingestion_attempts (
         id SERIAL PRIMARY KEY,
+        run_id INTEGER,
         source TEXT NOT NULL,
         adapter_version TEXT NOT NULL,
         tune_id INTEGER NOT NULL,
@@ -273,6 +274,8 @@ export async function ensureRuntimeTables(): Promise<void> {
         last_attempt_at TIMESTAMP NOT NULL DEFAULT now(),
         UNIQUE (source, adapter_version, tune_id)
       );
+      ALTER TABLE audio_ingestion_attempts
+        ADD COLUMN IF NOT EXISTS run_id INTEGER;
       CREATE INDEX IF NOT EXISTS audio_ingestion_attempts_retry_idx
         ON audio_ingestion_attempts (source, adapter_version, status, next_retry_at);
       CREATE INDEX IF NOT EXISTS audio_ingestion_attempts_tune_idx

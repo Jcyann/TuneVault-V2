@@ -36,13 +36,15 @@
     },
     {
       "name": "Library of Congress",
-      "status": "approved as a trusted archival reference",
+      "status": "approved for direct audio when the live item API exposes a verified MP3; otherwise retained as a trusted archival reference",
       "requirements": [
         "Exact item-title or verified alias match in a named public collection",
-        "A stable Library of Congress item reference",
-        "Do not label a reference as a direct downloadable player URL until that playback path is separately verified"
+        "The item must identify a named performer and carry positive fiddle-tune plus instrumental context",
+        "The live item or its named collection rights statement must say the Library is not aware of U.S. copyright restrictions or identify the recording as public domain",
+        "The live item JSON must expose an HTTPS MP3 that passes MIME, bounded-response, and audio-signature verification",
+        "A stable Library of Congress item reference must be retained alongside the direct file"
       ],
-      "context": "LOC records remain distinct from direct-audio coverage in catalog audits. The loc.gov API/search endpoints were not reachable from the automated sourcing environment during the most recent large-scale pass, so no new direct-audio LOC lane was added; existing LOC references are unaffected."
+      "context": "The loc.gov JSON API and tile.loc.gov MP3 resources are currently reachable. Archival references remain distinct from direct-audio coverage until the item-specific MP3 and rights checks pass. Existing references can be upgraded without replacing any other trusted recording."
     },
     {
       "name": "Southern Folklife Collection / Digital SFC",
@@ -75,6 +77,15 @@
         "Needs a reachable, scriptable per-item metadata/rights endpoint before use"
       ],
       "context": "The site runs on CONTENTdm; its dmwebservices API endpoint returned 403/blocked responses to automated requests during evaluation, and per-item rights statements vary by collection, so this lane cannot be verified end-to-end from the automated sourcing environment."
+    },
+    {
+      "name": "Berea College Sound Archives",
+      "status": "evaluated, not approved for automated tune-level imports",
+      "requirements": [
+        "Needs tune-level files or documented timestamps that map an exact tune title to one performance",
+        "Needs rights that permit public site playback rather than the current personal-research and educational-use notice"
+      ],
+      "context": "The Preservica catalog and direct MP3 downloads are scriptable, and the Bruce Greene, John Harrod, Steve Rice, and Barbara Kunkle collections contain hundreds of relevant recordings. The exposed files are full cassettes or reels named for performers/interviews rather than individual tunes, and item pages state that material is posted for personal research and educational purposes. Treating an entire tape as one tune would be inaccurate, so this source remains a documented shortfall rather than a title-only import lane."
     },
     {
       "name": "Duke Digital Collections",

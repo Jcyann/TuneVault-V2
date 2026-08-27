@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-08-27T19:39:29.109Z",
+  "dryRun": false,
+  "requestedSource": "library-of-congress",
+  "requestedLimitPerSource": 10,
+  "runs": [
+    {
+      "runId": 7,
+      "source": "library-of-congress",
+      "adapterVersion": "3",
+      "status": "paused",
+      "pauseReason": "waiting to retry tune 8 after 2026-08-27T19:53:26.692Z",
+      "cursorId": 0,
+      "processedThisBatch": 3,
+      "processedTotal": 3,
+      "candidatesThisBatch": 3,
+      "addedThisBatch": 3,
+      "addedTotal": 3,
+      "failuresThisBatch": 0
+    }
+  ],
+  "coverage": {
+    "totalTunes": 1348,
+    "directAudioFiles": 1004,
+    "target": 1200,
+    "remainingToTarget": 196,
+    "unresolvedDirectAudio": 340,
+    "sourceStatus": {
+      "library-of-congress": {
+        "applied": 3,
+        "candidate": 1,
+        "failed": 4,
+        "no-match": 39,
+        "rejected": 7
+      },
+      "slippery-hill": {
+        "no-match": 2
+      }
+    }
+  },
+  "shortfall": {
+    "filesNeeded": 196,
+    "explanation": "Approved adapters exhausted or still processing the unresolved catalog; no unverified, rights-unclear, or video-only media is counted.",
+    "nextAction": "Resume paused runs, add a new approved source adapter, or ingest a rights-cleared manifest with exact tune identities."
+  }
+}

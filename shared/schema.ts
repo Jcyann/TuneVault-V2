@@ -172,6 +172,7 @@ export type AudioIngestionRun = typeof audioIngestionRuns.$inferSelect;
 
 export const audioIngestionAttempts = pgTable("audio_ingestion_attempts", {
   id: serial("id").primaryKey(),
+  runId: integer("run_id"),
   source: text("source").notNull(),
   adapterVersion: text("adapter_version").notNull(),
   tuneId: integer("tune_id").notNull(),
