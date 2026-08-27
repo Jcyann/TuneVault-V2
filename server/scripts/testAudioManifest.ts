@@ -13,6 +13,7 @@ const entry = {
 };
 
 assert.equal(normalizeTuneTitle("The Road-to Reel!"), "road to reel");
+assert.equal(normalizeTuneTitle("Old Joe Clark"), "old joe clark");
 assert.equal(hasExactManifestTitleMatch(entry, ["Road to Reel", "Another Name"]), true);
 assert.equal(hasExactManifestTitleMatch(entry, ["Road Reel"]), false);
 assert.equal(hasExactManifestTitleMatch(entry, ["The Road to Reels"]), false);

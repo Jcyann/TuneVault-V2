@@ -456,127 +456,16 @@ export default function AdminPage() {
   const [applyingBulk, setApplyingBulk] = useState(false);
   const [bulkLimit, setBulkLimit] = useState(50);
 
-  function normalizeTitle(t: string): string {
-    return t
-      .toLowerCase()
-      .replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "")
-      .replace(/[-–—_#'`]/g, " ").replace(/[^a-z0-9 ]/g, "")
-      .replace(/\s+/g, " ").trim();
-  }
-
-  const YT_STOP = new Set([
-    "the","and","with","for","from","old","new","some","this","that",
-    "its","our","her","his","your","my","at","by","in","on","of","to",
-    "up","as","an","a","tune","fiddle","old-time","oldtime","otaf",
-    "appalachian","time","playing","straight","style","duo","duet",
-  ]);
-
-  function keyWords(norm: string): string[] {
-    return norm.split(" ").filter(w => w.length >= 3 && !YT_STOP.has(w));
-  }
-
-  function wordPrefixMatch(a: string, b: string): boolean {
-    return a === b || a.startsWith(b) || b.startsWith(a);
-  }
-
-  function matchScore(videoNorm: string, tuneNorm: string): number {
-    const tuneKW = keyWords(tuneNorm);
-    if (tuneKW.length === 0) return 0;
-    const videoKW = keyWords(videoNorm);
-    const hits = tuneKW.filter(tw => videoKW.some(vw => wordPrefixMatch(tw, vw))).length;
-    return hits / tuneKW.length;
-  }
-
-  async function getYtKey(): Promise<string> {
-    const res = await fetch("/api/admin/youtube-key");
-    if (!res.ok) throw new Error("YouTube API key not configured");
-    const { key } = await res.json();
-    return key;
-  }
-
-  async function ytGet(url: string): Promise<any> {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`YouTube API error ${r.status}`);
-    return r.json();
-  }
-
-  async function fetchChannelVideos(apiKey: string, handle: string): Promise<{ videoId: string; title: string }[]> {
-    const chanData = await ytGet(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`);
-    const uploadsId = chanData?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-    if (!uploadsId) throw new Error("Channel not found or has no public uploads");
-    const videos: { videoId: string; title: string }[] = [];
-    let pageToken = "";
-    do {
-      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ""}`;
-      const data = await ytGet(url);
-      for (const item of data.items ?? []) {
-        const videoId = item.snippet?.resourceId?.videoId;
-        const title = item.snippet?.title;
-        if (videoId && title) videos.push({ videoId, title });
-      }
-      pageToken = data.nextPageToken ?? "";
-    } while (pageToken);
-    return videos;
-  }
-
   async function runChannelSync() {
     setSyncLoading(true);
     setSyncResult(null);
     setSyncChecked(new Set());
     try {
-      const [apiKey, tunesRes] = await Promise.all([getYtKey(), fetch("/api/admin/tune-titles")]);
-      const allTunes: { id: number; title: string; altTitles: string | null; hasVideo: string | null }[] = await tunesRes.json();
-      const videos = await fetchChannelVideos(apiKey, "jasonnchinchen");
-
-      const tuneMap = new Map<string, { id: number; title: string; hasVideo: boolean }>();
-      for (const t of allTunes) {
-        tuneMap.set(normalizeTitle(t.title), { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
-        if (t.altTitles) {
-          for (const alt of t.altTitles.split(/[,;|]/)) {
-            const n = normalizeTitle(alt.trim());
-            if (n) tuneMap.set(n, { id: t.id, title: t.title, hasVideo: !!t.hasVideo });
-          }
-        }
-      }
-
-      const matched: any[] = [];
-      const unmatched: any[] = [];
-      for (const v of videos) {
-        const normVideo = normalizeTitle(v.title);
-        let found = tuneMap.get(normVideo);
-
-        if (!found) {
-          for (const [key, tune] of tuneMap) {
-            if (key.length >= 4 && normVideo.includes(key)) { found = tune; break; }
-          }
-        }
-
-        if (!found) {
-          let bestScore = 0;
-          let bestTune: typeof found;
-          for (const [key, tune] of tuneMap) {
-            if (key.length < 4) continue;
-            const kw = keyWords(key);
-            if (kw.length < 2) continue;  // single-word titles: substring only
-            const score = matchScore(normVideo, key);
-            const threshold = kw.length <= 2 ? 1.0 : 0.70;
-            if (score >= threshold && score > bestScore) {
-              bestScore = score;
-              bestTune = tune;
-            }
-          }
-          found = bestTune;
-        }
-
-        if (found) {
-          matched.push({ videoId: v.videoId, videoTitle: v.title, tuneId: found.id, tuneTitle: found.title, alreadyHasVideo: found.hasVideo });
-        } else {
-          unmatched.push({ videoId: v.videoId, videoTitle: v.title });
-        }
-      }
-
-      setSyncResult({ total: videos.length, matched, unmatched });
-      setSyncChecked(new Set(matched.map((m) => m.videoId)));
+      const res = await fetch("/api/admin/youtube-sync");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Channel scan failed");
+      setSyncResult(data);
+      setSyncChecked(new Set(data.matched.map((m: any) => m.videoId)));
     } catch (err: any) {
       toast({ title: "Channel scan failed", description: err.message, variant: "destructive" });
     } finally {
@@ -609,32 +498,15 @@ export default function AdminPage() {
     setBulkResult(null);
     setBulkChecked(new Set());
     try {
-      const [apiKey, tunesRes] = await Promise.all([getYtKey(), fetch("/api/admin/tune-titles")]);
-      const allTunes: { id: number; title: string; hasVideo: string | null }[] = await tunesRes.json();
-      const missing = allTunes.filter((t) => !t.hasVideo).slice(0, bulkLimit);
-
-      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
-      const results: any[] = [];
-
-      for (const tune of missing) {
-        try {
-          const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(tune.title + " old time fiddle")}&key=${apiKey}`;
-          const data = await ytGet(url);
-          const top = data.items?.[0];
-          if (top?.id?.videoId) {
-            results.push({
-              tuneId: tune.id, tuneTitle: tune.title,
-              videoId: top.id.videoId, videoTitle: top.snippet?.title,
-              channel: top.snippet?.channelTitle,
-              thumbnail: top.snippet?.thumbnails?.default?.url,
-            });
-          }
-        } catch {}
-        await delay(150);
-      }
-
-      setBulkResult({ searched: missing.length, found: results.length, results });
-      setBulkChecked(new Set(results.map((r) => r.tuneId)));
+      const res = await fetch("/api/admin/youtube-bulk-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: bulkLimit }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk search failed");
+      setBulkResult(data);
+      setBulkChecked(new Set(data.results.map((r: any) => r.tuneId)));
     } catch (err: any) {
       toast({ title: "Bulk search failed", description: err.message, variant: "destructive" });
     } finally {

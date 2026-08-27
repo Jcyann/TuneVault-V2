@@ -11,6 +11,7 @@
  *
  * Usage:
  *   npx tsx server/scripts/buildCompleteTunePages.ts --limit=25
+ *   npx tsx server/scripts/buildCompleteTunePages.ts --limit=25 --after-id=250
  *   npx tsx server/scripts/buildCompleteTunePages.ts --limit=25 --dry-run
  *   npx tsx server/scripts/buildCompleteTunePages.ts --limit=25 --concurrency=4 \
  *     --write-report=server/seedData/tune-page-build-latest.json
@@ -31,7 +32,7 @@ import {
 } from "./wikimediaCommonsReview";
 
 const LIMIT = parsePositiveArg("--limit=", 25);
-const OFFSET = parseNonNegativeArg("--offset=", 0);
+const AFTER_ID = parseNonNegativeArg("--after-id=", 0);
 const CONCURRENCY = parsePositiveArg("--concurrency=", 4);
 const DRY_RUN = process.argv.includes("--dry-run");
 const SKIP_YOUTUBE = process.argv.includes("--skip-youtube");
@@ -86,6 +87,7 @@ type TuneRow = {
   youtube_video_id: string | null;
   is_embeddable: boolean | null;
   popularity: number | null;
+  tags: string | null;
 };
 
 type FieldUpdate = {
@@ -129,7 +131,7 @@ type BuildResult = {
   sources: {
     session: "matched" | "missing" | "conflict" | "not-requested";
     audio: string;
-    video: "matched" | "no-match" | "quota-stopped" | "not-requested";
+    video: "matched" | "no-match" | "quota-stopped" | "access-failed" | "not-requested";
   };
   errors: string[];
 };
@@ -463,6 +465,15 @@ function titleContainsWholeWords(haystack: string, needle: string): boolean {
   return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`).test(haystack);
 }
 
+async function throwIfYoutubeQuota(response: Response): Promise<void> {
+  if (response.status !== 403 && response.status !== 429) return;
+  const body = await response.text();
+  if (/quota/i.test(body)) {
+    youtubeQuotaStopped = true;
+    throw new YoutubeQuotaExceeded();
+  }
+}
+
 async function findYoutubePerformance(tune: TuneRow): Promise<{
   result: PlayerVideo | null;
   status: BuildResult["sources"]["video"];
@@ -472,7 +483,7 @@ async function findYoutubePerformance(tune: TuneRow): Promise<{
   }
   if (SKIP_YOUTUBE) return { result: null, status: "not-requested" };
   if (!API_KEY || youtubeQuotaStopped) {
-    return { result: null, status: youtubeQuotaStopped ? "quota-stopped" : "no-match" };
+    return { result: null, status: youtubeQuotaStopped ? "quota-stopped" : "access-failed" };
   }
 
   const names = tuneNames(tune)
@@ -493,17 +504,11 @@ async function findYoutubePerformance(tune: TuneRow): Promise<{
   try {
     searchResponse = await fetch(searchUrl, { headers: UA, signal: AbortSignal.timeout(20000) });
   } catch {
-    return { result: null, status: "no-match" };
+    return { result: null, status: "access-failed" };
   }
   if (!searchResponse.ok) {
-    const body = await searchResponse.text();
-    if (searchResponse.status === 403 || searchResponse.status === 429) {
-      if (/quota/i.test(body)) {
-        youtubeQuotaStopped = true;
-        throw new YoutubeQuotaExceeded();
-      }
-    }
-    return { result: null, status: "no-match" };
+    await throwIfYoutubeQuota(searchResponse);
+    return { result: null, status: "access-failed" };
   }
 
   const data = await searchResponse.json();
@@ -521,8 +526,16 @@ async function findYoutubePerformance(tune: TuneRow): Promise<{
     part: "status",
     key: API_KEY,
   })}`;
-  const verifyResponse = await fetch(verifyUrl, { headers: UA, signal: AbortSignal.timeout(20000) });
-  if (!verifyResponse.ok) return { result: null, status: "no-match" };
+  let verifyResponse: Response;
+  try {
+    verifyResponse = await fetch(verifyUrl, { headers: UA, signal: AbortSignal.timeout(20000) });
+  } catch {
+    return { result: null, status: "access-failed" };
+  }
+  if (!verifyResponse.ok) {
+    await throwIfYoutubeQuota(verifyResponse);
+    return { result: null, status: "access-failed" };
+  }
   const verifyData = await verifyResponse.json();
   const video = verifyData.items?.[0];
   if (video?.status?.embeddable !== true || video?.status?.privacyStatus !== "public") {
@@ -594,23 +607,99 @@ async function buildOneTune(tune: TuneRow, client: any): Promise<BuildResult> {
     errors.push(`YouTube: ${String(video.reason)}`);
   }
 
-  const applied = Object.keys(updates);
-  if (!DRY_RUN && applied.length > 0) {
-    const assignments: string[] = [];
-    const values: unknown[] = [];
-    for (const [field, value] of Object.entries(updates)) {
-      assignments.push(`${field} = $${values.length + 1}`);
-      values.push(value);
-    }
-    values.push(tune.id);
-    const updated = await client.query(
-      `UPDATE tunes SET ${assignments.join(", ")} WHERE id = $${values.length} RETURNING id`,
-      values,
-    );
-    if (updated.rowCount !== 1) errors.push("Database update skipped because the tune changed concurrently");
-  }
+  const proposed = Object.keys(updates);
+  let applied = [...proposed];
+  let after = pageStatus(tune, updates);
+  if (!DRY_RUN && proposed.length > 0) {
+    applied = [];
 
-  const after = pageStatus(tune, updates);
+    if (updates.abc_notation) {
+      const result = await pool.query(
+        `UPDATE tunes SET abc_notation = $1
+         WHERE id = $2 AND (abc_notation IS NULL OR btrim(abc_notation) = '')
+         RETURNING id`,
+        [updates.abc_notation, tune.id],
+      );
+      if (result.rowCount === 1) applied.push("abc_notation");
+      else errors.push("Notation skipped because it was added concurrently");
+    }
+
+    if (updates.alternative_titles) {
+      const result = await pool.query(
+        `UPDATE tunes SET alternative_titles = $1
+         WHERE id = $2 AND alternative_titles IS NOT DISTINCT FROM $3::text
+         RETURNING id`,
+        [updates.alternative_titles, tune.id, tune.alternative_titles],
+      );
+      if (result.rowCount === 1) applied.push("alternative_titles");
+      else errors.push("Aliases skipped because they changed concurrently");
+    }
+
+    if (updates.audio_url && updates.audio_source && updates.audio_attribution) {
+      const result = await pool.query<{
+        source_fiddler: string | null;
+        tags: string | null;
+      }>(
+        `UPDATE tunes
+         SET audio_url = $1,
+             audio_source = $2,
+             audio_attribution = $3,
+             source_fiddler = CASE
+               WHEN source_fiddler IS NULL OR btrim(source_fiddler) = ''
+                 THEN COALESCE($4::text, source_fiddler)
+               ELSE source_fiddler
+             END,
+             tags = CASE WHEN tags = 'audio-needed' THEN NULL ELSE tags END
+         WHERE id = $5
+           AND (audio_url IS NULL OR btrim(audio_url) = '')
+           AND (loc_item_id IS NULL OR btrim(loc_item_id) = '')
+         RETURNING source_fiddler, tags`,
+        [
+          updates.audio_url,
+          updates.audio_source,
+          updates.audio_attribution,
+          updates.source_fiddler || null,
+          tune.id,
+        ],
+      );
+      if (result.rowCount === 1) {
+        applied.push("audio_url", "audio_source", "audio_attribution");
+        if (updates.source_fiddler && result.rows[0]?.source_fiddler === updates.source_fiddler) {
+          applied.push("source_fiddler");
+        }
+        if (tune.tags === "audio-needed" && result.rows[0]?.tags === null) applied.push("tags");
+      } else {
+        errors.push("Direct audio skipped because trusted audio was added concurrently");
+      }
+    }
+
+    if (updates.youtube_video_id && updates.youtube_url) {
+      const result = await pool.query(
+        `UPDATE tunes
+         SET youtube_url = $1, youtube_video_id = $2, is_embeddable = true
+         WHERE id = $3
+           AND (youtube_url IS NULL OR btrim(youtube_url) = '')
+           AND (youtube_video_id IS NULL OR btrim(youtube_video_id) = '')
+         RETURNING id`,
+        [updates.youtube_url, updates.youtube_video_id, tune.id],
+      );
+      if (result.rowCount === 1) {
+        applied.push("youtube_url", "youtube_video_id", "is_embeddable");
+      } else {
+        errors.push("Player video skipped because it was added concurrently");
+      }
+    }
+
+    const refreshed = await pool.query<TuneRow>(
+      `SELECT id, title, alternative_titles, key, tune_type, description,
+              source_fiddler, abc_notation, transcript_url, the_session_id,
+              audio_url, loc_item_id, youtube_url, youtube_video_id,
+              is_embeddable, popularity, tags
+       FROM tunes WHERE id = $1`,
+      [tune.id],
+    );
+    if (refreshed.rows[0]) after = pageStatus(refreshed.rows[0]);
+  }
   return {
     id: tune.id,
     title: tune.title,
@@ -625,29 +714,26 @@ async function buildOneTune(tune: TuneRow, client: any): Promise<BuildResult> {
 async function main() {
   const client = await pool.connect();
   const results: BuildResult[] = [];
+  let selectedRows: TuneRow[] = [];
   try {
     const { rows } = await client.query<TuneRow>(
       `SELECT id, title, alternative_titles, key, tune_type, description,
               source_fiddler, abc_notation, transcript_url, the_session_id,
               audio_url, loc_item_id, youtube_url, youtube_video_id,
-              is_embeddable, popularity
+               is_embeddable, popularity, tags
        FROM tunes
-       WHERE (audio_url IS NULL AND loc_item_id IS NULL)
-          OR youtube_video_id IS NULL
-          OR abc_notation IS NULL
-          OR description IS NULL
-       ORDER BY
-         (
-           CASE WHEN description IS NULL OR btrim(description) = '' THEN 1 ELSE 0 END
-           + CASE WHEN abc_notation IS NULL OR btrim(abc_notation) = '' THEN 1 ELSE 0 END
-           + CASE WHEN audio_url IS NULL AND loc_item_id IS NULL THEN 1 ELSE 0 END
-           + CASE WHEN youtube_video_id IS NULL OR btrim(youtube_video_id) = '' THEN 1 ELSE 0 END
-         ) DESC,
-         popularity DESC NULLS LAST,
-         id ASC
-       LIMIT $1 OFFSET $2`,
-      [LIMIT, OFFSET],
+       WHERE id > $1
+         AND (
+           (audio_url IS NULL AND loc_item_id IS NULL)
+           OR youtube_video_id IS NULL
+           OR abc_notation IS NULL
+           OR description IS NULL
+         )
+       ORDER BY id ASC
+       LIMIT $2`,
+      [AFTER_ID, LIMIT],
     );
+    selectedRows = rows;
 
     let cursor = 0;
     const worker = async () => {
@@ -683,10 +769,23 @@ async function main() {
     await pool.end();
   }
 
+  const resultsById = new Map(results.map((result) => [result.id, result]));
+  let nextAfterId = AFTER_ID;
+  for (const tune of selectedRows) {
+    const result = resultsById.get(tune.id);
+    if (!result) break;
+    if (!SKIP_YOUTUBE
+      && (result.sources.video === "quota-stopped" || result.sources.video === "access-failed")) {
+      break;
+    }
+    nextAfterId = tune.id;
+  }
+
   const summary = {
     dryRun: DRY_RUN,
     requested: LIMIT,
-    offset: OFFSET,
+    afterId: AFTER_ID,
+    nextAfterId,
     concurrency: CONCURRENCY,
     skipYoutube: SKIP_YOUTUBE,
     processed: results.length,

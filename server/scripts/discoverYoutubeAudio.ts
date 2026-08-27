@@ -14,11 +14,13 @@
  *
  * Usage:
  *   npx tsx server/scripts/discoverYoutubeAudio.ts --limit=80
+ *   npx tsx server/scripts/discoverYoutubeAudio.ts --limit=80 --after-id=250
  *   npx tsx server/scripts/discoverYoutubeAudio.ts --limit=80 --dry-run
  */
 
 import { pool } from "../db";
 import { normalizeTuneTitle } from "./audioManifest";
+import { writeFileSync } from "fs";
 
 const API_KEY = process.env.YOUTUBE_API_KEY;
 if (!API_KEY) {
@@ -28,10 +30,29 @@ if (!API_KEY) {
 
 const LIMIT_ARG = process.argv.find((arg) => arg.startsWith("--limit="));
 const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG.split("=")[1], 10) : 80;
+const AFTER_ID_ARG = process.argv.find((arg) => arg.startsWith("--after-id="));
+const AFTER_ID = AFTER_ID_ARG ? parseInt(AFTER_ID_ARG.split("=")[1], 10) : 0;
+const WRITE_ARG = process.argv.find((arg) => arg.startsWith("--write-report="));
+const WRITE_PATH = WRITE_ARG?.split("=").slice(1).join("=");
 const DRY_RUN = process.argv.includes("--dry-run");
 const UA = { "User-Agent": "TuneVault/1.0 (audio discovery; youtube)" };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+class YoutubeAccessFailed extends Error {
+  constructor() {
+    super("YOUTUBE_ACCESS_FAILED");
+    this.name = "YoutubeAccessFailed";
+  }
+}
+
+async function throwYoutubeFailure(response: Response): Promise<never> {
+  if (response.status === 403 || response.status === 429) {
+    const body = await response.text();
+    if (/quota/i.test(body)) throw new Error("QUOTA_EXCEEDED");
+  }
+  throw new YoutubeAccessFailed();
+}
 
 function titleContainsWholeWords(haystack: string, needle: string): boolean {
   if (!needle) return false;
@@ -61,17 +82,13 @@ async function searchYoutube(query: string): Promise<any[]> {
   try {
     const response = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
     if (!response.ok) {
-      if (response.status === 403 || response.status === 429) {
-        const body = await response.text();
-        if (/quota/i.test(body)) throw new Error("QUOTA_EXCEEDED");
-      }
-      return [];
+      await throwYoutubeFailure(response);
     }
     const data = await response.json();
     return Array.isArray(data.items) ? data.items : [];
   } catch (error: any) {
-    if (error?.message === "QUOTA_EXCEEDED") throw error;
-    return [];
+    if (error?.message === "QUOTA_EXCEEDED" || error instanceof YoutubeAccessFailed) throw error;
+    throw new YoutubeAccessFailed();
   }
 }
 
@@ -83,8 +100,13 @@ async function checkEmbeddable(videoIds: string[]): Promise<Map<string, boolean>
     part: "status",
     key: API_KEY!,
   })}`;
-  const response = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
-  if (!response.ok) return result;
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
+  } catch {
+    throw new YoutubeAccessFailed();
+  }
+  if (!response.ok) await throwYoutubeFailure(response);
   const data = await response.json();
   for (const item of data.items ?? []) {
     const embeddable = item.status?.embeddable === true && item.status?.privacyStatus === "public";
@@ -94,7 +116,9 @@ async function checkEmbeddable(videoIds: string[]): Promise<Map<string, boolean>
 }
 
 async function main() {
-  if (!Number.isInteger(LIMIT) || LIMIT < 1) throw new Error("--limit must be a positive integer");
+  if (!Number.isInteger(LIMIT) || LIMIT < 1 || !Number.isInteger(AFTER_ID) || AFTER_ID < 0) {
+    throw new Error("--limit must be positive and --after-id must be a non-negative integer");
+  }
 
   const client = await pool.connect();
   let searched = 0;
@@ -102,6 +126,9 @@ async function main() {
   let notEmbeddable = 0;
   let applied = 0;
   let quotaStopped = false;
+  let accessFailed = false;
+  let nextAfterId = AFTER_ID;
+  const results: Array<{ id: number; title: string; status: string; videoId?: string }> = [];
 
   try {
     const { rows } = await client.query<{
@@ -111,11 +138,12 @@ async function main() {
     }>(
       `SELECT id, title, alternative_titles
        FROM tunes
-       WHERE audio_url IS NULL AND loc_item_id IS NULL
+       WHERE id > $1
+         AND audio_url IS NULL AND loc_item_id IS NULL
          AND (youtube_video_id IS NULL OR youtube_video_id = '')
-       ORDER BY popularity DESC NULLS LAST, id ASC
-       LIMIT $1`,
-      [LIMIT],
+       ORDER BY id ASC
+       LIMIT $2`,
+      [AFTER_ID, LIMIT],
     );
 
     for (const tune of rows) {
@@ -138,6 +166,12 @@ async function main() {
       } catch (error: any) {
         if (error?.message === "QUOTA_EXCEEDED") {
           quotaStopped = true;
+          results.push({ id: tune.id, title: tune.title, status: "quota-stopped" });
+          break;
+        }
+        if (error instanceof YoutubeAccessFailed) {
+          accessFailed = true;
+          results.push({ id: tune.id, title: tune.title, status: "access-failed" });
           break;
         }
         throw error;
@@ -162,13 +196,32 @@ async function main() {
 
       if (!matchedVideoId) {
         noMatch++;
+        nextAfterId = tune.id;
+        results.push({ id: tune.id, title: tune.title, status: "no-match" });
         await sleep(150);
         continue;
       }
 
-      const embedMap = await checkEmbeddable([matchedVideoId]);
+      let embedMap: Map<string, boolean>;
+      try {
+        embedMap = await checkEmbeddable([matchedVideoId]);
+      } catch (error: any) {
+        if (error?.message === "QUOTA_EXCEEDED") {
+          quotaStopped = true;
+          results.push({ id: tune.id, title: tune.title, status: "quota-stopped" });
+          break;
+        }
+        if (error instanceof YoutubeAccessFailed) {
+          accessFailed = true;
+          results.push({ id: tune.id, title: tune.title, status: "access-failed" });
+          break;
+        }
+        throw error;
+      }
       if (!embedMap.get(matchedVideoId)) {
         notEmbeddable++;
+        nextAfterId = tune.id;
+        results.push({ id: tune.id, title: tune.title, status: "not-embeddable", videoId: matchedVideoId });
         await sleep(150);
         continue;
       }
@@ -176,6 +229,8 @@ async function main() {
       process.stdout.write(`[Tune#${tune.id}] ${tune.title} -> "${matchedTitle}" (${matchedChannel}) `);
       if (DRY_RUN) {
         applied++;
+        nextAfterId = tune.id;
+        results.push({ id: tune.id, title: tune.title, status: "dry-run-match", videoId: matchedVideoId });
         console.log("DRY ready");
         await sleep(150);
         continue;
@@ -192,10 +247,13 @@ async function main() {
       );
       if (update.rowCount && update.rowCount > 0) {
         applied++;
+        results.push({ id: tune.id, title: tune.title, status: "applied", videoId: matchedVideoId });
         console.log("✓ applied");
       } else {
+        results.push({ id: tune.id, title: tune.title, status: "concurrent-skip", videoId: matchedVideoId });
         console.log("skipped (video was added concurrently)");
       }
+      nextAfterId = tune.id;
       await sleep(150);
     }
   } finally {
@@ -203,15 +261,24 @@ async function main() {
     await pool.end();
   }
 
-  console.log(`
-YouTube discovery complete
-  Searched        : ${searched}
-  Applied         : ${applied}
-  No title match  : ${noMatch}
-  Not embeddable  : ${notEmbeddable}
-  Quota stopped   : ${quotaStopped}
-  Dry-run mode    : ${DRY_RUN}
-`);
+  const report = {
+    generatedAt: new Date().toISOString(),
+    afterId: AFTER_ID,
+    nextAfterId,
+    searched,
+    applied,
+    noMatch,
+    notEmbeddable,
+    quotaStopped,
+    accessFailed,
+    dryRun: DRY_RUN,
+    results,
+  };
+  console.log(JSON.stringify(report, null, 2));
+  if (WRITE_PATH) {
+    writeFileSync(WRITE_PATH, JSON.stringify(report, null, 2) + "\n");
+    console.log(`Wrote YouTube batch report to ${WRITE_PATH}`);
+  }
 }
 
 main().catch((error) => {

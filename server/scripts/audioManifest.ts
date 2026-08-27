@@ -32,7 +32,7 @@ type AudioManifestFile = AudioManifestEntry[] | { entries: AudioManifestEntry[] 
 export function normalizeTuneTitle(value: string): string {
   return value
     .toLowerCase()
-    .replace(/^(the|a|an|ye|old|ol')\s+/g, "")
+    .replace(/^(the|a|an|ye)\s+/g, "")
     .replace(/['’`]/g, "")
     .replace(/[".,!?()\-–—]/g, " ")
     .replace(/\s+/g, " ")

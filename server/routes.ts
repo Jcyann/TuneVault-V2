@@ -616,13 +616,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     return videos;
   }
 
-  // GET /api/admin/youtube-key — returns the key for client-side YouTube API calls
-  app.get("/api/admin/youtube-key", (_req, res) => {
-    const key = process.env.YOUTUBE_API_KEY;
-    if (!key) return res.status(500).json({ error: "YOUTUBE_API_KEY not configured" });
-    res.json({ key });
-  });
-
   // GET /api/admin/tune-titles — returns all tune titles+ids for client-side matching
   app.get("/api/admin/tune-titles", async (_req, res) => {
     try {
@@ -665,7 +658,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
         // 2. Video title contains the full tune key (substring)
         if (!found) {
-          for (const [key, tune] of tuneMap) {
+          for (const [key, tune] of Array.from(tuneMap.entries())) {
             if (key.length >= 4 && normVideo.includes(key)) { found = tune; break; }
           }
         }
@@ -674,8 +667,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         //    Requires ≥2 key words in the tune so single-word tunes don't over-match
         if (!found) {
           let bestScore = 0;
-          let bestTune: typeof found;
-          for (const [key, tune] of tuneMap) {
+          let bestTune: { id: number; title: string; hasVideo: boolean } | undefined;
+          for (const [key, tune] of Array.from(tuneMap.entries())) {
             if (key.length < 4) continue;
             const tuneKW = keyWords(key);
             if (tuneKW.length < 2) continue;  // single-word titles rely on substring only
