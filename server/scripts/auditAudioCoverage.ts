@@ -122,16 +122,21 @@ async function main() {
       audio_attribution: string | null;
       source_fiddler: string | null;
       popularity: number | null;
+      description: string | null;
+      abc_notation: string | null;
+      transcript_url: string | null;
     }>(
       CATALOG_WIDE
         ? `SELECT id, title, alternative_titles, tune_type, the_session_id, created_at,
                   audio_url, loc_item_id, loc_url, youtube_url, youtube_video_id,
-                  audio_source, audio_attribution, source_fiddler, popularity
+                   audio_source, audio_attribution, source_fiddler, popularity,
+                   description, abc_notation, transcript_url
            FROM tunes
            ORDER BY popularity DESC NULLS LAST, id ASC`
         : `SELECT id, title, alternative_titles, tune_type, the_session_id, created_at,
                   audio_url, loc_item_id, loc_url, youtube_url, youtube_video_id,
-                  audio_source, audio_attribution, source_fiddler, popularity
+                   audio_source, audio_attribution, source_fiddler, popularity,
+                   description, abc_notation, transcript_url
            FROM tunes
            WHERE created_at >= $1
            ORDER BY popularity DESC NULLS LAST, id ASC`,
@@ -168,6 +173,32 @@ async function main() {
     const pendingReview = pendingReviewSummary(
       new Set(rowsWithCoverage.map((tune) => tune.audio_url).filter((url): url is string => Boolean(url))),
     );
+    const hasDescription = (tune: typeof rowsWithCoverage[number]) => Boolean(tune.description?.trim());
+    const hasNotation = (tune: typeof rowsWithCoverage[number]) =>
+      Boolean(tune.abc_notation?.trim() || tune.transcript_url?.trim());
+    const hasDirectAudio = (tune: typeof rowsWithCoverage[number]) => Boolean(tune.audio_url?.trim());
+    const hasPlayerVideo = (tune: typeof rowsWithCoverage[number]) =>
+      Boolean(tune.youtube_video_id?.trim() || tune.youtube_url?.trim());
+    const pageCompleteness = {
+      withDescription: rowsWithCoverage.filter(hasDescription).length,
+      withNotation: rowsWithCoverage.filter(hasNotation).length,
+      withDirectAudioFile: rowsWithCoverage.filter(hasDirectAudio).length,
+      withPlayerVideo: rowsWithCoverage.filter(hasPlayerVideo).length,
+      withBothAudioAndVideo: rowsWithCoverage.filter((tune) =>
+        hasDirectAudio(tune) && hasPlayerVideo(tune),
+      ).length,
+      completeWithAvailableMedia: rowsWithCoverage.filter((tune) =>
+        hasDescription(tune)
+        && hasNotation(tune)
+        && (hasDirectAudio(tune) || hasPlayerVideo(tune)),
+      ).length,
+      completeWithAudioAndVideo: rowsWithCoverage.filter((tune) =>
+        hasDescription(tune)
+        && hasNotation(tune)
+        && hasDirectAudio(tune)
+        && hasPlayerVideo(tune),
+      ).length,
+    };
     const report = {
       generatedAt: new Date().toISOString(),
       scope: CATALOG_WIDE ? "catalog-wide" : "recent additions",
@@ -182,6 +213,7 @@ async function main() {
       coverageByClass,
       directAudioBySource,
       pendingReview,
+      pageCompleteness,
       heldByTuneType: Object.fromEntries(Object.entries(byType).sort((a, b) => b[1] - a[1])),
       heldTunes: held.map((tune) => ({
         id: tune.id,
@@ -214,6 +246,7 @@ async function main() {
       coverageByClass: report.coverageByClass,
       directAudioBySource: report.directAudioBySource,
       pendingReview: report.pendingReview,
+      pageCompleteness: report.pageCompleteness,
       heldByTuneType: report.heldByTuneType,
     }, null, 2));
     if (WRITE_PATH) {

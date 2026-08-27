@@ -1,24 +1,24 @@
 {
-  "generatedAt": "2026-08-27T17:34:07.747Z",
+  "generatedAt": "2026-08-27T19:05:56.751Z",
   "scope": "catalog-wide",
   "from": null,
   "totalTunes": 1348,
-  "audioPlayerReady": 996,
-  "directAudioReady": 996,
+  "audioPlayerReady": 1001,
+  "directAudioReady": 1001,
   "trustedArchivalReferences": 9,
-  "archivalReferenceReady": 1003,
-  "heldForVerifiedAudio": 254,
+  "archivalReferenceReady": 1008,
+  "heldForVerifiedAudio": 260,
   "coverageByClass": {
     "loc_reference_only": 7,
-    "direct_playable_url": 994,
-    "youtube_only": 91,
+    "direct_playable_url": 999,
     "direct_url_and_loc_reference": 2,
-    "unresolved": 254
+    "youtube_only": 80,
+    "unresolved": 260
   },
   "directAudioBySource": {
     "Mossyroof": 26,
-    "Internet Archive": 57,
-    "Slippery Hill": 23,
+    "Internet Archive": 59,
+    "Slippery Hill": 26,
     "other direct": 890
   },
   "pendingReview": {
@@ -26,16 +26,25 @@
     "bySource": {},
     "reports": []
   },
+  "pageCompleteness": {
+    "withDescription": 1348,
+    "withNotation": 374,
+    "withDirectAudioFile": 1001,
+    "withPlayerVideo": 317,
+    "withBothAudioAndVideo": 230,
+    "completeWithAvailableMedia": 115,
+    "completeWithAudioAndVideo": 37
+  },
   "heldByTuneType": {
     "march": 84,
     "jig": 61,
     "waltz": 43,
     "polka": 30,
-    "hornpipe": 17,
+    "hornpipe": 18,
     "mazurka": 9,
+    "reel": 7,
     "slip jig": 3,
     "three-two": 2,
-    "reel": 2,
     "slide": 2,
     "breakdown": 1
   },
@@ -48,6 +57,66 @@
       "theSessionId": null,
       "popularity": 6,
       "createdAt": "2026-04-24T15:38:11.724Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1241,
+      "title": "The Irish American",
+      "alternativeTitles": "Deirdre Shannon's, Irish-American, The Narrowback, Reel Des Moissonneurs",
+      "tuneType": "reel",
+      "theSessionId": "3675",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:44:17.778Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1250,
+      "title": "Quadrille Montcalm",
+      "alternativeTitles": "La Cuisiniere, Quadrille De Montcalm, Reel Dans La Cuisiniere, Reel Du Lac, Reel In 'La Cuisinière'",
+      "tuneType": "reel",
+      "theSessionId": "5184",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:44:28.559Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1254,
+      "title": "Pointe Au Pic",
+      "alternativeTitles": "Le Reel De Pointe-au Pic, Point Au Pic, Pointe A Pique, Pointe-Au-Pic, Reel A Pointe-Au-Pic, Reel De Pointe-au-Pic",
+      "tuneType": "reel",
+      "theSessionId": "6183",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:44:33.800Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1257,
+      "title": "La Toque Bleu",
+      "alternativeTitles": "Blue Cap, The Blue Cap, Blue Tuque, The Blue Tuque, La Reel De La Tuque Bleu, La Reel De La Tuque Bleue, La Torque Bleu, Reel De La Tuque Bleu",
+      "tuneType": "reel",
+      "theSessionId": "6845",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:44:36.973Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1554,
+      "title": "The Saratoga",
+      "alternativeTitles": "The Saratoga Hornpipe",
+      "tuneType": "hornpipe",
+      "theSessionId": "8125",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:51:28.305Z",
+      "status": "audio sought, none verified"
+    },
+    {
+      "id": 1572,
+      "title": "Batchelder's",
+      "alternativeTitles": "Atlanta Hornpipe, Quigley's",
+      "tuneType": "reel",
+      "theSessionId": "1182",
+      "popularity": 3,
+      "createdAt": "2026-07-26T06:53:02.995Z",
       "status": "audio sought, none verified"
     },
     {
@@ -2591,6 +2660,54 @@
       "createdAt": "2026-04-24T15:38:11.724Z"
     },
     {
+      "id": 1241,
+      "title": "The Irish American",
+      "alternativeTitles": "Deirdre Shannon's, Irish-American, The Narrowback, Reel Des Moissonneurs",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:44:17.778Z"
+    },
+    {
+      "id": 1250,
+      "title": "Quadrille Montcalm",
+      "alternativeTitles": "La Cuisiniere, Quadrille De Montcalm, Reel Dans La Cuisiniere, Reel Du Lac, Reel In 'La Cuisinière'",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:44:28.559Z"
+    },
+    {
+      "id": 1254,
+      "title": "Pointe Au Pic",
+      "alternativeTitles": "Le Reel De Pointe-au Pic, Point Au Pic, Pointe A Pique, Pointe-Au-Pic, Reel A Pointe-Au-Pic, Reel De Pointe-au-Pic",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:44:33.800Z"
+    },
+    {
+      "id": 1257,
+      "title": "La Toque Bleu",
+      "alternativeTitles": "Blue Cap, The Blue Cap, Blue Tuque, The Blue Tuque, La Reel De La Tuque Bleu, La Reel De La Tuque Bleue, La Torque Bleu, Reel De La Tuque Bleu",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:44:36.973Z"
+    },
+    {
+      "id": 1554,
+      "title": "The Saratoga",
+      "alternativeTitles": "The Saratoga Hornpipe",
+      "popularity": 3,
+      "tuneType": "hornpipe",
+      "createdAt": "2026-07-26T06:51:28.305Z"
+    },
+    {
+      "id": 1572,
+      "title": "Batchelder's",
+      "alternativeTitles": "Atlanta Hornpipe, Quigley's",
+      "popularity": 3,
+      "tuneType": "reel",
+      "createdAt": "2026-07-26T06:53:02.995Z"
+    },
+    {
       "id": 1603,
       "title": "Waltz Blanchard",
       "alternativeTitles": null,
@@ -3333,54 +3450,6 @@
       "popularity": 3,
       "tuneType": "three-two",
       "createdAt": "2026-07-26T06:55:20.097Z"
-    },
-    {
-      "id": 1696,
-      "title": "The Athol Highlander's March To Loch Katrine",
-      "alternativeTitles": "The Athol Highlander's Farewell To Loch Katrine, The Athole Highlander's Farewell To Loch Katrine, Loch Katrine",
-      "popularity": 3,
-      "tuneType": "march",
-      "createdAt": "2026-07-26T06:55:21.146Z"
-    },
-    {
-      "id": 1697,
-      "title": "St. Sinneach's March",
-      "alternativeTitles": null,
-      "popularity": 3,
-      "tuneType": "polka",
-      "createdAt": "2026-07-26T06:55:22.198Z"
-    },
-    {
-      "id": 1698,
-      "title": "The March To Victory",
-      "alternativeTitles": null,
-      "popularity": 3,
-      "tuneType": "polka",
-      "createdAt": "2026-07-26T06:55:23.243Z"
-    },
-    {
-      "id": 1699,
-      "title": "The First Of March",
-      "alternativeTitles": "An Cead La Marta",
-      "popularity": 3,
-      "tuneType": "reel",
-      "createdAt": "2026-07-26T06:55:24.286Z"
-    },
-    {
-      "id": 1700,
-      "title": "O'Sullivan's March",
-      "alternativeTitles": "A Rock And A Wee Pickle Tow, The Burnt Old Man, Captain Collins, Did You See My Man, The First Clan March Of The O'Sullivans, Lilliburlero, Máirseáil Uí Shúilleabháin, Mairseail Ui Shulleabhain",
-      "popularity": 3,
-      "tuneType": "jig",
-      "createdAt": "2026-07-26T06:55:25.485Z"
-    },
-    {
-      "id": 1701,
-      "title": "The March Of The King Of Lychees",
-      "alternativeTitles": null,
-      "popularity": 3,
-      "tuneType": "march",
-      "createdAt": "2026-07-26T06:55:26.538Z"
     }
   ]
 }

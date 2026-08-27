@@ -78,7 +78,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       conditions.push(
         or(
           sql`audio_url is not null`,
-          sql`loc_item_id is not null`
+          sql`loc_item_id is not null`,
+          sql`youtube_video_id is not null`,
         )
       );
       const whereClause = and(...conditions);
