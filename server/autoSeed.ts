@@ -237,6 +237,47 @@ export async function ensureRuntimeTables(): Promise<void> {
         created_at TIMESTAMP NOT NULL DEFAULT now()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audio_ingestion_runs (
+        id SERIAL PRIMARY KEY,
+        source TEXT NOT NULL,
+        adapter_version TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'running',
+        cursor_id INTEGER NOT NULL DEFAULT 0,
+        requested_limit INTEGER,
+        processed_count INTEGER NOT NULL DEFAULT 0,
+        added_count INTEGER NOT NULL DEFAULT 0,
+        candidate_count INTEGER NOT NULL DEFAULT 0,
+        failure_count INTEGER NOT NULL DEFAULT 0,
+        pause_reason TEXT,
+        started_at TIMESTAMP NOT NULL DEFAULT now(),
+        updated_at TIMESTAMP NOT NULL DEFAULT now(),
+        finished_at TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS audio_ingestion_runs_source_status_idx
+        ON audio_ingestion_runs (source, status, updated_at DESC);
+      CREATE TABLE IF NOT EXISTS audio_ingestion_attempts (
+        id SERIAL PRIMARY KEY,
+        source TEXT NOT NULL,
+        adapter_version TEXT NOT NULL,
+        tune_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 1,
+        candidate_url TEXT,
+        candidate_source TEXT,
+        candidate_attribution TEXT,
+        details TEXT,
+        failure_reason TEXT,
+        next_retry_at TIMESTAMP,
+        first_attempt_at TIMESTAMP NOT NULL DEFAULT now(),
+        last_attempt_at TIMESTAMP NOT NULL DEFAULT now(),
+        UNIQUE (source, adapter_version, tune_id)
+      );
+      CREATE INDEX IF NOT EXISTS audio_ingestion_attempts_retry_idx
+        ON audio_ingestion_attempts (source, adapter_version, status, next_retry_at);
+      CREATE INDEX IF NOT EXISTS audio_ingestion_attempts_tune_idx
+        ON audio_ingestion_attempts (tune_id);
+    `);
   } catch (err) {
     log(`ensureRuntimeTables failed: ${err}`, "autoSeed");
   } finally {

@@ -151,6 +151,44 @@ export const insertKeyReviewSchema = createInsertSchema(keyReviews).omit({ id: t
 export type InsertKeyReview = z.infer<typeof insertKeyReviewSchema>;
 export type KeyReview = typeof keyReviews.$inferSelect;
 
+export const audioIngestionRuns = pgTable("audio_ingestion_runs", {
+  id: serial("id").primaryKey(),
+  source: text("source").notNull(),
+  adapterVersion: text("adapter_version").notNull(),
+  status: text("status").notNull().default("running"),
+  cursorId: integer("cursor_id").notNull().default(0),
+  requestedLimit: integer("requested_limit"),
+  processedCount: integer("processed_count").notNull().default(0),
+  addedCount: integer("added_count").notNull().default(0),
+  candidateCount: integer("candidate_count").notNull().default(0),
+  failureCount: integer("failure_count").notNull().default(0),
+  pauseReason: text("pause_reason"),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  finishedAt: timestamp("finished_at"),
+});
+
+export type AudioIngestionRun = typeof audioIngestionRuns.$inferSelect;
+
+export const audioIngestionAttempts = pgTable("audio_ingestion_attempts", {
+  id: serial("id").primaryKey(),
+  source: text("source").notNull(),
+  adapterVersion: text("adapter_version").notNull(),
+  tuneId: integer("tune_id").notNull(),
+  status: text("status").notNull(),
+  attempts: integer("attempts").notNull().default(1),
+  candidateUrl: text("candidate_url"),
+  candidateSource: text("candidate_source"),
+  candidateAttribution: text("candidate_attribution"),
+  details: text("details"),
+  failureReason: text("failure_reason"),
+  nextRetryAt: timestamp("next_retry_at"),
+  firstAttemptAt: timestamp("first_attempt_at").defaultNow().notNull(),
+  lastAttemptAt: timestamp("last_attempt_at").defaultNow().notNull(),
+});
+
+export type AudioIngestionAttempt = typeof audioIngestionAttempts.$inferSelect;
+
 export const blogPosts = pgTable("blog_posts", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
