@@ -10,3 +10,4 @@
 - [Postgres null-param CASE WHEN bug](postgres-null-param-type.md) — bare `$n` in `CASE WHEN` with a null value throws "could not determine data type"; cast or COALESCE it.
 - [Wikimedia Commons audio source](wikimedia-commons-audio-source.md) — real CC/PD audio via batched imageinfo API; accept application/ogg; very low hit rate for niche tune backlogs.
 - [Open-corpus audio title-collision guard](audio-source-title-collision-guard.md) — exact title/alias match alone attached a LibriVox audiobook, an improv solo, wrong-genre tracks, and a Commons pronunciation clip; require positive genre/context evidence too.
+- [Dry-run cursors must preserve promotion paths](dry-run-cursor-semantics.md) — advancing a discovery cursor can strand nonterminal candidates; live resume must rewind and fully revalidate them.

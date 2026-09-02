@@ -81,6 +81,39 @@ function locAudioGroups(resources: unknown): Array<Record<string, any>[]> {
   return groups;
 }
 
+let henryReedRightsEvidencePromise:
+  | Promise<
+      { ok: true; rights: string }
+      | { ok: false; reason: string; retryAfterMs?: number }
+    >
+  | null = null;
+
+async function henryReedRightsEvidence(): Promise<
+  { ok: true; rights: string }
+  | { ok: false; reason: string; retryAfterMs?: number }
+> {
+  if (!henryReedRightsEvidencePromise) {
+    henryReedRightsEvidencePromise = (async () => {
+      const response = await fetchJson("https://www.loc.gov/item/afcreed000235/?fo=json");
+      if (!response.ok) return response;
+      const item = response.data?.item || {};
+      const partOf = Array.isArray(item.partof)
+        ? item.partof.map((value: any) => String(value?.title || value).toLowerCase())
+        : [];
+      const rights = Array.isArray(item.rights)
+        ? item.rights.join(" ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+        : "";
+      const sameCollection = partOf.some((value: string) =>
+        value.includes("fiddle tunes of the old frontier") && value.includes("henry reed"));
+      if (!sameCollection || !/not aware of any[^.]{0,80}copyright/i.test(rights)) {
+        return { ok: false as const, reason: "Henry Reed collection rights evidence is unavailable" };
+      }
+      return { ok: true as const, rights };
+    })();
+  }
+  return henryReedRightsEvidencePromise;
+}
+
 async function locCandidateFromItem(
   itemId: string,
   names: string[],
@@ -105,8 +138,20 @@ async function locCandidateFromItem(
     : [];
   const henryReedCollection = partOf.some((value: string) =>
     value.includes("fiddle tunes of the old frontier") && value.includes("henry reed"));
-  if (!henryReedCollection
-      && !/(not aware of any[^.]{0,80}copyright|public domain)/i.test(rightsText.replace(/<[^>]*>/g, " "))) {
+  let effectiveRights = rightsText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (!/(not aware of any[^.]{0,80}copyright|public domain)/i.test(effectiveRights)
+      && henryReedCollection) {
+    const evidence = await henryReedRightsEvidence();
+    if (!evidence.ok) {
+      return {
+        status: "failed",
+        reason: evidence.reason,
+        retryAfterMs: evidence.retryAfterMs || 15 * 60 * 1000,
+      };
+    }
+    effectiveRights = evidence.rights;
+  }
+  if (!/(not aware of any[^.]{0,80}copyright|public domain)/i.test(effectiveRights)) {
     return { status: "rejected", reason: "LOC item lacks an approved no-known-copyright or public-domain statement" };
   }
   const contributors = Array.isArray(item.contributor_names)
@@ -148,9 +193,7 @@ async function locCandidateFromItem(
           locItemId: itemId,
           locUrl: `https://www.loc.gov/item/${encodeURIComponent(itemId)}/`,
           sourceFiddler: performer.replace(/\s*\(performer\)\s*/i, "").trim(),
-          rights: henryReedCollection
-            ? "Library of Congress Henry Reed collection rights statement: no known U.S. copyright protection, subject to stated privacy/publicity considerations."
-            : rightsText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(),
+          rights: effectiveRights,
           contentType: verification.contentType,
         },
       },
@@ -162,8 +205,8 @@ async function locCandidateFromItem(
 export function createLibraryOfCongressAdapter(): AudioSourceAdapter {
   return {
     name: "library-of-congress",
-    version: "3",
-    minimumDelayMs: 250,
+    version: "4",
+    minimumDelayMs: 2000,
     includeArchivalReferences: true,
     async discover(tune) {
       const names = tuneNames(tune);
@@ -372,7 +415,7 @@ function slipperyForms(name: string): string[] {
 }
 
 async function urlExists(url: string): Promise<
-  { ok: true; exists: boolean } | { ok: false; reason: string }
+  { ok: true; exists: boolean; blocked?: boolean } | { ok: false; reason: string }
 > {
   try {
     const response = await fetch(url, {
@@ -381,6 +424,7 @@ async function urlExists(url: string): Promise<
       signal: AbortSignal.timeout(15000),
     });
     if (response.status === 404) return { ok: true, exists: false };
+    if (response.status === 403) return { ok: true, exists: false, blocked: true };
     if (!response.ok) return { ok: false, reason: `HTTP ${response.status}` };
     return { ok: true, exists: true };
   } catch (error: any) {
@@ -391,15 +435,27 @@ async function urlExists(url: string): Promise<
 export function createSlipperyHillAdapter(): AudioSourceAdapter {
   return {
     name: "slippery-hill",
-    version: "2",
-    minimumDelayMs: 100,
+    version: "3",
+    minimumDelayMs: 0,
     async discover(tune) {
       const forms = Array.from(new Set(tuneNames(tune).flatMap(slipperyForms)));
-      for (const form of forms) {
+      const checks = await Promise.all(forms.map(async (form) => {
         const url = `${SLIPPERY_HILL_BASE}${encodeURIComponent(form)}.mp3`;
         const existence = await urlExists(url);
-        if (!existence.ok) return { status: "failed", reason: existence.reason, retryAfterMs: 15 * 60 * 1000 };
-        if (!existence.exists) continue;
+        return { form, url, existence };
+      }));
+      const failed = checks.find((check) => !check.existence.ok);
+      if (failed && !failed.existence.ok) {
+        return {
+          status: "failed",
+          reason: failed.existence.reason,
+          retryAfterMs: 15 * 60 * 1000,
+        };
+      }
+      const blockedForms = checks.filter((check) =>
+        check.existence.ok && check.existence.blocked).length;
+      for (const { form, url, existence } of checks) {
+        if (!existence.ok || !existence.exists) continue;
         const exact = tuneNames(tune).some((name) =>
           normalizeTuneTitle(name).replace(/[^a-z0-9]/g, "")
             === normalizeTuneTitle(form).replace(/[^a-z0-9]/g, ""));
@@ -420,7 +476,7 @@ export function createSlipperyHillAdapter(): AudioSourceAdapter {
           },
         };
       }
-      return { status: "no-match", details: { checkedForms: forms.length } };
+      return { status: "no-match", details: { checkedForms: forms.length, blockedForms } };
     },
   };
 }

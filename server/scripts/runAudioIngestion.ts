@@ -18,6 +18,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { pool } from "../db";
 import {
+  acquireAudioIngestionSourceLock,
   advanceAudioIngestionRun,
   audioIngestionRetryBlock,
   applyVerifiedAudio,
@@ -26,9 +27,10 @@ import {
   nextAudioIngestionTune,
   openAudioIngestionRun,
   recordAudioIngestionAttempt,
+  releaseAudioIngestionSourceLock,
+  rewindRunToPendingCandidate,
   type AudioIngestionRun,
 } from "./audioIngestionLedger";
-import { verifyPlayableAudio } from "./audioManifest";
 import { createAudioSourceAdapter, type AudioSourceAdapter } from "./audioSourceAdapters";
 
 const SOURCE_ARG = process.argv.find((arg) => arg.startsWith("--source="));
@@ -66,96 +68,6 @@ type RunSummary = {
   failuresThisBatch: number;
 };
 
-async function promotePersistedCandidates(
-  client: Awaited<ReturnType<typeof pool.connect>>,
-  run: AudioIngestionRun,
-): Promise<{ processed: number; candidates: number; added: number }> {
-  if (DRY_RUN) return { processed: 0, candidates: 0, added: 0 };
-  const result = await client.query<{
-    tune_id: number;
-    loc_item_id: string | null;
-    candidate_url: string;
-    candidate_source: string;
-    candidate_attribution: string;
-    details: string | null;
-  }>(
-    `SELECT a.tune_id, t.loc_item_id, a.candidate_url, a.candidate_source,
-            a.candidate_attribution, a.details
-     FROM audio_ingestion_attempts a
-     JOIN tunes t ON t.id = a.tune_id
-     WHERE a.source = $1
-       AND a.adapter_version = $2
-       AND a.status = 'candidate'
-       AND a.candidate_url IS NOT NULL
-       AND a.candidate_source IS NOT NULL
-       AND a.candidate_attribution IS NOT NULL
-       AND (t.audio_url IS NULL OR btrim(t.audio_url) = '')
-     ORDER BY a.tune_id`,
-    [run.source, run.adapter_version],
-  );
-  let processed = 0;
-  let candidates = 0;
-  let added = 0;
-  for (const row of result.rows) {
-    const details = row.details ? JSON.parse(row.details) : {};
-    const locReference = row.loc_item_id || details.locItemId || null;
-    if (row.candidate_source === "Library of Congress" && !locReference) continue;
-    const verification = await verifyPlayableAudio({
-      audioUrl: row.candidate_url,
-      audioSource: row.candidate_source,
-      audioAttribution: row.candidate_attribution,
-    });
-    if (!verification.ok) {
-      await recordAudioIngestionAttempt(client, {
-        runId: run.id,
-        source: run.source,
-        adapterVersion: run.adapter_version,
-        tuneId: row.tune_id,
-        status: "rejected",
-        failureReason: `persisted candidate revalidation failed: ${verification.reason}`,
-      });
-      processed++;
-      continue;
-    }
-    const applied = await applyVerifiedAudio(client, row.tune_id, {
-      audioUrl: row.candidate_url,
-      audioSource: row.candidate_source,
-      audioAttribution: row.candidate_attribution,
-      sourceFiddler: details.sourceFiddler
-        || row.candidate_attribution.split(";")[0]?.trim()
-        || null,
-      locItemId: locReference,
-      locUrl: details.locUrl || (locReference ? `https://www.loc.gov/item/${encodeURIComponent(locReference)}/` : null),
-    });
-    await recordAudioIngestionAttempt(client, {
-      runId: run.id,
-      source: run.source,
-      adapterVersion: run.adapter_version,
-      tuneId: row.tune_id,
-      status: applied ? "applied" : "skipped-existing",
-      candidateUrl: row.candidate_url,
-      candidateSource: row.candidate_source,
-      candidateAttribution: row.candidate_attribution,
-      details,
-    });
-    processed++;
-    candidates++;
-    if (applied) added++;
-  }
-  if (processed > 0) {
-    await client.query(
-      `UPDATE audio_ingestion_runs
-       SET processed_count = processed_count + $2,
-           candidate_count = candidate_count + $3,
-           added_count = added_count + $4,
-           updated_at = now()
-       WHERE id = $1`,
-      [run.id, processed, candidates, added],
-    );
-  }
-  return { processed, candidates, added };
-}
-
 function validateArgs(): void {
   if (!Number.isInteger(LIMIT) || LIMIT < 1) throw new Error("--limit must be a positive integer");
   if (!Number.isInteger(TARGET) || TARGET < 1) throw new Error("--target must be a positive integer");
@@ -177,19 +89,30 @@ function sourcesToRun(): string[] {
 async function processAdapter(adapter: AudioSourceAdapter): Promise<RunSummary> {
   const client = await pool.connect();
   let run: AudioIngestionRun;
+  let sourceLockAcquired = false;
   try {
     await ensureAudioIngestionTables(client);
     const adapterVersion = VERSION_OVERRIDE || adapter.version;
+    sourceLockAcquired = await acquireAudioIngestionSourceLock(
+      client,
+      adapter.name,
+      adapterVersion,
+    );
+    if (!sourceLockAcquired) {
+      throw new Error(`Another ${adapter.name}@${adapterVersion} ingestion run is already active`);
+    }
     run = await openAudioIngestionRun(client, {
       source: adapter.name,
       adapterVersion,
       requestedLimit: LIMIT,
       resumeRunId: RUN_ID,
     });
-    const promoted = await promotePersistedCandidates(client, run);
-    let processedThisBatch = promoted.processed;
-    let candidatesThisBatch = promoted.candidates;
-    let addedThisBatch = promoted.added;
+    if (!DRY_RUN && RUN_ID !== null) {
+      run = await rewindRunToPendingCandidate(client, run);
+    }
+    let processedThisBatch = 0;
+    let candidatesThisBatch = 0;
+    let addedThisBatch = 0;
     let failuresThisBatch = 0;
     let status: "completed" | "paused" | "failed" = "paused";
     let pauseReason: string | null = "batch-limit";
@@ -202,7 +125,7 @@ async function processAdapter(adapter: AudioSourceAdapter): Promise<RunSummary> 
         break;
       }
       const retryBlock = await audioIngestionRetryBlock(client, run);
-      if (retryBlock?.tuneId === tune.id) {
+      if (retryBlock) {
         status = "paused";
         pauseReason = `waiting to retry tune ${retryBlock.tuneId} after ${retryBlock.nextRetryAt.toISOString()}`;
         break;
@@ -304,6 +227,13 @@ async function processAdapter(adapter: AudioSourceAdapter): Promise<RunSummary> 
     }
     throw error;
   } finally {
+    if (sourceLockAcquired) {
+      await releaseAudioIngestionSourceLock(
+        client,
+        adapter.name,
+        VERSION_OVERRIDE || adapter.version,
+      ).catch(() => {});
+    }
     client.release();
   }
 }
@@ -380,6 +310,122 @@ async function coverageAndSourceStatus() {
   };
 }
 
+type DirectAudioSnapshotRow = {
+  id: number;
+  audio_url: string;
+  audio_source: string | null;
+  audio_attribution: string | null;
+};
+
+async function databaseDirectAudioSnapshot(): Promise<DirectAudioSnapshotRow[]> {
+  const result = await pool.query<DirectAudioSnapshotRow>(
+    `SELECT id, audio_url, audio_source, audio_attribution
+     FROM tunes
+     WHERE NULLIF(btrim(audio_url), '') IS NOT NULL
+     ORDER BY id`,
+  );
+  return result.rows;
+}
+
+function verifySeedParity(databaseRows: DirectAudioSnapshotRow[]): void {
+  const tunes = JSON.parse(readFileSync("server/seedData/tunes.json", "utf8"));
+  if (!Array.isArray(tunes)) throw new Error("Seed parity check failed: tunes.json is not an array");
+  const seedRows = tunes
+    .filter((tune: any) => typeof tune?.audio_url === "string" && tune.audio_url.trim())
+    .map((tune: any) => ({
+      id: Number(tune.id),
+      audio_url: tune.audio_url,
+      audio_source: tune.audio_source || null,
+      audio_attribution: tune.audio_attribution || null,
+    }))
+    .sort((a: DirectAudioSnapshotRow, b: DirectAudioSnapshotRow) => a.id - b.id);
+  if (JSON.stringify(seedRows) !== JSON.stringify(databaseRows)) {
+    throw new Error(
+      `Seed parity check failed: database and seed differ in direct-audio URL/source/attribution by tune ID`,
+    );
+  }
+  console.log(`Seed parity verified: ${databaseRows.length} direct audio records match by ID and attribution`);
+}
+
+async function approvedSourceLaneStatus() {
+  const lanes = [
+    { source: "library-of-congress", name: "Library of Congress", includeArchivalReferences: true },
+    { source: "internet-archive", name: "Internet Archive", includeArchivalReferences: false },
+    { source: "slippery-hill", name: "Slippery Hill", includeArchivalReferences: false },
+    { source: "wikimedia-commons", name: "Wikimedia Commons", includeArchivalReferences: false },
+  ];
+  return Promise.all(lanes.map(async (lane) => {
+    const version = createAudioSourceAdapter(lane.source).version;
+    const latest = await pool.query<{
+      id: number;
+      status: string;
+      cursor_id: number;
+      pause_reason: string | null;
+      updated_at: Date;
+    }>(
+      `SELECT id, status, cursor_id, pause_reason, updated_at
+       FROM audio_ingestion_runs
+       WHERE source = $1 AND adapter_version = $2
+       ORDER BY updated_at DESC, id DESC
+       LIMIT 1`,
+      [lane.source, version],
+    );
+    const attempts = await pool.query<{ status: string; count: string }>(
+      `SELECT status, COUNT(*)::text AS count
+       FROM audio_ingestion_attempts
+       WHERE source = $1 AND adapter_version = $2
+       GROUP BY status`,
+      [lane.source, version],
+    );
+    const counts = Object.fromEntries(
+      attempts.rows.map((row) => [row.status, Number(row.count)]),
+    );
+    const remaining = await pool.query<{ remaining: string; unattempted: string }>(
+      `SELECT
+         COUNT(*) FILTER (
+           WHERE NOT EXISTS (
+             SELECT 1 FROM audio_ingestion_attempts a
+             WHERE a.source = $1 AND a.adapter_version = $2 AND a.tune_id = t.id
+               AND a.status IN ('applied', 'no-match', 'rejected', 'skipped-existing')
+           )
+         )::text AS remaining,
+         COUNT(*) FILTER (
+           WHERE NOT EXISTS (
+             SELECT 1 FROM audio_ingestion_attempts a
+             WHERE a.source = $1 AND a.adapter_version = $2 AND a.tune_id = t.id
+           )
+         )::text AS unattempted
+       FROM tunes t
+       WHERE NULLIF(btrim(t.audio_url), '') IS NULL
+         AND ($3::boolean OR NULLIF(btrim(t.loc_item_id), '') IS NULL)`,
+      [lane.source, version, lane.includeArchivalReferences],
+    );
+    const run = latest.rows[0] || null;
+    return {
+      source: lane.source,
+      name: lane.name,
+      adapterVersion: version,
+      state: run?.status || "not-started",
+      cursorId: run?.cursor_id || 0,
+      pauseReason: run?.pause_reason || null,
+      updatedAt: run?.updated_at || null,
+      attempts: counts,
+      additions: counts.applied || 0,
+      pendingCandidates: counts.candidate || 0,
+      pendingFailures: counts.failed || 0,
+      remainingEligibleOrRetryable: Number(remaining.rows[0].remaining),
+      unattempted: Number(remaining.rows[0].unattempted),
+      determination: run?.status === "completed"
+        ? "exhausted for the current adapter version"
+        : run?.status === "paused"
+          ? `paused: ${run.pause_reason || "manual resume required"}`
+          : run?.status === "running"
+            ? "still processing"
+            : "current adapter version has not run",
+    };
+  }));
+}
+
 async function main() {
   validateArgs();
   const summaries: RunSummary[] = [];
@@ -391,6 +437,8 @@ async function main() {
   }
 
   const coverage = await coverageAndSourceStatus();
+  const sourceLanes = await approvedSourceLaneStatus();
+  const databaseSnapshot = await databaseDirectAudioSnapshot();
   const sourcePolicy = JSON.parse(
     readFileSync("server/seedData/audio-source-policy.json", "utf8"),
   );
@@ -402,6 +450,7 @@ async function main() {
     requestedLimitPerSource: LIMIT,
     runs: summaries,
     coverage,
+    approvedSourceLanes: sourceLanes,
     evaluatedSources: sourcePolicy.sources.map((source: any) => ({
       name: source.name,
       status: source.status,
@@ -410,8 +459,9 @@ async function main() {
     shortfall: coverage.remainingToTarget === 0
       ? null
       : {
+          qualified: sourceLanes.every((lane) => lane.state === "completed"),
           filesNeeded: coverage.remainingToTarget,
-          explanation: "Approved adapters exhausted or still processing the unresolved catalog; no unverified, rights-unclear, or video-only media is counted.",
+          explanation: "The source records above quantify every approved lane as exhausted, paused, running, or not started. Rights-unclear, title-collision, blocked, and video-only media are not counted.",
           nextAction: "Resume paused runs, add a new approved source adapter, or ingest a rights-cleared manifest with exact tune identities.",
         },
   };
@@ -425,6 +475,7 @@ async function main() {
       stdio: "inherit",
       env: process.env,
     });
+    verifySeedParity(databaseSnapshot);
   }
 }
 

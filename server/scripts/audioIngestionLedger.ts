@@ -108,7 +108,7 @@ export async function openAudioIngestionRun(
       `UPDATE audio_ingestion_runs
        SET status = 'running', pause_reason = NULL, updated_at = now(), finished_at = NULL
        WHERE id = $1 AND source = $2 AND adapter_version = $3
-         AND status IN ('running', 'paused', 'failed')
+         AND status IN ('running', 'paused', 'failed', 'completed')
        RETURNING *`,
       [options.resumeRunId, options.source, options.adapterVersion],
     );
@@ -126,6 +126,30 @@ export async function openAudioIngestionRun(
     [options.source, options.adapterVersion, options.requestedLimit],
   );
   return created.rows[0];
+}
+
+export async function rewindRunToPendingCandidate(
+  client: PoolClient,
+  run: AudioIngestionRun,
+): Promise<AudioIngestionRun> {
+  const result = await client.query<AudioIngestionRun>(
+    `UPDATE audio_ingestion_runs r
+     SET cursor_id = LEAST(
+           r.cursor_id,
+           COALESCE((
+             SELECT MIN(a.tune_id) - 1
+             FROM audio_ingestion_attempts a
+             WHERE a.source = r.source
+               AND a.adapter_version = r.adapter_version
+               AND a.status = 'candidate'
+           ), r.cursor_id)
+         ),
+         updated_at = now()
+     WHERE r.id = $1
+     RETURNING r.*`,
+    [run.id],
+  );
+  return result.rows[0];
 }
 
 export async function nextAudioIngestionTune(
@@ -164,7 +188,7 @@ export async function audioIngestionRetryBlock(
      WHERE source = $1
        AND adapter_version = $2
        AND status = 'failed'
-       AND tune_id > $3
+       AND tune_id >= $3
        AND next_retry_at IS NOT NULL
        AND next_retry_at > now()
      ORDER BY tune_id ASC
@@ -174,6 +198,29 @@ export async function audioIngestionRetryBlock(
   return result.rows[0]
     ? { tuneId: result.rows[0].tune_id, nextRetryAt: result.rows[0].next_retry_at }
     : null;
+}
+
+export async function acquireAudioIngestionSourceLock(
+  client: PoolClient,
+  source: string,
+  adapterVersion: string,
+): Promise<boolean> {
+  const result = await client.query<{ acquired: boolean }>(
+    `SELECT pg_try_advisory_lock(hashtext($1)) AS acquired`,
+    [`audio-ingestion:${source}@${adapterVersion}`],
+  );
+  return result.rows[0]?.acquired === true;
+}
+
+export async function releaseAudioIngestionSourceLock(
+  client: PoolClient,
+  source: string,
+  adapterVersion: string,
+): Promise<void> {
+  await client.query(
+    `SELECT pg_advisory_unlock(hashtext($1))`,
+    [`audio-ingestion:${source}@${adapterVersion}`],
+  );
 }
 
 export async function recordAudioIngestionAttempt(
@@ -187,7 +234,10 @@ export async function recordAudioIngestionAttempt(
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      ON CONFLICT (source, adapter_version, tune_id) DO UPDATE SET
        run_id = EXCLUDED.run_id,
-       status = EXCLUDED.status,
+       status = CASE
+         WHEN audio_ingestion_attempts.status = 'applied' THEN 'applied'
+         ELSE EXCLUDED.status
+       END,
        attempts = audio_ingestion_attempts.attempts + 1,
        candidate_url = COALESCE(EXCLUDED.candidate_url, audio_ingestion_attempts.candidate_url),
        candidate_source = COALESCE(EXCLUDED.candidate_source, audio_ingestion_attempts.candidate_source),

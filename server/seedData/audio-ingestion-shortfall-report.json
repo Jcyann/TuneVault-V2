@@ -1,0 +1,278 @@
+{
+  "generatedAt": "2026-08-27T19:57:33.708Z",
+  "dryRun": false,
+  "requestedSource": "all",
+  "requestedLimitPerSource": 100,
+  "runs": [],
+  "coverage": {
+    "totalTunes": 1348,
+    "directAudioFiles": 1017,
+    "target": 1200,
+    "remainingToTarget": 183,
+    "unresolvedDirectAudio": 327,
+    "sourceStatus": {
+      "internet-archive": {
+        "applied": 6,
+        "no-match": 260,
+        "rejected": 74
+      },
+      "library-of-congress": {
+        "applied": 3,
+        "candidate": 1,
+        "failed": 5,
+        "no-match": 39,
+        "rejected": 7
+      },
+      "slippery-hill": {
+        "applied": 7,
+        "failed": 1,
+        "no-match": 333
+      },
+      "wikimedia-commons": {
+        "no-match": 340
+      }
+    },
+    "latestRuns": [
+      {
+        "source": "internet-archive",
+        "id": 10,
+        "adapter_version": "2",
+        "status": "completed",
+        "cursor_id": 1855,
+        "processed_count": 340,
+        "added_count": 6,
+        "candidate_count": 6,
+        "failure_count": 0,
+        "pause_reason": null,
+        "updated_at": "2026-08-27T19:46:33.565Z"
+      },
+      {
+        "source": "library-of-congress",
+        "id": 12,
+        "adapter_version": "4",
+        "status": "paused",
+        "cursor_id": 0,
+        "processed_count": 1,
+        "added_count": 0,
+        "candidate_count": 0,
+        "failure_count": 1,
+        "pause_reason": "source failure at tune 1; retry after 2026-08-27T20:05:50.009Z",
+        "updated_at": "2026-08-27T19:50:50.027Z"
+      },
+      {
+        "source": "slippery-hill",
+        "id": 11,
+        "adapter_version": "3",
+        "status": "completed",
+        "cursor_id": 1855,
+        "processed_count": 334,
+        "added_count": 7,
+        "candidate_count": 7,
+        "failure_count": 0,
+        "pause_reason": null,
+        "updated_at": "2026-08-27T19:57:12.795Z"
+      },
+      {
+        "source": "wikimedia-commons",
+        "id": 8,
+        "adapter_version": "2",
+        "status": "completed",
+        "cursor_id": 1855,
+        "processed_count": 340,
+        "added_count": 0,
+        "candidate_count": 0,
+        "failure_count": 0,
+        "pause_reason": null,
+        "updated_at": "2026-08-27T19:40:55.834Z"
+      }
+    ],
+    "currentDirectAudioBySource": {
+      "Old Time Fiddle Tunes": 890,
+      "Slippery Hill": 33,
+      "Canote Brothers": 26,
+      "Internet Archive": 11,
+      "via Internet Archive": 7,
+      "Library of Congress": 3,
+      "Baker, Bev; Combs, Norman via Internet Archive (1937)": 2,
+      "D.D.Teoli Jr. A.C. via Internet Archive": 2,
+      "Alan F Brookes via Internet Archive (1999)": 1,
+      "Asher, Boyd via Internet Archive (1937)": 1,
+      "Big Foot Lane via Internet Archive": 1,
+      "Blue Ridge Mountain Boys via Internet Archive": 1,
+      "Bob Hill and his Canadian Country Boys via Internet Archive": 1,
+      "Celtic Influence via Internet Archive (2015)": 1,
+      "Derek Piotr, Guy Wolff via Internet Archive (2023)": 1,
+      "Derek Piotr, Guy Wolff via Internet Archive (2025)": 1,
+      "Doc Watson, Clint Howard, and Fred Price via Internet Archive (1966)": 1,
+      "Don Richardson via Internet Archive (1916)": 1,
+      "Frank Fallon and His Orchestra via Internet Archive": 1,
+      "Gerry Dempsey and Tom Joad via Internet Archive (2004)": 1,
+      "Harold Goodfellow and His Good Fellows via Internet Archive (1951)": 1,
+      "Ian Jacks and Tom Joad via Internet Archive (2000)": 1,
+      "In House with Jeremy Petersen via Internet Archive": 1,
+      "Jack Saturday via Internet Archive": 1,
+      "Jeffrey Wood & Trevor Wood via Internet Archive": 1,
+      "Jock Tamson's Bairns via Internet Archive (2000)": 1,
+      "John Baltzell & John F. Burckhardt via Internet Archive": 1,
+      "Johnny Cash & June Carter via Internet Archive": 1,
+      "Mellie Dunham via Internet Archive": 1,
+      "Pete Seeger via Internet Archive (1966)": 1,
+      "Pickard Family via Internet Archive (1929)": 1,
+      "R. Dunne via Internet Archive (2018)": 1,
+      "Ralph Page's New Hampshire Orchestra via Internet Archive": 1,
+      "Richie Hass via Internet Archive (2006)": 1,
+      "Roark, George Shortbuckle\" via Internet Archive (1938)": 1,
+      "SLEEPY MARLIN via Internet Archive": 1,
+      "SONNY OSBORN via Internet Archive": 1,
+      "Samantha Bumgarner via Internet Archive (1924)": 1,
+      "Schroeder's Playboys via Internet Archive": 1,
+      "Sizemore, John; Collett, J.F. (Farmer) via Internet Archive (1937)": 1,
+      "THE WOODSHED FOUR via Internet Archive": 1,
+      "Taylor's Kentucky Boys via Internet Archive": 1,
+      "The Bansai Bills via Internet Archive (2014)": 1,
+      "The Homesteaders via Internet Archive (1962)": 1,
+      "The Scottish Country Dance Players via Internet Archive": 1,
+      "Tom Joad via Internet Archive": 1,
+      "Tom Joad via Internet Archive (2000)": 1,
+      "Vernon Dalhart & Carson Robison via Internet Archive (1927)": 1,
+      "Watson/Howard/Price/Seeger via Internet Archive": 1,
+      "Wm. B. Houchens via Internet Archive (1924)": 1,
+      "unknown via Internet Archive": 1
+    }
+  },
+  "approvedSourceLanes": [
+    {
+      "source": "library-of-congress",
+      "name": "Library of Congress",
+      "adapterVersion": "4",
+      "state": "paused",
+      "cursorId": 0,
+      "pauseReason": "source failure at tune 1; retry after 2026-08-27T20:05:50.009Z",
+      "updatedAt": "2026-08-27T19:50:50.027Z",
+      "attempts": {
+        "failed": 1
+      },
+      "additions": 0,
+      "pendingCandidates": 0,
+      "pendingFailures": 1,
+      "remainingEligibleOrRetryable": 331,
+      "unattempted": 330,
+      "determination": "paused: source failure at tune 1; retry after 2026-08-27T20:05:50.009Z"
+    },
+    {
+      "source": "internet-archive",
+      "name": "Internet Archive",
+      "adapterVersion": "2",
+      "state": "completed",
+      "cursorId": 1855,
+      "pauseReason": null,
+      "updatedAt": "2026-08-27T19:46:33.565Z",
+      "attempts": {
+        "applied": 6,
+        "rejected": 74,
+        "no-match": 260
+      },
+      "additions": 6,
+      "pendingCandidates": 0,
+      "pendingFailures": 0,
+      "remainingEligibleOrRetryable": 0,
+      "unattempted": 0,
+      "determination": "exhausted for the current adapter version"
+    },
+    {
+      "source": "slippery-hill",
+      "name": "Slippery Hill",
+      "adapterVersion": "3",
+      "state": "completed",
+      "cursorId": 1855,
+      "pauseReason": null,
+      "updatedAt": "2026-08-27T19:57:12.795Z",
+      "attempts": {
+        "applied": 7,
+        "no-match": 327
+      },
+      "additions": 7,
+      "pendingCandidates": 0,
+      "pendingFailures": 0,
+      "remainingEligibleOrRetryable": 0,
+      "unattempted": 0,
+      "determination": "exhausted for the current adapter version"
+    },
+    {
+      "source": "wikimedia-commons",
+      "name": "Wikimedia Commons",
+      "adapterVersion": "2",
+      "state": "completed",
+      "cursorId": 1855,
+      "pauseReason": null,
+      "updatedAt": "2026-08-27T19:40:55.834Z",
+      "attempts": {
+        "no-match": 340
+      },
+      "additions": 0,
+      "pendingCandidates": 0,
+      "pendingFailures": 0,
+      "remainingEligibleOrRetryable": 0,
+      "unattempted": 0,
+      "determination": "exhausted for the current adapter version"
+    }
+  ],
+  "evaluatedSources": [
+    {
+      "name": "Slippery Hill",
+      "status": "approved for direct audio",
+      "context": "Performer and edition details are retained when the source page provides them. Discovery/apply run against the full unresolved backlog by default (no small fixed batch limit)."
+    },
+    {
+      "name": "Internet Archive",
+      "status": "approved for direct audio",
+      "context": "Review reports preserve the collection, file, rights/license, creator, performer when named, and source-page URL. There is no manual editorial 'is this a genuine old-time edition' gate — exact match, rights/license, attribution, and a verified playable file are sufficient to auto-attach. Discovery/apply run against the full unresolved backlog by default (no small fixed batch limit)."
+    },
+    {
+      "name": "Wikimedia Commons",
+      "status": "approved for direct audio",
+      "context": "Commons only hosts freely licensed or public-domain media, but individual files can still declare restricted terms, so the license line is rechecked live before every apply."
+    },
+    {
+      "name": "Library of Congress",
+      "status": "approved for direct audio when the live item API exposes a verified MP3; otherwise retained as a trusted archival reference",
+      "context": "The loc.gov JSON API and tile.loc.gov MP3 resources are currently reachable. Archival references remain distinct from direct-audio coverage until the item-specific MP3 and rights checks pass. Existing references can be upgraded without replacing any other trusted recording."
+    },
+    {
+      "name": "Southern Folklife Collection / Digital SFC",
+      "status": "evaluated, not approved for automated direct imports",
+      "context": "The collection contains relevant field recordings, but search discovery alone is not enough evidence for automatic attachment. No lawful, scriptable per-file audio+rights endpoint was found during evaluation."
+    },
+    {
+      "name": "Smithsonian Folkways / Learning Lab",
+      "status": "evaluated, not approved for automated direct imports",
+      "context": "The Smithsonian Open Access API returns rich catalog metadata for Folkways recordings but no downloadable audio file for them (they are physical/commercial recordings, not digitized open-access media). Folkways.si.edu track pages offer short promotional preview clips only, sold under standard commercial terms rather than a redistributable license, so they do not clear the rights bar."
+    },
+    {
+      "name": "Folkstreams / NCTA",
+      "status": "evaluated, not approved for automated direct imports",
+      "context": "Folkstreams publishes documentary films (not individual tune tracks), and the site exposes no discoverable API for scripted per-title lookup, so exact tune-title matching and rights verification are not currently possible here."
+    },
+    {
+      "name": "Digital Library of Appalachia",
+      "status": "evaluated, not approved for automated direct imports",
+      "context": "The site runs on CONTENTdm; its dmwebservices API endpoint returned 403/blocked responses to automated requests during evaluation, and per-item rights statements vary by collection, so this lane cannot be verified end-to-end from the automated sourcing environment."
+    },
+    {
+      "name": "Berea College Sound Archives",
+      "status": "evaluated, not approved for automated tune-level imports",
+      "context": "The Preservica catalog and direct MP3 downloads are scriptable, and the Bruce Greene, John Harrod, Steve Rice, and Barbara Kunkle collections contain hundreds of relevant recordings. The exposed files are full cassettes or reels named for performers/interviews rather than individual tunes, and item pages state that material is posted for personal research and educational purposes. Treating an entire tape as one tune would be inaccurate, so this source remains a documented shortfall rather than a title-only import lane."
+    },
+    {
+      "name": "Duke Digital Collections",
+      "status": "evaluated, not approved for automated direct imports",
+      "context": "repository.duke.edu is protected by an interactive bot challenge that blocks scripted access, so item-level title, rights, and audio-file verification cannot be automated from this environment."
+    }
+  ],
+  "shortfall": {
+    "qualified": true,
+    "filesNeeded": 183,
+    "explanation": "The source records above quantify every approved lane as exhausted, paused, running, or not started. Rights-unclear, title-collision, blocked, and video-only media are not counted.",
+    "nextAction": "Resume paused runs, add a new approved source adapter, or ingest a rights-cleared manifest with exact tune identities."
+  }
+}
