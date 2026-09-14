@@ -21,6 +21,7 @@ import IdentifyKeyPage from "@/pages/IdentifyKeyPage";
 import NotFound from "@/pages/not-found";
 import MiniPlayer from "@/components/MiniPlayer";
 import NavBar from "@/components/NavBar";
+import LessonFooter from "@/components/LessonFooter";
 
 function Router() {
   useAnalytics();
@@ -56,6 +57,7 @@ function App() {
           <Toaster />
           <NavBar />
           <Router />
+          <LessonFooter />
           <MiniPlayer />
         </PlaylistProvider>
       </TooltipProvider>

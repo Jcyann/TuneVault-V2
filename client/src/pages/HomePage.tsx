@@ -287,7 +287,7 @@ export default function HomePage() {
                 data-testid="link-home-lesson-hero"
               >
                 <GraduationCap className="mr-2 h-4 w-4" />
-                Explore lessons
+                Learn a tune
               </Link>
             </div>
           </div>

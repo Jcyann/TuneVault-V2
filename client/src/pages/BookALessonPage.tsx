@@ -12,30 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { apiRequest } from "@/lib/queryClient";
 import { trackEvent } from "@/lib/analytics";
 import instructorPortrait from "@assets/0_IMG_6259_1787327184148.jpeg";
-
-const INSTRUMENTS = [
-  {
-    name: "Old-Time Fiddle",
-    desc: "The heart of the tradition. Beginner and intermediate players work on bow technique, left-hand position, tone production, rhythm, and repertoire from the full Old-Time canon.",
-  },
-  {
-    name: "Clawhammer Banjo",
-    desc: "The driving pulse of Old-Time music. Learn the bum-ditty stroke, drop-thumb technique, and how to lock in with the fiddle at a session.",
-  },
-  {
-    name: "Old-Time Guitar",
-    desc: "The rhythmic backbone. Learn boom-chick rhythm, bass runs, and how to comp sensitively behind a melody without overpowering the groove.",
-  },
-  {
-    name: "Upright Bass",
-    desc: "The rhythmic foundation of Old-Time music. Learn to hold a steady, even pulse — two beats per bar, roots and fifths — and support the group without drawing attention to yourself. The goal is invisibility through reliability.",
-  },
-];
 
 interface FormData {
   name: string;
@@ -66,7 +46,7 @@ const EMPTY: FormData = {
 export default function BookALessonPage() {
   usePageMeta(
     "Book a Lesson",
-    "Online lessons focused on beginner and intermediate Old-Time fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass."
+    "Tune-based online lessons from $40 for 30 minutes, focused on beginner and intermediate Old-Time fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass."
   );
 
   const [form, setForm] = useState<FormData>(() => ({
@@ -84,7 +64,7 @@ export default function BookALessonPage() {
   const arrivalSource = params.get("source") || (selectedTune ? "tune" : "direct");
 
   useEffect(() => {
-    const safeSources = ["homepage", "tune", "navigation"];
+    const safeSources = ["homepage", "tune", "navigation", "page_footer"];
     trackEvent("lesson_page_arrival", "lessons", safeSources.includes(arrivalSource) ? arrivalSource : "direct");
   }, [arrivalSource]);
 
@@ -141,16 +121,6 @@ export default function BookALessonPage() {
           <p className="mt-5 max-w-2xl font-serif text-lg leading-relaxed text-muted-foreground">
             One-on-one lessons built around real old-time repertoire—its rhythm, technique, source recordings, and history. Bring a tune you love or let Jason help you choose one.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3">
-            <a
-              href="#inquiry-form"
-              onClick={() => trackEvent("lesson_cta_click", "lessons", "lesson_page_hero")}
-              className="inline-flex items-center bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-transform hover:-translate-y-0.5"
-            >
-              Start a conversation <ChevronRight className="ml-2 h-4 w-4" />
-            </a>
-            <span className="text-xs text-muted-foreground">No payment or commitment to inquire.</span>
-          </div>
         </header>
         <div className="grid border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-border">
           {[
@@ -172,55 +142,50 @@ export default function BookALessonPage() {
       <div className="container mx-auto max-w-6xl px-6 pb-10">
         <div className="grid items-start gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <main className="min-w-0 space-y-12">
-            {/* Intro */}
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">A practical way into the tradition</div>
-              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Lessons start with music, not exercises.</h2>
-              <p>
-                Old-Time music is one of the most rewarding traditions you can dive
-                into — the repertoire is deep, the community is welcoming, and the
-                music lives at the intersection of history, feel, and technique.
-                Lessons draw directly from the TuneVault repertoire so every tune
-                comes with context, recordings, and a real reason to play it.
-              </p>
-              <p>
-                Jason’s focus is beginner-to-intermediate fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass—with particular attention to groove, feel, and supportive playing.
-              </p>
-            </div>
+            <section className="border border-foreground bg-card p-6 sm:p-8" aria-labelledby="first-tune-heading">
+              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-primary">A simple place to start</p>
+              <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                <h2 id="first-tune-heading" className="font-display text-4xl font-semibold tracking-tight text-foreground">
+                  Your First Tune
+                </h2>
+                <p className="font-display text-2xl font-semibold text-primary">$40 <span className="text-base font-normal text-muted-foreground">· 30 minutes</span></p>
+              </div>
+              <div className="mt-5 space-y-2 font-serif text-[16px] leading-relaxed text-muted-foreground">
+                <p>Pick a tune from TuneVault—or tell me what you’ve been trying to learn.</p>
+                <p>We’ll spend the lesson getting you moving on it.</p>
+                <p className="font-sans text-sm font-medium text-foreground">No subscription. No commitment. No payment until we confirm the lesson.</p>
+              </div>
+              <a
+                href="#inquiry-form"
+                onClick={() => trackEvent("lesson_cta_click", "lessons", "first_tune_offer")}
+                className="mt-6 inline-flex items-center bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-transform hover:-translate-y-0.5"
+                data-testid="link-first-tune-inquiry"
+              >
+                Ask About Your First Lesson <ChevronRight className="ml-2 h-4 w-4" />
+              </a>
+            </section>
 
-            {/* Instruments */}
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">The Instruments</div>
-              <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight mb-6">What we teach</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7 border-t border-border pt-7">
-                {INSTRUMENTS.map(({ name, desc }) => (
-                  <div key={name} className="flex flex-col gap-2">
-                    <p className="font-display text-xl font-semibold text-foreground tracking-tight">{name}</p>
-                    <p className="font-serif text-[15px] text-muted-foreground leading-relaxed">{desc}</p>
+            <section aria-labelledby="ongoing-heading">
+              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Flexible session lengths</p>
+              <h2 id="ongoing-heading" className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground">
+                Want ongoing instruction?
+              </h2>
+              <dl className="mt-5 grid grid-cols-3 divide-x divide-border border-y border-border">
+                {[
+                  ["30 min", "$40"],
+                  ["45 min", "$55"],
+                  ["60 min", "$70"],
+                ].map(([length, price]) => (
+                  <div key={length} className="px-3 py-5 text-center first:pl-0 last:pr-0">
+                    <dt className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{length}</dt>
+                    <dd className="mt-1 font-display text-2xl font-semibold text-foreground">{price}</dd>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* What to expect */}
-            <div>
-              <h2 className="text-xl font-serif font-bold text-foreground mb-3">
-                What your first lesson looks like
-              </h2>
-              <ul className="space-y-2 text-muted-foreground text-sm">
-                {[
-                  "Start with the tune, question, or technique that brought you in",
-                  "Listen closely to a source recording and identify what gives the music its feel",
-                  "Break the work into an achievable next step for your instrument and level",
-                  "Leave with a clear direction for practice—not a generic lesson plan",
-                ].map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <ChevronRight className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              </dl>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                Focus: beginner-to-intermediate fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass.
+              </p>
+            </section>
 
             {/* ── Questionnaire ── */}
             <div id="inquiry-form">
@@ -571,7 +536,6 @@ export default function BookALessonPage() {
           </aside>
         </div>
 
-        <TipJar />
       </div>
     </div>
   );
