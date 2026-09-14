@@ -2,10 +2,8 @@ declare global {
   interface Window {
     dataLayer: any[];
     gtag: (...args: any[]) => void;
-    replit?: {
-      analytics?: {
-        track: (eventName: string, properties?: Record<string, string | number>) => void;
-      };
+    umami?: {
+      track: (eventName: string, properties?: Record<string, string | number>) => void;
     };
   }
 }
@@ -49,11 +47,15 @@ export const trackEvent = (
   value?: number
 ) => {
   if (typeof window === "undefined") return;
-  window.replit?.analytics?.track(action, {
-    ...(category ? { category } : {}),
-    ...(label ? { label } : {}),
-    ...(typeof value === "number" ? { value } : {}),
-  });
+  try {
+    window.umami?.track(action, {
+      ...(category ? { category } : {}),
+      ...(label ? { label } : {}),
+      ...(typeof value === "number" ? { value } : {}),
+    });
+  } catch {
+    // Analytics must never break the app.
+  }
   window.gtag?.("event", action, {
     event_category: category,
     event_label: label,

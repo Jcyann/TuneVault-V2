@@ -66,7 +66,7 @@ export default function TuneDetailPage() {
     trackEvent("tune_view", "tune", tune.title);
 
     const pageTitle = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
-    const pageUrl = `https://tunevault.org/tunes/${tune.id}`;
+    const pageUrl = `https://tunevault.org/tune/${tune.id}`;
     const pageDesc = tune.description
       ? tune.description.slice(0, 155).replace(/\s\S*$/, "") + "…"
       : `${tune.title}: a ${tune.key} ${tune.tuneType} from the Old-Time fiddle tradition. Audio, history, ABC notation, and video on TuneVault.`;
