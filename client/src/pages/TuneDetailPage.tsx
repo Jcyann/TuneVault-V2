@@ -347,7 +347,7 @@ export default function TuneDetailPage() {
             className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
             data-testid="link-tune-lesson"
           >
-            Learn {tune.title} with Jason
+            Get help learning {tune.title}
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </header>
@@ -528,7 +528,7 @@ export default function TuneDetailPage() {
                 Take {tune.title} from reference to repertoire.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
-                Work directly with Jason Chinchen on the bowing, rhythm, technique, and musical context that make this tune feel right. Jason teaches from the same recordings, notation, and research collected here in TuneVault.
+                Work one-on-one on the bowing, rhythm, technique, and musical context that make this tune feel right. Lessons draw from the same recordings, notation, and research collected here in TuneVault.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-primary-foreground/75">
                 <span>Fiddle · Clawhammer banjo · Guitar · Upright bass</span>

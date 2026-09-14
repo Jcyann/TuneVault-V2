@@ -299,7 +299,7 @@ export default function HomePage() {
               <strong className="text-foreground font-semibold">
                 {stats?.total ? `over ${(Math.floor(Number(stats.total) / 100) * 100).toLocaleString("en-US")}` : "over 1,000"}
               </strong>{" "}
-              fiddle tunes—then work through one with Jason in a private online lesson.
+              fiddle tunes—then work through one in a private online lesson.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a
@@ -315,7 +315,7 @@ export default function HomePage() {
                 data-testid="link-home-lesson-hero"
               >
                 <GraduationCap className="mr-2 h-4 w-4" />
-                Learn with Jason
+                Explore lessons
               </Link>
             </div>
           </div>
@@ -770,12 +770,12 @@ export default function HomePage() {
         <section className="mt-20 border-y border-foreground bg-primary px-6 py-9 sm:px-10 sm:py-11 text-primary-foreground" aria-labelledby="lesson-callout">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/70">Learn from the person behind the vault</p>
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/70">Private online instruction</p>
               <h2 id="lesson-callout" className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
                 Turn one tune into a way of playing.
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
-                Jason Chinchen teaches tune-based lessons in Old-Time fiddle, clawhammer banjo, rhythm guitar, and upright bass. Choose a tune from the archive, bring a question, and start there.
+                Tune-based lessons are available in Old-Time fiddle, clawhammer banjo, rhythm guitar, and upright bass. Choose a tune from the archive, bring a question, and start there.
               </p>
             </div>
             <Link
