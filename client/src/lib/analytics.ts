@@ -2,6 +2,11 @@ declare global {
   interface Window {
     dataLayer: any[];
     gtag: (...args: any[]) => void;
+    replit?: {
+      analytics?: {
+        track: (eventName: string, properties?: Record<string, string | number>) => void;
+      };
+    };
   }
 }
 
@@ -43,8 +48,13 @@ export const trackEvent = (
   label?: string,
   value?: number
 ) => {
-  if (typeof window === "undefined" || !window.gtag) return;
-  window.gtag("event", action, {
+  if (typeof window === "undefined") return;
+  window.replit?.analytics?.track(action, {
+    ...(category ? { category } : {}),
+    ...(label ? { label } : {}),
+    ...(typeof value === "number" ? { value } : {}),
+  });
+  window.gtag?.("event", action, {
     event_category: category,
     event_label: label,
     value,

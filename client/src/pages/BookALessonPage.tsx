@@ -15,6 +15,7 @@ import {
 import TipJar from "@/components/TipJar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { apiRequest } from "@/lib/queryClient";
+import { trackEvent } from "@/lib/analytics";
 import instructorPortrait from "@assets/0_IMG_6259_1787327184148.jpeg";
 
 const INSTRUMENTS = [
@@ -68,7 +69,10 @@ export default function BookALessonPage() {
     "Online lessons in Old-Time fiddle, clawhammer banjo, Old-Time guitar, and upright bass. All levels welcome. Tune-based learning with deep historical context."
   );
 
-  const [form, setForm] = useState<FormData>(EMPTY);
+  const [form, setForm] = useState<FormData>(() => ({
+    ...EMPTY,
+    specificTunes: new URLSearchParams(window.location.search).get("tune") || "",
+  }));
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -89,8 +93,6 @@ export default function BookALessonPage() {
       e.email = "Valid email is required";
     if (!form.instrument) e.instrument = "Please select an instrument";
     if (!form.experienceLevel) e.experienceLevel = "Please select your level";
-    if (!form.currentGoals.trim())
-      e.currentGoals = "Please describe what you'd like to work on";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -102,6 +104,7 @@ export default function BookALessonPage() {
     setServerError("");
     try {
       await apiRequest("POST", "/api/lesson-inquiry", form);
+      trackEvent("lesson_inquiry_submitted", "lessons", form.instrument);
       setSubmitted(true);
     } catch {
       setServerError("Something went wrong. Please try again or email directly.");
@@ -329,7 +332,7 @@ export default function BookALessonPage() {
                   {/* Goals */}
                   <div className="space-y-1.5">
                     <Label htmlFor="inq-goals">
-                      What do you most want to work on? *
+                      What do you most want to work on? (optional)
                     </Label>
                     <Textarea
                       id="inq-goals"
@@ -337,7 +340,7 @@ export default function BookALessonPage() {
                       placeholder="Describe your goals — technique issues, specific skills, where you feel stuck, what kind of player you want to be..."
                       value={form.currentGoals}
                       onChange={setInput("currentGoals")}
-                      rows={4}
+                      rows={3}
                     />
                     {errors.currentGoals && (
                       <p className="text-xs text-destructive">
