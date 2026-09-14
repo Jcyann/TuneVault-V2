@@ -21,7 +21,7 @@ import instructorPortrait from "@assets/0_IMG_6259_1787327184148.jpeg";
 const INSTRUMENTS = [
   {
     name: "Old-Time Fiddle",
-    desc: "The heart of the tradition. Learn bow technique, left-hand position, tone production, and repertoire from the full Old-Time canon. Beginners welcome.",
+    desc: "The heart of the tradition. Beginner and intermediate players work on bow technique, left-hand position, tone production, rhythm, and repertoire from the full Old-Time canon.",
   },
   {
     name: "Clawhammer Banjo",
@@ -66,7 +66,7 @@ const EMPTY: FormData = {
 export default function BookALessonPage() {
   usePageMeta(
     "Book a Lesson",
-    "Online lessons in Old-Time fiddle, clawhammer banjo, Old-Time guitar, and upright bass. All levels welcome. Tune-based learning with deep historical context."
+    "Online lessons focused on beginner and intermediate Old-Time fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass."
   );
 
   const [form, setForm] = useState<FormData>(() => ({
@@ -181,7 +181,7 @@ export default function BookALessonPage() {
                 comes with context, recordings, and a real reason to play it.
               </p>
               <p>
-                Jason’s focus is beginner fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass—with particular attention to groove, feel, and supportive playing.
+                Jason’s focus is beginner-to-intermediate fiddle, intermediate-to-advanced clawhammer banjo, rhythm guitar, and upright bass—with particular attention to groove, feel, and supportive playing.
               </p>
             </div>
 
@@ -554,7 +554,7 @@ export default function BookALessonPage() {
                   </p>
                   <p>
                     Jason focuses on intermediate-to-advanced clawhammer banjo,
-                    beginner fiddle, rhythm guitar, and upright bass. He specializes
+                    beginner-to-intermediate fiddle, rhythm guitar, and upright bass. He specializes
                     in groove, feel, and melodic, supportive playing.
                   </p>
                   <p>
