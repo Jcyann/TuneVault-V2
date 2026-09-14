@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus, Pause, Radio, GraduationCap } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -12,7 +12,6 @@ import { usePlaylist } from "@/context/PlaylistContext";
 import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
-import { LATEST_UPDATES } from "@/data/latestUpdates";
 import { trackEvent } from "@/lib/analytics";
 
 const TUNE_TYPE_COLORS: Record<string, string> = {
@@ -81,39 +80,12 @@ export default function HomePage() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [shuffleLoading, setShuffleLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [latestUpdateIndex, setLatestUpdateIndex] = useState(0);
-  const [updatesPaused, setUpdatesPaused] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMounted = useRef(false);
 
   const { favorites, toggleFavorite, isFavorite, favoritesCount } = useFavorites();
   const { startPlaylist, enqueue } = usePlaylist();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    updatePreference();
-    mediaQuery.addEventListener?.("change", updatePreference);
-    return () => mediaQuery.removeEventListener?.("change", updatePreference);
-  }, []);
-
-  useEffect(() => {
-    if (updatesPaused || prefersReducedMotion || LATEST_UPDATES.length < 2) return;
-    const timer = window.setTimeout(() => {
-      setLatestUpdateIndex((current) => (current + 1) % LATEST_UPDATES.length);
-    }, 7000);
-    return () => window.clearTimeout(timer);
-  }, [latestUpdateIndex, updatesPaused, prefersReducedMotion]);
-
-  const showPreviousUpdate = useCallback(() => {
-    setLatestUpdateIndex((current) => (current - 1 + LATEST_UPDATES.length) % LATEST_UPDATES.length);
-  }, []);
-
-  const showNextUpdate = useCallback(() => {
-    setLatestUpdateIndex((current) => (current + 1) % LATEST_UPDATES.length);
-  }, []);
 
   useEffect(() => {
     if (showFavorites) return;
@@ -484,92 +456,6 @@ export default function HomePage() {
             </p>
           )}
 
-          {LATEST_UPDATES.length > 0 && (() => {
-            const update = LATEST_UPDATES[latestUpdateIndex];
-            return (
-              <section
-                className="mt-7 border-t border-foreground/15 pt-5"
-                aria-labelledby="latest-updates-title"
-                data-testid="latest-updates"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Radio className="h-3.5 w-3.5" aria-hidden />
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <h2
-                          id="latest-updates-title"
-                          className="text-[10px] font-medium uppercase tracking-[0.18em] text-foreground"
-                        >
-                          Latest from TuneVault
-                        </h2>
-                        <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-                          {update.category}
-                        </span>
-                      </div>
-                      <div
-                        className="mt-1.5 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1"
-                        aria-live={updatesPaused || prefersReducedMotion ? "polite" : "off"}
-                      >
-                        <span className="font-display text-lg font-semibold leading-tight text-foreground">
-                          {update.title}
-                        </span>
-                        <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                          {update.dateLabel}
-                        </span>
-                      </div>
-                      <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                        {update.summary}{" "}
-                        <Link
-                          href={update.href}
-                          className="whitespace-nowrap text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
-                        >
-                          {update.linkLabel}
-                        </Link>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1 self-end sm:self-center">
-                    <button
-                      type="button"
-                      onClick={showPreviousUpdate}
-                      className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      aria-label="Previous TuneVault update"
-                      data-testid="button-previous-update"
-                    >
-                      <ChevronLeft className="h-4 w-4" aria-hidden />
-                    </button>
-                    <span className="min-w-[3.5rem] text-center text-[10px] tabular-nums uppercase tracking-[0.14em] text-muted-foreground" aria-label={`Update ${latestUpdateIndex + 1} of ${LATEST_UPDATES.length}`}>
-                      {latestUpdateIndex + 1} / {LATEST_UPDATES.length}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={showNextUpdate}
-                      className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      aria-label="Next TuneVault update"
-                      data-testid="button-next-update"
-                    >
-                      <ChevronRight className="h-4 w-4" aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUpdatesPaused((paused) => !paused)}
-                      className="ml-1 inline-flex h-8 items-center gap-1.5 border-l border-border pl-3 text-[10px] uppercase tracking-[0.13em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      aria-pressed={updatesPaused}
-                      aria-label={updatesPaused ? "Resume latest updates" : "Pause latest updates"}
-                      data-testid="button-toggle-updates"
-                    >
-                      {updatesPaused ? <Play className="h-3 w-3" aria-hidden /> : <Pause className="h-3 w-3" aria-hidden />}
-                      <span className="hidden sm:inline">{updatesPaused ? "Play" : "Pause"}</span>
-                    </button>
-                  </div>
-                </div>
-              </section>
-            );
-          })()}
         </div>
       </section>
 
