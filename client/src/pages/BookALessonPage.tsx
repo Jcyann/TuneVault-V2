@@ -187,6 +187,15 @@ export default function BookALessonPage() {
               </p>
             </section>
 
+            <figure className="border-l-2 border-primary py-1 pl-5" data-testid="lesson-testimonial">
+              <blockquote className="font-serif text-xl italic leading-relaxed text-foreground">
+                “Jason has a gift for groove and he’s really good at helping others feel and express the groove in old time music.”
+              </blockquote>
+              <figcaption className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Brian D. · Student
+              </figcaption>
+            </figure>
+
             {/* ── Questionnaire ── */}
             <div id="inquiry-form">
               <h2 className="text-xl font-serif font-bold text-foreground mb-1">
