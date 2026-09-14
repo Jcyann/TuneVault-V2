@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus, Pause, Radio } from "lucide-react";
+import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus, Pause, Radio, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tune } from "@shared/schema";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -13,6 +13,7 @@ import TipJar from "@/components/TipJar";
 import { useSwipe } from "@/hooks/useSwipe";
 import fiddleHero from "@assets/IMG_5307_1773106986966.jpeg";
 import { LATEST_UPDATES } from "@/data/latestUpdates";
+import { trackEvent } from "@/lib/analytics";
 
 const TUNE_TYPE_COLORS: Record<string, string> = {
   breakdown: "#B45309",
@@ -284,28 +285,45 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl px-5 relative z-10">
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-5 sm:mb-6 flex items-center gap-3">
             <span className="h-px w-8 bg-foreground/40" />
-            An Old-Time Fiddle Treasury
+            Listen · Learn · Play
           </p>
           <div className="max-w-xl">
             <h1 className="font-display font-bold tracking-tight leading-[0.95] text-foreground text-[2.75rem] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
               TuneVault
             </h1>
             <p className="font-display italic font-medium text-primary mt-3 text-xl sm:text-2xl lg:text-3xl leading-snug">
-              Where the Old-Time fiddle tradition lives on.
+              Learn the tunes. Hear the tradition.
             </p>
             <p className="text-sm sm:text-base text-muted-foreground mt-5 max-w-sm leading-relaxed">
-              Source recordings, sheet music, and history for{" "}
+              Explore source recordings, notation, history, and practical playing notes for{" "}
               <strong className="text-foreground font-semibold">
                 {stats?.total ? `over ${(Math.floor(Number(stats.total) / 100) * 100).toLocaleString("en-US")}` : "over 1,000"}
               </strong>{" "}
-              fiddle tunes from the living American old-time tradition.
+              fiddle tunes—then work through one with Jason in a private online lesson.
             </p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <a
+                href="#browse"
+                className="inline-flex items-center justify-center bg-foreground px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-background transition-transform hover:-translate-y-0.5"
+              >
+                Find a tune <ChevronRight className="ml-2 h-4 w-4" />
+              </a>
+              <Link
+                href="/book-a-lesson?source=homepage"
+                onClick={() => trackEvent("lesson_cta_click", "lessons", "homepage_hero")}
+                className="inline-flex items-center justify-center border border-primary/50 bg-background/70 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary backdrop-blur transition-colors hover:bg-primary hover:text-primary-foreground"
+                data-testid="link-home-lesson-hero"
+              >
+                <GraduationCap className="mr-2 h-4 w-4" />
+                Learn with Jason
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── SEARCH + FILTERS ────────────────────────────────────────── */}
-      <section className="border-b border-border bg-card">
+      <section id="browse" className="scroll-mt-16 border-b border-border bg-card">
         <div className="container mx-auto max-w-6xl px-5 py-6 sm:py-7">
 
           {/* Search input — underline editorial style */}
@@ -749,6 +767,27 @@ export default function HomePage() {
         )}
 
         {/* Footer archives */}
+        <section className="mt-20 border-y border-foreground bg-primary px-6 py-9 sm:px-10 sm:py-11 text-primary-foreground" aria-labelledby="lesson-callout">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/70">Learn from the person behind the vault</p>
+              <h2 id="lesson-callout" className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
+                Turn one tune into a way of playing.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
+                Jason Chinchen teaches tune-based lessons in Old-Time fiddle, clawhammer banjo, rhythm guitar, and upright bass. Choose a tune from the archive, bring a question, and start there.
+              </p>
+            </div>
+            <Link
+              href="/book-a-lesson?source=homepage"
+              onClick={() => trackEvent("lesson_cta_click", "lessons", "homepage_footer")}
+              className="inline-flex shrink-0 items-center justify-center border border-primary-foreground/60 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:bg-primary-foreground hover:text-primary"
+              data-testid="link-home-lesson-cta"
+            >
+              See how lessons work <ChevronRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </section>
         <div className="mt-20 pt-10 border-t border-border">
           <p className="text-[10px] uppercase tracking-[0.22em] font-medium text-muted-foreground mb-6 flex items-center gap-3">
             <span className="h-px w-8 bg-foreground/40" />

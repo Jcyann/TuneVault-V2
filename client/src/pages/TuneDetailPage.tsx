@@ -63,7 +63,7 @@ export default function TuneDetailPage() {
   useEffect(() => {
     if (!tune) return;
 
-    trackEvent("tune_view", "tune", tune.title);
+    trackEvent("tune_view", "tune", "detail");
 
     const pageTitle = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
     const pageUrl = `https://tunevault.org/tune/${tune.id}`;
@@ -342,12 +342,12 @@ export default function TuneDetailPage() {
             </div>
           )}
           <a
-            href={`/book-a-lesson?tune=${encodeURIComponent(tune.title)}`}
-            onClick={() => trackEvent("lesson_link_click", "tune", tune.title)}
+            href={`/book-a-lesson?tune=${encodeURIComponent(tune.title)}&source=tune`}
+            onClick={() => trackEvent("lesson_cta_click", "lessons", "tune_header")}
             className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
             data-testid="link-tune-lesson"
           >
-            Want help learning {tune.title}?
+            Learn {tune.title} with Jason
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </header>
@@ -515,6 +515,34 @@ export default function TuneDetailPage() {
                 </div>
               </section>
             )}
+
+            <section
+              className="border-y border-foreground bg-primary px-6 py-8 text-primary-foreground sm:px-8"
+              aria-labelledby="tune-lesson-heading"
+              data-testid="section-tune-lesson"
+            >
+              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-primary-foreground/70">
+                Private online lesson
+              </p>
+              <h2 id="tune-lesson-heading" className="mt-2 font-display text-3xl font-semibold leading-tight">
+                Take {tune.title} from reference to repertoire.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
+                Work directly with Jason Chinchen on the bowing, rhythm, technique, and musical context that make this tune feel right. Jason teaches from the same recordings, notation, and research collected here in TuneVault.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-primary-foreground/75">
+                <span>Fiddle · Clawhammer banjo · Guitar · Upright bass</span>
+                <span>No payment required to inquire</span>
+              </div>
+              <a
+                href={`/book-a-lesson?tune=${encodeURIComponent(tune.title)}&source=tune`}
+                onClick={() => trackEvent("lesson_cta_click", "lessons", "tune_learning_module")}
+                className="mt-6 inline-flex items-center bg-primary-foreground px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary transition-transform hover:-translate-y-0.5"
+                data-testid="link-tune-lesson-module"
+              >
+                Ask about learning this tune <ExternalLink className="ml-2 h-3.5 w-3.5" />
+              </a>
+            </section>
           </div>
 
           {/* Sidebar — flat, hairline-divided */}

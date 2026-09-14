@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Music2, Calendar, Info, GraduationCap, BookOpen, KeyRound, ShoppingBag } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const navLinks = [
   { href: "/", label: "Home", mobileLabel: "Home", icon: Music2 },
@@ -8,11 +9,12 @@ const navLinks = [
   // { href: "/blog", label: "Blog", mobileLabel: "Blog", icon: BookOpen },
   { href: "/gear", label: "Store", mobileLabel: "Store", icon: ShoppingBag },
   { href: "/about", label: "About", mobileLabel: "About", icon: Info },
-  { href: "/book-a-lesson", label: "Lessons", mobileLabel: "Lessons", icon: GraduationCap },
+  { href: "/book-a-lesson?source=navigation", label: "Lessons", mobileLabel: "Lessons", icon: GraduationCap },
 ];
 
 export default function NavBar() {
   const [location] = useLocation();
+  const currentPath = location.split("?")[0];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-30 bg-background/90 backdrop-blur border-b border-border">
@@ -26,11 +28,13 @@ export default function NavBar() {
         </Link>
         <div className="hidden sm:flex items-center gap-1">
           {navLinks.map(({ href, label }) => {
-            const active = location === href || (href === "/" && location === "");
+            const hrefPath = href.split("?")[0];
+            const active = currentPath === hrefPath || (hrefPath === "/" && currentPath === "");
             return (
               <Link
                 key={href}
                 href={href}
+                onClick={() => label === "Lessons" && trackEvent("lesson_cta_click", "lessons", "navigation_desktop")}
                 data-testid={`nav-link-${label.toLowerCase().replace(/\s+/g, "-")}`}
                 className={`relative inline-flex items-center px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] font-medium transition-colors ${
                   active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -49,11 +53,13 @@ export default function NavBar() {
       {/* Mobile bottom tab strip */}
       <div className="sm:hidden flex border-t border-border bg-background">
         {navLinks.map(({ href, mobileLabel, icon: Icon }) => {
-          const active = location === href || (href === "/" && location === "");
+          const hrefPath = href.split("?")[0];
+          const active = currentPath === hrefPath || (hrefPath === "/" && currentPath === "");
           return (
             <Link
               key={href}
               href={href}
+              onClick={() => mobileLabel === "Lessons" && trackEvent("lesson_cta_click", "lessons", "navigation_mobile")}
               className={`flex-1 flex flex-col items-center py-1.5 text-[9px] font-medium tracking-wider uppercase transition-colors ${
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
