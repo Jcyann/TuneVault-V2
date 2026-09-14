@@ -141,13 +141,16 @@ export default function BookALessonPage() {
           <p className="mt-5 max-w-2xl font-serif text-lg leading-relaxed text-muted-foreground">
             One-on-one lessons built around real old-time repertoire—its rhythm, technique, source recordings, and history. Bring a tune you love or let Jason help you choose one.
           </p>
-          <a
-            href="#inquiry-form"
-            onClick={() => trackEvent("lesson_cta_click", "lessons", "lesson_page_hero")}
-            className="mt-7 inline-flex items-center bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-transform hover:-translate-y-0.5"
-          >
-            Ask about a lesson <ChevronRight className="ml-2 h-4 w-4" />
-          </a>
+          <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3">
+            <a
+              href="#inquiry-form"
+              onClick={() => trackEvent("lesson_cta_click", "lessons", "lesson_page_hero")}
+              className="inline-flex items-center bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-transform hover:-translate-y-0.5"
+            >
+              Start a conversation <ChevronRight className="ml-2 h-4 w-4" />
+            </a>
+            <span className="text-xs text-muted-foreground">No payment or commitment to inquire.</span>
+          </div>
         </header>
         <div className="grid border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-border">
           {[
@@ -222,10 +225,10 @@ export default function BookALessonPage() {
             {/* ── Questionnaire ── */}
             <div id="inquiry-form">
               <h2 className="text-xl font-serif font-bold text-foreground mb-1">
-                Get Started
+                Tell Jason what you’d like to learn
               </h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Start with the four essentials below. Everything after that is optional and helps Jason prepare.
+                A tune title, a technique question, or simply “I’m not sure where to start” is enough. Begin with four essentials; everything else is optional.
               </p>
               {selectedTune && (
                 <p className="mb-5 border-l-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground" data-testid="lesson-selected-tune">
@@ -494,13 +497,13 @@ export default function BookALessonPage() {
                     ) : (
                       <>
                         <GraduationCap className="w-4 h-4 mr-2" />
-                        Send My Inquiry
+                        Ask About a Lesson
                       </>
                     )}
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    No payment now — we'll confirm details and schedule together.
+                    No payment or commitment now. Jason will reply within a day or two to talk through fit, details, and scheduling.
                   </p>
                 </form>
               )}

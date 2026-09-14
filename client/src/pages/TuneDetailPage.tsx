@@ -347,7 +347,7 @@ export default function TuneDetailPage() {
             className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
             data-testid="link-tune-lesson"
           >
-            Get help learning {tune.title}
+            Work on {tune.title} in a lesson
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </header>
@@ -540,7 +540,7 @@ export default function TuneDetailPage() {
                 className="mt-6 inline-flex items-center bg-primary-foreground px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary transition-transform hover:-translate-y-0.5"
                 data-testid="link-tune-lesson-module"
               >
-                Ask about learning this tune <ExternalLink className="ml-2 h-3.5 w-3.5" />
+                Bring this tune to a lesson <ExternalLink className="ml-2 h-3.5 w-3.5" />
               </a>
             </section>
           </div>

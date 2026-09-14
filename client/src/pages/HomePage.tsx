@@ -658,10 +658,10 @@ export default function HomePage() {
             <div className="max-w-2xl">
               <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-primary-foreground/70">Private online instruction</p>
               <h2 id="lesson-callout" className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
-                Turn one tune into a way of playing.
+                Stuck on a tune? Bring it to a lesson.
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
-                Tune-based lessons are available in Old-Time fiddle, clawhammer banjo, rhythm guitar, and upright bass. Choose a tune from the archive, bring a question, and start there.
+                Get focused, one-on-one help with beginner-to-intermediate fiddle, clawhammer banjo, rhythm guitar, or upright bass. You do not need a polished plan—a tune, a question, or a place where you feel stuck is enough.
               </p>
             </div>
             <Link
@@ -670,7 +670,7 @@ export default function HomePage() {
               className="inline-flex shrink-0 items-center justify-center border border-primary-foreground/60 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:bg-primary-foreground hover:text-primary"
               data-testid="link-home-lesson-cta"
             >
-              See how lessons work <ChevronRight className="ml-2 h-4 w-4" />
+              Find your next step <ChevronRight className="ml-2 h-4 w-4" />
             </Link>
           </div>
         </section>
