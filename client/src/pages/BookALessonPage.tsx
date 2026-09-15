@@ -187,7 +187,7 @@ export default function BookALessonPage() {
               </p>
             </section>
 
-            <section className="grid gap-7 sm:grid-cols-2" aria-label="Student reviews">
+            <section className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3" aria-label="Student reviews">
               {[
                 {
                   quote: "Jason has a gift for groove and he’s really good at helping others feel and express the groove in old time music.",
@@ -196,6 +196,10 @@ export default function BookALessonPage() {
                 {
                   quote: "As an Oldtime fiddler wanting to learn banjo, Jason helped me really find the groove and rhythm in clawhamer banjo, rather than just plucking out the melody. He is a very kind and patient teacher.",
                   name: "Rebecca B.",
+                },
+                {
+                  quote: "Jason is a great teacher. He helped me find songs I connected with, and before I knew it we were playing tunes! He’s a great multi-instrumentalist, and he’s been super welcoming and encouraging as I’ve stepped into a new style of playing. Plus, he’s an all-around creative and fun guy to be around!",
+                  name: "Nick W.",
                 },
               ].map(({ quote, name }) => (
                 <figure key={name} className="border-l-2 border-primary py-1 pl-5" data-testid="lesson-testimonial">
