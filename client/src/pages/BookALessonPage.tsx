@@ -187,14 +187,27 @@ export default function BookALessonPage() {
               </p>
             </section>
 
-            <figure className="border-l-2 border-primary py-1 pl-5" data-testid="lesson-testimonial">
-              <blockquote className="font-serif text-xl italic leading-relaxed text-foreground">
-                “Jason has a gift for groove and he’s really good at helping others feel and express the groove in old time music.”
-              </blockquote>
-              <figcaption className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Brian D. · Student
-              </figcaption>
-            </figure>
+            <section className="grid gap-7 sm:grid-cols-2" aria-label="Student reviews">
+              {[
+                {
+                  quote: "Jason has a gift for groove and he’s really good at helping others feel and express the groove in old time music.",
+                  name: "Brian D.",
+                },
+                {
+                  quote: "As an Oldtime fiddler wanting to learn banjo, Jason helped me really find the groove and rhythm in clawhamer banjo, rather than just plucking out the melody. He is a very kind and patient teacher.",
+                  name: "Rebecca B.",
+                },
+              ].map(({ quote, name }) => (
+                <figure key={name} className="border-l-2 border-primary py-1 pl-5" data-testid="lesson-testimonial">
+                  <blockquote className="font-serif text-lg italic leading-relaxed text-foreground">
+                    “{quote}”
+                  </blockquote>
+                  <figcaption className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {name} · Student
+                  </figcaption>
+                </figure>
+              ))}
+            </section>
 
             {/* ── Questionnaire ── */}
             <div id="inquiry-form">
