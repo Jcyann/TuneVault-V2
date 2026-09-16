@@ -22,13 +22,6 @@ export default function TipJar() {
         Support TuneVault
       </a>
       <Link
-        href="/book-a-lesson"
-        data-testid="link-book-lesson-footer"
-        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-      >
-        Book a lesson in Old-Time fiddle, clawhammer banjo, guitar, or upright bass
-      </Link>
-      <Link
         href="/gear"
         data-testid="link-gear-footer"
         className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"

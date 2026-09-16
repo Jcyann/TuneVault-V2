@@ -341,15 +341,6 @@ export default function TuneDetailPage() {
               </span>
             </div>
           )}
-          <a
-            href={`/book-a-lesson?tune=${encodeURIComponent(tune.title)}&source=tune`}
-            onClick={() => trackEvent("lesson_cta_click", "lessons", "tune_header")}
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
-            data-testid="link-tune-lesson"
-          >
-            Work on {tune.title} in a lesson
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
         </header>
 
         {/* Body — two column editorial */}
