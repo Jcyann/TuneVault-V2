@@ -303,6 +303,11 @@ export async function autoSeed(): Promise<void> {
 
     // Ensure seed_meta table exists
     await client.query(`CREATE TABLE IF NOT EXISTS seed_meta (key TEXT PRIMARY KEY, value TEXT)`);
+    // Also create here: autoSeed and ensureRuntimeTables can start concurrently.
+    await client.query(`CREATE TABLE IF NOT EXISTS tune_copy_overrides (
+      tune_id INTEGER PRIMARY KEY REFERENCES tunes(id) ON DELETE CASCADE,
+      description TEXT, notes TEXT, updated_at TIMESTAMP NOT NULL DEFAULT now()
+    )`);
     await applyCatalogCulls(client);
 
     const countResult = await client.query("SELECT COUNT(*) FROM tunes");
@@ -394,7 +399,9 @@ export async function autoSeed(): Promise<void> {
                tune_type = EXCLUDED.tune_type,
                region = EXCLUDED.region,
                difficulty = EXCLUDED.difficulty,
-               description = EXCLUDED.description,
+                description = CASE WHEN EXISTS (SELECT 1 FROM tune_copy_overrides WHERE tune_id = EXCLUDED.id)
+                  THEN (SELECT description FROM tune_copy_overrides WHERE tune_id = EXCLUDED.id)
+                  ELSE EXCLUDED.description END,
                source_fiddler = EXCLUDED.source_fiddler,
                era = EXCLUDED.era,
                 youtube_url = EXCLUDED.youtube_url,
@@ -409,7 +416,9 @@ export async function autoSeed(): Promise<void> {
                the_session_id = EXCLUDED.the_session_id,
                popularity = EXCLUDED.popularity,
                tags = EXCLUDED.tags,
-               notes = EXCLUDED.notes,
+                notes = CASE WHEN EXISTS (SELECT 1 FROM tune_copy_overrides WHERE tune_id = EXCLUDED.id)
+                  THEN (SELECT notes FROM tune_copy_overrides WHERE tune_id = EXCLUDED.id)
+                  ELSE EXCLUDED.notes END,
                audio_source = EXCLUDED.audio_source,
                audio_attribution = EXCLUDED.audio_attribution
              RETURNING (xmax = 0) AS inserted`,

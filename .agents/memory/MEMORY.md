@@ -12,3 +12,4 @@
 - [Open-corpus audio title-collision guard](audio-source-title-collision-guard.md) — exact title/alias match alone attached a LibriVox audiobook, an improv solo, wrong-genre tracks, and a Commons pronunciation clip; require positive genre/context evidence too.
 - [Dry-run cursors must preserve promotion paths](dry-run-cursor-semantics.md) — advancing a discovery cursor can strand nonterminal candidates; live resume must rewind and fully revalidate them.
 - [Teacher credibility language](teacher-credibility-language.md) — establish Jason’s legitimacy with concrete evidence; never narrate whether visitors “trust” him.
+- [Owner-only catalog edits](owner-only-catalog-edits.md) — keep the admin surface fail-closed until an explicit verified owner identity is configured; never rely on a hidden URL.

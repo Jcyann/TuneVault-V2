@@ -6,10 +6,73 @@ import { storage } from "./storage";
 import { sendNotificationEmail, lessonInquiryEmail, suggestionEmail } from "./email";
 import { eq, ilike, or, sql, desc, and, inArray } from "drizzle-orm";
 import { KEY_CONFIDENCE_THRESHOLD } from "@shared/keyDetection";
+import { getAuth, clerkClient } from "@clerk/express";
+import { z } from "zod";
+import { pool } from "./db";
 
 const youtubeEmbedCache = new Map<string, boolean>();
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // Fail closed until the owner's verified sign-in address is configured.
+  app.use("/api/admin", async (req, res, next) => {
+    const ownerEmail = process.env.TUNEVAULT_OWNER_EMAIL?.trim().toLowerCase();
+    const userId = getAuth(req).userId;
+    if (!userId) return res.status(401).json({ error: "Sign in required" });
+    if (!ownerEmail) return res.status(403).json({ error: "Owner account not configured" });
+    try {
+      const user = await clerkClient.users.getUser(userId);
+      const verified = user.emailAddresses.some(
+        (address) => address.emailAddress.toLowerCase() === ownerEmail &&
+          address.verification?.status === "verified",
+      );
+      if (!verified) return res.status(403).json({ error: "Owner access required" });
+      next();
+    } catch (err) {
+      console.error("Owner authorization failed:", err);
+      res.status(503).json({ error: "Unable to verify owner access" });
+    }
+  });
+
+  app.get("/api/admin/me", (_req, res) => res.json({ owner: true }));
+
+  const tuneCopySchema = z.object({
+    description: z.string().max(10000).nullable(),
+    notes: z.string().max(10000).nullable(),
+  }).strict();
+  app.put("/api/admin/tunes/:id/copy", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ error: "Invalid tune ID" });
+    const parsed = tuneCopySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Description and notes must each be at most 10,000 characters" });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const existing = await client.query("SELECT id FROM tunes WHERE id = $1 FOR UPDATE", [id]);
+      if (!existing.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Tune not found" });
+      }
+      await client.query(
+        `INSERT INTO tune_copy_overrides (tune_id, description, notes)
+         VALUES ($1, $2, $3) ON CONFLICT (tune_id) DO UPDATE
+         SET description = EXCLUDED.description, notes = EXCLUDED.notes, updated_at = now()`,
+        [id, parsed.data.description, parsed.data.notes],
+      );
+      const result = await client.query(
+        "UPDATE tunes SET description = $2, notes = $3 WHERE id = $1 RETURNING id, description, notes",
+        [id, parsed.data.description, parsed.data.notes],
+      );
+      await client.query("COMMIT");
+      res.json(result.rows[0]);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Tune copy save failed:", err);
+      res.status(500).json({ error: "Unable to save tune copy" });
+    } finally {
+      client.release();
+    }
+  });
+
   app.get("/api/tunes", async (req, res) => {
     try {
       const { key, search, region, difficulty, tuneType, page, limit, ids } = req.query;

@@ -704,6 +704,9 @@ export default function AdminPage() {
       </div>
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
+        <a href="/admin/tune-copy" className="inline-flex items-center gap-2 mb-6 rounded-lg border border-primary px-4 py-3 text-primary font-medium hover:bg-muted">
+          <Pencil className="w-4 h-4" /> Edit tune page copy
+        </a>
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
           <button
             onClick={() => setTab("inquiries")}

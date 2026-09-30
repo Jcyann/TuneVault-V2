@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" role="img" aria-label="TuneVault">
+  <rect width="160" height="50" rx="8" fill="#9b5a21"/>
+  <path d="M25 10v27m0-21c12-5 17 4 9 9-4 3-9 2-9 2" fill="none" stroke="#fffaf3" stroke-width="3" stroke-linecap="round"/>
+  <text x="48" y="31" fill="#fffaf3" font-family="Georgia,serif" font-size="17" font-weight="bold">TuneVault</text>
+</svg>
