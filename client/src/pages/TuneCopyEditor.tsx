@@ -41,6 +41,7 @@ export default function TuneCopyEditor() {
 
   const dirty = !!tune && (description !== (tune.description ?? "") || notes !== (tune.notes ?? ""));
   function choose(id: number | null) {
+    if (saving) return;
     if (dirty && !window.confirm("Discard your unsaved changes?")) return;
     setSelectedId(id);
     setReviewing(false);
@@ -55,7 +56,9 @@ export default function TuneCopyEditor() {
       });
       const saved = await response.json();
       queryClient.setQueryData([`/api/tunes/${tune.id}`], (old: Tune | undefined) => old ? { ...old, ...saved } : old);
-      queryClient.invalidateQueries({ queryKey: ["/api/tunes"] });
+      queryClient.invalidateQueries({
+        predicate: (query) => typeof query.queryKey[0] === "string" && query.queryKey[0].startsWith("/api/tunes"),
+      });
       setDescription(saved.description ?? "");
       setNotes(saved.notes ?? "");
       setReviewing(false);
@@ -72,13 +75,13 @@ export default function TuneCopyEditor() {
       <h1 className="font-serif text-3xl font-bold mt-5">Edit tune page copy</h1>
       <p className="text-muted-foreground mt-2">Update the story and playing notes for one tune. Recordings, notation, and catalog details stay unchanged.</p>
       <label className="block mt-8 font-medium" htmlFor="tune-search">Find a tune by title</label>
-      <input id="tune-search" value={search} onChange={(e) => setSearch(e.target.value)}
+      <input id="tune-search" value={search} disabled={saving} onChange={(e) => setSearch(e.target.value)}
         placeholder="Type at least two letters…" className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2" />
       {debounced.length >= 2 && (
         <div className="mt-2 rounded-md border border-border max-h-64 overflow-y-auto" role="listbox" aria-label="Tune search results">
           {searching ? <p className="p-3 text-sm">Searching…</p> :
             results?.tunes.length ? results.tunes.map((item) => (
-              <button key={item.id} type="button" onClick={() => choose(item.id)}
+              <button key={item.id} type="button" disabled={saving} onClick={() => choose(item.id)}
                 className={`block w-full text-left px-3 py-2 border-b border-border last:border-0 hover:bg-muted ${selectedId === item.id ? "bg-muted font-semibold" : ""}`}>
                 {item.title} <span className="text-muted-foreground font-normal text-sm">· {item.key}</span>
               </button>
@@ -94,13 +97,13 @@ export default function TuneCopyEditor() {
           </div>
           <div>
             <label htmlFor="tune-description" className="block font-semibold mb-2">About this tune</label>
-            <textarea id="tune-description" value={description} onChange={(e) => { setDescription(e.target.value); setReviewing(false); }}
+            <textarea id="tune-description" value={description} disabled={saving} onChange={(e) => { setDescription(e.target.value); setReviewing(false); }}
               maxLength={10000} rows={7} className="w-full rounded-md border border-border bg-background px-3 py-2" />
             <p className="text-xs text-muted-foreground">{description.length}/10,000 characters. Leave blank to show the public “not yet documented” message.</p>
           </div>
           <div>
             <label htmlFor="tune-notes" className="block font-semibold mb-2">Performance notes</label>
-            <textarea id="tune-notes" value={notes} onChange={(e) => { setNotes(e.target.value); setReviewing(false); }}
+            <textarea id="tune-notes" value={notes} disabled={saving} onChange={(e) => { setNotes(e.target.value); setReviewing(false); }}
               maxLength={10000} rows={5} className="w-full rounded-md border border-border bg-background px-3 py-2" />
             <p className="text-xs text-muted-foreground">{notes.length}/10,000 characters. Leave blank to hide this section.</p>
           </div>

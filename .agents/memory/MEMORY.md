@@ -13,3 +13,4 @@
 - [Dry-run cursors must preserve promotion paths](dry-run-cursor-semantics.md) — advancing a discovery cursor can strand nonterminal candidates; live resume must rewind and fully revalidate them.
 - [Teacher credibility language](teacher-credibility-language.md) — establish Jason’s legitimacy with concrete evidence; never narrate whether visitors “trust” him.
 - [Owner-only catalog edits](owner-only-catalog-edits.md) — keep the admin surface fail-closed until an explicit verified owner identity is configured; never rely on a hidden URL.
+- [Concurrent startup DDL](concurrent-startup-ddl.md) — Postgres CREATE TABLE IF NOT EXISTS can still race; assign each runtime table one startup creator.

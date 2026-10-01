@@ -28,6 +28,12 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  if (/^\/(admin|sign-in|sign-up)(\/|$)/.test(req.path)) {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  }
+  next();
+});
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(

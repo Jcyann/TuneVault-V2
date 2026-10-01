@@ -51,6 +51,14 @@ export const insertTuneSchema = createInsertSchema(tunes).omit({ id: true, creat
 export type InsertTune = z.infer<typeof insertTuneSchema>;
 export type Tune = typeof tunes.$inferSelect;
 
+// Manual prose is independent of the catalog seed and retained by schema syncs.
+export const tuneCopyOverrides = pgTable("tune_copy_overrides", {
+  tuneId: integer("tune_id").primaryKey().references(() => tunes.id, { onDelete: "cascade" }),
+  description: text("description"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const suggestions = pgTable("suggestions", {
   id: serial("id").primaryKey(),
   name: text("name"),

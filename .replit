@@ -48,6 +48,7 @@ integrations = ["javascript_database:1.0.0"]
 
 [userenv.shared]
 VITE_GA_MEASUREMENT_ID = "G-ZG7NE7DJCP"
+TUNEVAULT_OWNER_EMAIL = "Jchinchen@msn.com"
 
 [postMerge]
 path = "scripts/post-merge.sh"

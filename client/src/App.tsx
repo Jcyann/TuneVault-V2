@@ -55,7 +55,7 @@ function OwnerArea({ children }: { children: React.ReactNode }) {
   if (!isLoaded || (isSignedIn && isLoading)) return <div className="container mx-auto px-4 py-16">Checking access…</div>;
   if (!isSignedIn) return <div className="container mx-auto px-4 py-16 space-y-4"><h1 className="text-2xl font-serif">Owner sign-in required</h1><a className="text-primary underline" href="/sign-in">Sign in to manage TuneVault</a></div>;
   if (isError || !data?.owner) return <div className="container mx-auto px-4 py-16 space-y-4"><h1 className="text-2xl font-serif">Owner access required</h1><p>This account cannot manage the catalog.</p><button className="text-primary underline" onClick={() => signOut({ redirectUrl: "/" })}>Sign out</button></div>;
-  return <>{children}</>;
+  return <><div className="container mx-auto px-4 pt-4 text-right"><button className="text-sm text-primary underline" onClick={() => signOut({ redirectUrl: "/" })}>Sign out of admin</button></div>{children}</>;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -70,10 +70,10 @@ function ClerkQueryClientCacheInvalidator() {
 }
 
 function SignInPage() {
-  return <div className="min-h-[100dvh] flex items-center justify-center bg-background px-4 py-12"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
+  return <div className="min-h-[100dvh] flex items-center justify-center bg-background px-4 py-12"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} fallbackRedirectUrl={`${basePath}/admin`} /></div>;
 }
 function SignUpPage() {
-  return <div className="min-h-[100dvh] flex items-center justify-center bg-background px-4 py-12"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>;
+  return <div className="min-h-[100dvh] flex items-center justify-center bg-background px-4 py-12"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={`${basePath}/admin`} /></div>;
 }
 
 function Router() {
