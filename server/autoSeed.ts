@@ -8,7 +8,7 @@ import { createHash } from "crypto";
 // In production: dist/seedData/ | In development: server/seedData/
 const prodPath = join(process.cwd(), "dist", "seedData");
 const devPath = join(process.cwd(), "server", "seedData");
-const SEED_DIR = existsSync(prodPath) ? prodPath : devPath;
+const SEED_DIR = process.env.NODE_ENV === "production" && existsSync(prodPath) ? prodPath : devPath;
 
 interface TuneRow {
   id: number;

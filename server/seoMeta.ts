@@ -1,4 +1,5 @@
 import { pool } from "./db";
+import { tuneDescriptionSnippet } from "../shared/tuneCopy";
 
 export interface TuneMeta {
   id: number;
@@ -272,20 +273,11 @@ export function injectPageMeta(html: string, cfg: PageConfig): string {
 export function injectTuneMeta(html: string, tune: TuneMeta): string {
   const title = `${tune.title} — Key of ${tune.key} · ${cap(tune.tuneType)} | TuneVault`;
 
-  const rawDesc = tune.description
-    ? tune.description.slice(0, 200)
-    : `${tune.title}: a ${tune.key} ${tune.tuneType} from the Old-Time fiddle tradition. Audio, history, ABC notation, and video on TuneVault.`;
+  const rawDesc = tune.description || tuneDescriptionSnippet(tune);
 
   const url = `${BASE}/tune/${tune.id}`;
 
-  const regionStr = tune.region ? ` · ${tune.region}` : "";
-  const prefix = `Key of ${tune.key} · ${cap(tune.tuneType)}${regionStr}. `;
-  const remaining = 160 - prefix.length;
-  const snippet =
-    rawDesc.length > remaining
-      ? rawDesc.slice(0, remaining - 1).replace(/\s\S+$/, "") + "…"
-      : rawDesc;
-  const truncDesc = prefix + snippet;
+  const truncDesc = tuneDescriptionSnippet(tune);
 
   // Tune-specific keywords: tune name variations + key/type/region signals
   const t = tune.title;

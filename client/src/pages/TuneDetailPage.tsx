@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, Music2, ExternalLink, Video, BookOpen, Star, MessageSquarePlus, Play } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 import type { Tune, Recording } from "@shared/schema";
+import { tuneDescriptionSnippet } from "@shared/tuneCopy";
 import AudioPlayer from "@/components/AudioPlayer";
 import AbcStaffRenderer from "@/components/AbcStaffRenderer";
 import YoutubePlayer from "@/components/YoutubePlayer";
@@ -67,9 +68,7 @@ export default function TuneDetailPage() {
 
     const pageTitle = `${tune.title} — ${tune.key} ${tune.tuneType} | TuneVault`;
     const pageUrl = `https://tunevault.org/tune/${tune.id}`;
-    const pageDesc = tune.description
-      ? tune.description.slice(0, 155).replace(/\s\S*$/, "") + "…"
-      : `${tune.title}: a ${tune.key} ${tune.tuneType} from the Old-Time fiddle tradition. Audio, history, ABC notation, and video on TuneVault.`;
+    const pageDesc = tuneDescriptionSnippet(tune);
 
     const setMeta = (sel: string, attr: string, val: string) => {
       let el = document.querySelector(sel) as HTMLMetaElement | null;
@@ -108,9 +107,6 @@ export default function TuneDetailPage() {
       "description": tune.description ?? undefined,
       "musicalKey": tune.key,
       "genre": ["Old-Time", "Appalachian", tune.tuneType],
-      "composer": tune.sourceFiddler
-        ? { "@type": "Person", "name": tune.sourceFiddler }
-        : undefined,
       "dateCreated": tune.era ?? undefined,
       "inLanguage": "en",
       "publisher": {
@@ -337,7 +333,7 @@ export default function TuneDetailPage() {
               <Music2 className="w-4 h-4 text-primary/70" />
               <span>
                 No direct audio file available — audio recording still needed
-                {hasArchivalReference ? "; an archival reference may resolve below" : " and this tune is queued for sourcing"}
+                  {hasArchivalReference ? "; an archival reference is listed below" : ""}
               </span>
             </div>
           )}
@@ -351,15 +347,15 @@ export default function TuneDetailPage() {
 
             {/* About */}
             <section data-testid="section-about">
-              <SectionHeader eyebrow="History & Notes" title="About this tune" />
+              <SectionHeader title="About this tune" />
               {tune.description ? (
-                <p className="font-serif text-[17px] leading-[1.7] text-foreground/85 max-w-prose">
+                <p className="font-serif text-[17px] leading-[1.7] text-foreground/85 max-w-prose whitespace-pre-line">
                   {tune.description}
                 </p>
               ) : (
                 <p className="font-serif italic text-[16px] leading-[1.7] text-muted-foreground max-w-prose">
-                  Historical notes have not yet been documented for this tune. If you know its story,{" "}
-                  <a href="/about#suggestion-box" className="text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors">suggest a write-up</a>.
+                  History not yet documented. Know a source?{" "}
+                  <a href="/about#suggestion-box" className="text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors">Send a correction</a>.
                 </p>
               )}
             </section>
@@ -378,7 +374,7 @@ export default function TuneDetailPage() {
             {allRecordings.length > 1 && (
               <section data-testid="section-recordings">
                 <SectionHeader eyebrow={`${allRecordings.length} sources`} title="Recorded versions" />
-                <p className="text-sm text-muted-foreground mb-5">Select a recording to listen — click to switch.</p>
+                <p className="text-sm text-muted-foreground mb-5">Select a version to listen.</p>
                 <ul className="border-t border-border">
                   {allRecordings.map((rec, i) => {
                     const hasAudio = !!(rec.audioUrl || rec.locItemId);

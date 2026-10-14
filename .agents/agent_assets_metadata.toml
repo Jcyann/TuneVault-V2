@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "gQPniSkBFj2malFpGCX4n"
+uri = "file://generated-artifacts/tune-copy/review-report.html"
+type = "html"
+title = "Full tune-copy review"
+description = "Coverage for all 1,348 tunes, before/after word counts, editorial decisions, and representative examples."
+logical_id = "34dbd442-b7ec-475f-ad7f-bc431c85e6b3"
+content_hash = "sha256:7858e0b99513f4dde051b86ea2b07c850d9292667ae481d5765c7decd4fe46d8"
+size = 226754
+mtime_ms = 1791961816099
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:87b405a4-f314-4cf8-a1db-adadd5f7ada6/34dbd442-b7ec-475f-ad7f-bc431c85e6b3/fcaf16b9-da53-4b69-891e-f1ef386fa3ba"
+storage_version_token = "1791961842878677"
+content_type = "text/html"

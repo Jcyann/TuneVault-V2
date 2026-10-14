@@ -18,3 +18,19 @@ Tune-page prose must retain historically accurate information, remove repetition
 **Why:** The owner again reported reader feedback about overworked AI-sounding garble and repeated information. Removing obvious research scaffolding alone did not address the broader editorial problem.
 
 **How to apply:** Review whole entries for inflated praise, speculative metaphors, repetitive provenance, pasted archive text, and invented-sounding performance advice. Preserve supported details and attribution; do not invent personal anecdotes to sound natural.
+
+## Factual fidelity before bulk approval
+
+Do not approve catalog-wide paraphrases based on coverage counts or shorter word counts alone. Compare factual relationships with the original, including what each date describes, and preserve source/license credits independently of the prose.
+
+**Why:** Bulk editorial drafts changed a military discharge year into a death date, removed useful attributed history, and retained unsupported playing prescriptions despite explicit instructions. An entry having a review record does not make its replacement accurate.
+
+**How to apply:** Bulk editing is acceptable; use source comparisons and factual guards rather than repeatedly asking for approval. Reject drafts that alter factual meaning, turn a collection citation into an earliest-appearance claim, or invent technique.
+
+## Improvement over perfection
+
+The owner wants catalog-wide incremental improvement in one batch or four, not an open-ended pursuit of perfect historical accounts.
+
+**Why:** The owner explicitly corrected an approach that stopped after preparing drafts instead of shipping useful improvements.
+
+**How to apply:** Complete the whole catalog in a few batches. Preserve recoverability, source credits and owner edits, fix concrete factual errors, and ship the improvement without making exhaustive new historical research a prerequisite.
