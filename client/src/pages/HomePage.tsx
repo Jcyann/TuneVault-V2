@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Music2, Search, BookOpen, Disc, Video, Headphones, ChevronLeft, ChevronRight, X, Star, Shuffle, ListOrdered, Link2, Check, Play, ListPlus } from "lucide-react";
@@ -266,20 +265,8 @@ export default function HomePage() {
               Learn the tunes. Hear the tradition.
             </p>
             <p className="text-sm sm:text-base text-muted-foreground mt-5 max-w-sm leading-relaxed">
-              Explore source recordings, notation, history, and practical playing notes for{" "}
-              <strong className="text-foreground font-semibold">
-                {stats?.total ? `over ${(Math.floor(Number(stats.total) / 100) * 100).toLocaleString("en-US")}` : "over 1,000"}
-              </strong>{" "}
-              fiddle tunes—built for listening, study, and practice.
+              Explore fiddle tunes through source recordings, notation, and history.
             </p>
-            <div className="mt-7">
-              <a
-                href="#browse"
-                className="inline-flex items-center justify-center bg-foreground px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-background transition-transform hover:-translate-y-0.5"
-              >
-                Find a tune <ChevronRight className="ml-2 h-4 w-4" />
-              </a>
-            </div>
           </div>
         </div>
       </section>
